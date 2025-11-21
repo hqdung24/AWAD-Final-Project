@@ -1,4 +1,4 @@
-import { PaginationProvider } from '@/common/pagination/providers/pagination.provider';
+import { PaginationProvider } from '@/common/pagination/providers/offset-pagination.provider';
 import { TagsService } from '@/modules/tags/providers/tags.service';
 import { UsersService } from '@/modules/users/providers/users.service';
 import { Injectable } from '@nestjs/common';
@@ -8,7 +8,7 @@ import { CreatePostDto } from '../dtos/create-post.dto';
 import { GetPostsDto } from '../dtos/get-post.dto';
 import { UpdatePostDto } from '../dtos/update-post.dto';
 import { Post } from '../post.entity';
-import { Paginated } from '@/common/pagination/interfaces/paginated.interface';
+import { OffsetPaginated } from '@/common/pagination/interfaces/paginated.interface';
 import { CreatePostProvider } from './create-post.provider';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class PostsService {
   public async findAllByUserId(
     userId: string,
     query: GetPostsDto,
-  ): Promise<Paginated<Post>> {
+  ): Promise<OffsetPaginated<Post>> {
     // mặc định
     query.page ||= 1;
     query.limit ||= 10;

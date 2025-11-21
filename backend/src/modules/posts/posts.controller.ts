@@ -8,12 +8,14 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ActiveUser } from '../auth/decorator/active-user.decorator';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { GetPostsDto } from './dtos/get-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { PostsService } from './providers/posts.service';
-import { ActiveUser } from '../auth/decorator/active-user.decorator';
+
+@ApiBearerAuth('accessToken')
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -23,7 +25,6 @@ export class PostsController {
     @Param('userId') userId: string,
     @Query() postQuery: GetPostsDto,
   ) {
-    console.log('postQuery', postQuery);
     return this.postsService.findAllByUserId(userId, postQuery);
   }
 

@@ -44,18 +44,7 @@ export class CreateUsersProvider {
 
       return safeUser;
     } catch (e: unknown) {
-      // 5) Chặn race condition trùng email ở tầng DB
-      //   - Postgres: code 23505
-      //   - MySQL/MariaDB: ER_DUP_ENTRY
-      const errCode =
-        typeof e === 'object' && e !== null && 'code' in e
-          ? (e as { code?: unknown }).code
-          : undefined;
-
-      if (errCode === '23505' || errCode === 'ER_DUP_ENTRY') {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Could not create user');
+      throw new InternalServerErrorException(e, 'Could not create user');
     }
   }
 }

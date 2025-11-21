@@ -1,10 +1,12 @@
-import { IsOptional, IsPositive } from 'class-validator';
+import { IsOptional, IsPositive, IsString } from 'class-validator';
 
-export class PaginationQueryDto {
+export class BaseCursorQueryDto {
   @IsOptional()
   @IsPositive()
   limit?: number;
+}
 
+export class OffsetQueryDto extends BaseCursorQueryDto {
   @IsOptional()
   @IsPositive()
   page?: number;
@@ -12,4 +14,9 @@ export class PaginationQueryDto {
   @IsOptional()
   @IsPositive()
   offset?: number;
+}
+export class CursorQueryDto extends BaseCursorQueryDto {
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 }

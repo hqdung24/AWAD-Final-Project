@@ -2,6 +2,8 @@ import { IsArray, IsNotEmpty, ValidateNested } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+
+//Group dto for creating many users
 export class CreateManyUsersDto {
   @ApiProperty({
     description: 'Array of users to be created',

@@ -1,5 +1,10 @@
 import { UsersService } from '@/modules/users/providers/users.service';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { SignInDto } from '../dtos/signin.dto';
 import { SignInProvider } from './sign-in.provider';
 import { RefreshTokensProvider } from './refresh-tokens.provider';
@@ -24,12 +29,8 @@ export class AuthService {
   }
 
   public async signIn(signInDto: SignInDto) {
-    console.log('sign in dto', signInDto);
-    const tokens = await this.signInProvider.signIn(signInDto);
-    const user = await this.userService.findOneByEmail(signInDto.email);
-
     //return user and tokens
-    return { user, ...tokens };
+    return this.signInProvider.signIn(signInDto);
   }
 
   public async refreshToken({ refreshToken }: RefreshTokenDto) {
@@ -37,6 +38,9 @@ export class AuthService {
     //inject refresh tokens provider
 
     const tokens = await this.refreshTokensProvider.refreshToken(refreshToken);
+    if (!tokens) {
+      throw new BadRequestException('Failed to refresh the token');
+    }
     return tokens;
   }
 }

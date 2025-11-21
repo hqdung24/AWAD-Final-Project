@@ -6,15 +6,19 @@ import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
 import { SignInProvider } from './providers/sign-in.provider';
 import { ConfigModule } from '@nestjs/config';
-import { jwtConfig } from '@/config/jwt.config';
+import { jwtConfig } from '@/modules/auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { GenerateTokensProvider } from './providers/generate-tokens.provider';
 import { RefreshTokensProvider } from './providers/refresh-tokens.provider';
 import { APP_GUARD } from '@nestjs/core';
-import { AccessTokenGuard } from '@/modules/auth/access-token/access-token.guard';
-import { AuthenticationGuard } from '@/modules/auth/authentication/authentication.guard';
+import { AccessTokenGuard } from '@/modules/auth/guard/access-token.guard';
+import { MyAuthGuard } from '@/modules/auth/auth/auth.guard';
+import { GoogleAuthenticationController } from './social/google-authentication.controller';
+import { GoogleAuthenticationService } from './social/google-authentication.service';
+import { AccessControlProvider } from './providers/access-control.provider';
+import { RoleGuard } from './guard/role-based.guard';
 @Module({
-  controllers: [AuthController],
+  controllers: [AuthController, GoogleAuthenticationController],
   providers: [
     AuthService,
     SignInProvider,
@@ -23,9 +27,12 @@ import { AuthenticationGuard } from '@/modules/auth/authentication/authenticatio
     RefreshTokensProvider,
     {
       provide: APP_GUARD,
-      useClass: AuthenticationGuard,
+      useClass: MyAuthGuard,
     },
     AccessTokenGuard,
+    RoleGuard,
+    GoogleAuthenticationService,
+    AccessControlProvider,
   ],
   imports: [
     forwardRef(() => UsersModule),

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -59,6 +60,7 @@ export class Post {
     cascade: ['remove', 'insert', 'update'],
     eager: true,
   })
+  @JoinColumn()
   metaOptions?: MetaOption;
 
   @ManyToMany(() => Tag, (tag) => tag.posts)

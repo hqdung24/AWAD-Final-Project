@@ -27,4 +27,24 @@ export class FindOneUserProvider {
     }
     return user;
   }
+
+  async findOneByUsername(username: string): Promise<User> {
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.username = :username', { username })
+      .getOne();
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+
+  async findOneByGoogleId(googleId: string): Promise<User | null> {
+    const user = await this.usersRepository.findOne({
+      where: { googleId },
+    });
+    return user;
+  }
 }

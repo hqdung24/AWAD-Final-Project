@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { type ConfigType } from '@nestjs/config';
-import { jwtConfig } from '@/config/jwt.config';
+import { jwtConfig } from '@/modules/auth/config/jwt.config';
 import { User } from '@/modules/users/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 @Injectable()
@@ -39,6 +39,7 @@ export class GenerateTokensProvider {
       //generate access token
       this.signToken(user.id, this.jwtConfiguration.accessTokenTtl, {
         email: user.email,
+        role: user.role,
       }),
       //generate refresh token
       this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl),

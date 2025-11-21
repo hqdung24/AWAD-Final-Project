@@ -7,7 +7,7 @@ import axios, {
   type AxiosInstance,
   type AxiosRequestConfig,
 } from 'axios';
-const baseURL = import.meta.env.VITE_API_URL;
+export const baseURL = import.meta.env.VITE_API_URL;
 
 // axios chính
 export const http: AxiosInstance = axios.create({
@@ -60,7 +60,7 @@ http.interceptors.response.use(
 
     if (status === 401 && !skip) {
       original._retry = true;
-
+      console.log('Cookie sẵn sàng gửi: ', document.cookie); // Xem có cookie RT không
       try {
         if (isRefreshing) {
           // chờ AT mới
@@ -80,7 +80,6 @@ http.interceptors.response.use(
         const { accessToken } = RefreshResponseSchema.parse(resp.data.data);
 
         useAuthStore.getState().setAccessToken(accessToken);
-        useAuthStore.getState().setAuthenticated(true);
 
         waiters.forEach((cb) => cb(accessToken));
         waiters = [];

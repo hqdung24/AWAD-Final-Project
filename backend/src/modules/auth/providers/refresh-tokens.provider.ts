@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { type ConfigType } from '@nestjs/config';
-import { jwtConfig } from '@/config/jwt.config';
+import { jwtConfig } from '@/modules/auth/config/jwt.config';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
@@ -32,7 +32,7 @@ export class RefreshTokensProvider {
       if (!sub) {
         throw new UnauthorizedException('Invalid refresh token');
       }
-      const user = await this.usersService.findById(sub);
+      const user = await this.usersService.findOneById(sub);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }

@@ -25,6 +25,12 @@ export async function signin(payload: SigninPayload): Promise<SigninResponse> {
   const res = await http.post('/auth/signin', payload);
   return SigninResponseSchema.parse(res.data);
 }
+export async function googleAuthentication(
+  token: string
+): Promise<SigninResponse> {
+  const res = await http.post('/auth/google-authentication', { token });
+  return SigninResponseSchema.parse(res.data);
+}
 
 export async function signup(payload: SignupPayload): Promise<SignupResponse> {
   SignupPayloadSchema.parse(payload);

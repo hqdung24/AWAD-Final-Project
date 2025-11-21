@@ -1,0 +1,1613 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/users/me": {
+      "get": {
+        "operationId": "UsersController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UsersController_getUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": false,
+            "in": "path",
+            "description": "get user with a specific id",
+            "schema": {
+              "example": 1234,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "The nymber of entries returned par page",
+            "schema": {
+              "example": "10",
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "The nymber of entries returned par page",
+            "schema": {
+              "example": "10",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Fetch user by id",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/auth/signin": {
+      "post": {
+        "operationId": "AuthController_signIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User signed in successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignInResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sign in to an existing user account",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/google-authentication": {
+      "post": {
+        "operationId": "AuthController_googleAuthentication",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "description": "Endpoint to create a new user account",
+        "operationId": "AuthController_createNewUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User account created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "msg": "Signup successful"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new user account",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Endpoint to refresh access token, send refresh token in cookie",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1dWlkLTEyMzQiLCJpYXQiOjE2ODgwODc2MDAsImV4cCI6MTY4ODA5MTIwMH0.XYZ"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "refreshToken": []
+          },
+          {
+            "refreshToken": []
+          }
+        ],
+        "summary": "Refresh access token using refresh token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/signout": {
+      "post": {
+        "operationId": "AuthController_signOut",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/conversations": {
+      "post": {
+        "operationId": "ConversationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroupConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create a group conversation",
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "get": {
+        "operationId": "ConversationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List conversations for current user",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations/{convId}": {
+      "get": {
+        "operationId": "ConversationsController_get",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get conversation details",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/conversations/{convId}/participants": {
+      "post": {
+        "operationId": "ConversationsController_addParticipants",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOneParticipantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Add participants to a conversation",
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "get": {
+        "operationId": "ConversationsController_listParticipants",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListParticipantsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List participants of a conversation",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/posts/{userId}": {
+      "get": {
+        "operationId": "PostsController_getPosts",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Posts"
+        ]
+      }
+    },
+    "/posts": {
+      "post": {
+        "operationId": "PostsController_createPost",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The post has been created successfully."
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create a new post",
+        "tags": [
+          "Posts"
+        ]
+      },
+      "patch": {
+        "operationId": "PostsController_patchPost",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Posts"
+        ]
+      }
+    },
+    "/posts/{postId}": {
+      "delete": {
+        "operationId": "PostsController_deletePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Posts"
+        ]
+      }
+    },
+    "/meta-options": {
+      "post": {
+        "operationId": "MetaOptionsController_createMetaOptions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostMetaOptionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "MetaOptions"
+        ]
+      }
+    },
+    "/tags": {
+      "post": {
+        "operationId": "TagsController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/tags/{tagId}": {
+      "delete": {
+        "operationId": "TagsController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/tags/{tagId}/soft": {
+      "delete": {
+        "operationId": "TagsController_softDeleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/friends": {
+      "get": {
+        "operationId": "FriendsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2025-11-14T12:00:00Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendshipResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List friends for current user",
+        "tags": [
+          "Friends"
+        ]
+      }
+    },
+    "/friends/are-friends/{userId}": {
+      "get": {
+        "operationId": "FriendsController_areFriends",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Check if current user is friends with another user with userId",
+        "tags": [
+          "Friends"
+        ]
+      }
+    },
+    "/friends/{otherUserId}": {
+      "delete": {
+        "operationId": "FriendsController_remove",
+        "parameters": [
+          {
+            "name": "otherUserId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Remove a friend (delete friendship)",
+        "tags": [
+          "Friends"
+        ]
+      }
+    },
+    "/friend-requests": {
+      "post": {
+        "operationId": "FriendRequestsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFriendRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create friend request",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/friend-requests/to-me": {
+      "get": {
+        "operationId": "FriendRequestsController_list",
+        "parameters": [
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "incoming",
+              "type": "string",
+              "enum": [
+                "incoming",
+                "outgoing"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "pending",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendRequestResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List friend requests sent to me",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/friend-requests/from-me": {
+      "get": {
+        "operationId": "FriendRequestsController_listFromMe",
+        "parameters": [
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "incoming",
+              "type": "string",
+              "enum": [
+                "incoming",
+                "outgoing"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "pending",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FriendRequestResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List friend requests sent from me",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/friend-requests/{id}/accept": {
+      "post": {
+        "operationId": "FriendRequestsController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Accept a friend request",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/friend-requests/{id}/reject": {
+      "post": {
+        "operationId": "FriendRequestsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Reject a friend request",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/friend-requests/{id}": {
+      "delete": {
+        "operationId": "FriendRequestsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Cancel a friend request",
+        "tags": [
+          "Friend Requests"
+        ]
+      }
+    },
+    "/messages/conversations/{convId}/messages": {
+      "post": {
+        "operationId": "MessagesController_createMessage",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message created successfully"
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create message in a conversation",
+        "tags": [
+          "messages"
+        ]
+      },
+      "get": {
+        "operationId": "MessagesController_listMessages",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List messages in a conversation",
+        "tags": [
+          "messages"
+        ]
+      }
+    },
+    "/messages/conversations/{convId}/read": {
+      "post": {
+        "operationId": "MessagesController_markRead",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Mark conversation as read up to a seq",
+        "tags": [
+          "messages"
+        ]
+      }
+    },
+    "/messages/conversations/{convId}/unread-count": {
+      "get": {
+        "operationId": "MessagesController_getUnreadCount",
+        "parameters": [
+          {
+            "name": "convId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get unread message count for conversation",
+        "tags": [
+          "messages"
+        ]
+      }
+    },
+    "/upload/file": {
+      "post": {
+        "operationId": "UploadController_uploadFile",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "multipart/form-data",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token for authentication",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Upload a file",
+        "tags": [
+          "Upload"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "BlauChat API Documentation",
+    "description": "The description of my application",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3600/api"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken"
+      },
+      "accessToken": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "SignInDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SignInResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "First Name",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Last Name",
+            "example": "Doe"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "johndoe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "strongPassword123"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "username",
+          "email",
+          "password"
+        ]
+      },
+      "CreateGroupConversationDto": {
+        "type": "object",
+        "properties": {
+          "participantIds": {
+            "description": "Participant ids (uuid strings)",
+            "example": [
+              "uuid-1",
+              "uuid-2",
+              "uuid-3"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "Optional conversation title",
+            "example": "Project Team"
+          }
+        },
+        "required": [
+          "participantIds"
+        ]
+      },
+      "ConversationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-string"
+          },
+          "type": {
+            "type": "string",
+            "example": "direct"
+          },
+          "title": {
+            "type": "string",
+            "example": "Project Team"
+          },
+          "lastMessageAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-04-27T12:34:56Z"
+          },
+          "dm_key": {
+            "type": "string",
+            "example": "dm-key-string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-04-27T12:34:56Z"
+          },
+          "lastMessageId": {
+            "type": "string",
+            "example": "uuid-string"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "uuid-string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "lastMessageAt",
+          "createdAt",
+          "lastMessageId",
+          "ownerId"
+        ]
+      },
+      "AddOneParticipantDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "User id to add"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "ListParticipantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "participants": {
+            "description": "List of participants in the conversation",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "participants"
+        ]
+      },
+      "PostMetaOptionsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePostDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "My First Post",
+            "description": "Title of the post"
+          },
+          "postType": {
+            "type": "string",
+            "example": "blog",
+            "description": "Type of the post"
+          },
+          "slug": {
+            "type": "string",
+            "example": "my-first-post",
+            "description": "Slug of the post"
+          },
+          "status": {
+            "type": "string",
+            "example": "draft",
+            "description": "Status of the post"
+          },
+          "content": {
+            "type": "string",
+            "example": "This is the content of my first post.",
+            "description": "Content of the post"
+          },
+          "schema": {
+            "type": "string",
+            "example": "{\"type\":\"object\",\"properties\":{\"body\":{\"type\":\"string\"}}}",
+            "description": "JSON schema of the post content"
+          },
+          "featuredImage": {
+            "type": "string",
+            "example": "https://example.com/featured-image.jpg",
+            "description": "URL of the featured image"
+          },
+          "publishedOn": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-03-15T12:00:00Z",
+            "description": "Publication date of the post"
+          },
+          "tags": {
+            "example": [
+              "tech",
+              "nestjs"
+            ],
+            "description": "Tags associated with the post",
+            "items": {
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "metaOptions": {
+            "description": "Key-value meta options for the post",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PostMetaOptionsDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "postType",
+          "slug",
+          "status"
+        ]
+      },
+      "UpdatePostDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "My First Post",
+            "description": "Title of the post"
+          },
+          "postType": {
+            "type": "string",
+            "example": "blog",
+            "description": "Type of the post"
+          },
+          "slug": {
+            "type": "string",
+            "example": "my-first-post",
+            "description": "Slug of the post"
+          },
+          "status": {
+            "type": "string",
+            "example": "draft",
+            "description": "Status of the post"
+          },
+          "content": {
+            "type": "string",
+            "example": "This is the content of my first post.",
+            "description": "Content of the post"
+          },
+          "schema": {
+            "type": "string",
+            "example": "{\"type\":\"object\",\"properties\":{\"body\":{\"type\":\"string\"}}}",
+            "description": "JSON schema of the post content"
+          },
+          "featuredImage": {
+            "type": "string",
+            "example": "https://example.com/featured-image.jpg",
+            "description": "URL of the featured image"
+          },
+          "publishedOn": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2023-03-15T12:00:00Z",
+            "description": "Publication date of the post"
+          },
+          "tags": {
+            "example": [
+              "tech",
+              "nestjs"
+            ],
+            "description": "Tags associated with the post",
+            "items": {
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "metaOptions": {
+            "description": "Key-value meta options for the post",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PostMetaOptionsDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "example": "My Updated Post",
+            "description": "Id of the post to be updated"
+          }
+        }
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Technology",
+            "description": "The name of the tag"
+          },
+          "slug": {
+            "type": "string",
+            "example": "technology",
+            "description": "The slug of the tag"
+          },
+          "description": {
+            "type": "string",
+            "example": "A tag for all things technology.",
+            "description": "A brief description of the tag"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "featuredImage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "description"
+        ]
+      },
+      "FriendshipResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-1"
+          },
+          "user_id": {
+            "type": "string",
+            "example": "uuid-user"
+          },
+          "friend_id": {
+            "type": "string",
+            "example": "uuid-friend"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2025-11-14T12:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "friend_id",
+          "created_at"
+        ]
+      },
+      "CreateFriendRequestDto": {
+        "type": "object",
+        "properties": {
+          "toUserId": {
+            "type": "string",
+            "description": "User id to send request to",
+            "example": "uuid-1234"
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional message",
+            "example": "Hi, let's connect"
+          }
+        },
+        "required": [
+          "toUserId"
+        ]
+      },
+      "FriendRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-1"
+          },
+          "fromUserId": {
+            "type": "string",
+            "example": "uuid-from",
+            "description": "user id who sent the request"
+          },
+          "toUserId": {
+            "type": "string",
+            "example": "uuid-to",
+            "description": "user id who receives the request"
+          },
+          "status": {
+            "type": "string",
+            "example": "pending"
+          },
+          "message": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2025-11-14T12:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "fromUserId",
+          "toUserId",
+          "status",
+          "createdAt"
+        ]
+      },
+      "CreateMessageDto": {
+        "type": "object",
+        "properties": {
+          "clientMsgId": {
+            "type": "string",
+            "description": "Client generated id for idempotency",
+            "example": "cmsg_123"
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content",
+            "example": "Hello world"
+          },
+          "attachments": {
+            "description": "Attachment urls or ids",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "replyToSeq": {
+            "type": "string",
+            "description": "Reply to message seq"
+          },
+          "replyToMessageId": {
+            "type": "string",
+            "description": "Reply to message id"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ReadConversationDto": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "Sequence up to which messages are read (inclusive)",
+            "example": "150"
+          }
+        },
+        "required": [
+          "seq"
+        ]
+      }
+    }
+  }
+}

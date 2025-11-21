@@ -8,6 +8,7 @@ import {
 import { SignInDto } from '../dtos/signin.dto';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { HashingProvider } from './hashing.provider';
+import { User } from '@/modules/users/user.entity';
 @Injectable()
 export class SignInProvider {
   constructor(
@@ -21,13 +22,21 @@ export class SignInProvider {
     private readonly generateTokensProvider: GenerateTokensProvider,
   ) {}
   public async signIn(signInDto: SignInDto) {
-    const { email, password } = signInDto;
+    const { emailOrUsername: identifier, password } = signInDto;
 
-    //Find user by email first
-    const user = await this.userService.findOneByEmail(email);
+    if (!identifier || !password) {
+      throw new BadRequestException('Email/Username and password are required');
+    }
+    //Find user by email or username
+    let user: User;
+    if (identifier.includes('@')) {
+      user = await this.userService.findOneByEmail(identifier);
+    } else {
+      user = await this.userService.findOneByUsername(identifier);
+    }
 
     if (!user) {
-      throw new BadRequestException('Email is not registered');
+      throw new BadRequestException('User not found');
     }
 
     // Further sign-in logic goes here (e.g., password verification, token generation, etc.)
@@ -42,6 +51,6 @@ export class SignInProvider {
 
     const { accessToken, refreshToken } =
       await this.generateTokensProvider.generateTokens(user);
-    return { accessToken, refreshToken };
+    return { user, accessToken, refreshToken };
   }
 }

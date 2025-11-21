@@ -15,7 +15,7 @@ export class CreatePostProvider {
     private readonly tagService: TagsService,
   ) {}
   public async createPost(userId: string, postData: CreatePostDto) {
-    const user = await this.userService.findById(userId);
+    const user = await this.userService.findOneById(userId);
     if (!user) {
       throw new Error('Author not found');
     }

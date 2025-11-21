@@ -1,6 +1,12 @@
 // src/hooks/useSession.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMe, signin, signup, signout } from '@/services/authService';
+import {
+  getMe,
+  signin,
+  signup,
+  signout,
+  googleAuthentication,
+} from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
 import { notify } from '@/lib/notify';
@@ -9,10 +15,13 @@ import { useNavigate } from 'react-router-dom';
 
 export function useSession() {
   const setMe = useUserStore((s) => s.setMe);
+  const accessToken = useAuthStore((s) => s.accessToken);
   return useQuery({
     queryKey: ['me'],
+    enabled: !!accessToken, // chỉ chạy khi có access token
     queryFn: async () => {
       const me = await getMe();
+      if (!me) throw new Error('Failed to fetch user data');
       setMe(me);
       return me;
     },
@@ -20,17 +29,35 @@ export function useSession() {
   });
 }
 
+export function useGoogleAuthentication() {
+  const qc = useQueryClient();
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const setMe = useUserStore((s) => s.setMe);
+  return useMutation({
+    mutationFn: async (token: string) => {
+      return await googleAuthentication(token);
+    },
+    onSuccess: async ({ accessToken, user }) => {
+      setAccessToken(accessToken);
+      setMe(user);
+      notify.success('Signed in with Google!');
+      await qc.invalidateQueries({ queryKey: ['me'] });
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to signin with Google 😢');
+    },
+  });
+}
 export function useSignin() {
   const qc = useQueryClient();
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
-  const setAuth = useAuthStore((s) => s.setAuthenticated);
   const setMe = useUserStore((s) => s.setMe);
 
   return useMutation({
     mutationFn: signin,
     onSuccess: async ({ accessToken, user }) => {
       setAccessToken(accessToken);
-      setAuth(true);
       setMe(user);
       notify.success('Signed in!');
       await qc.invalidateQueries({ queryKey: ['me'] });
@@ -47,7 +74,7 @@ export function useSignup() {
   return useMutation({
     mutationFn: signup,
     onSuccess: (data) => {
-      notify.success(data.message || 'Signup successful! Please sign in.');
+      notify.success(data.msg || 'Signup successful! Please sign in.');
       navigate('/signin');
     },
     onError: (err) => {

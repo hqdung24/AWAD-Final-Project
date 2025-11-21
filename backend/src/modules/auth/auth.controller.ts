@@ -1,32 +1,50 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import {
+  clearRefreshCookie,
+  RT_COOKIE_NAME,
+  setRefreshCookie,
+} from '@/common/helpers/cookies-options.helper';
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import {
   Body,
   Controller,
   Post,
-  Res,
   Req,
+  Res,
   UnauthorizedException,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { type Request, type Response } from 'express';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
+import { SignInResponseDto } from './dtos/signin-response.dto';
 import { SignInDto } from './dtos/signin.dto';
 import { AuthType } from './enums/auth-type.enum';
 import { AuthService } from './providers/auth.service';
-import { SignInResponseDto } from './dtos/signin-response.dto';
-import {
-  setRefreshCookie,
-  clearRefreshCookie,
-  RT_COOKIE_NAME,
-} from '@/helpers/cookies-options.helper';
-import { type Request, type Response } from 'express';
-import {} from '@nestjs/common';
+import { GoogleAuthenticationService } from './social/google-authentication.service';
 @Auth(AuthType.None)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+
+    //Inject google authentication service
+    private readonly googleAuthService: GoogleAuthenticationService,
+  ) {}
 
   @Auth(AuthType.None)
   @Post('signin')
+  @ApiOperation({ summary: 'Sign in to an existing user account' })
+  @ApiBody({ type: SignInDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User signed in successfully',
+    type: SignInResponseDto,
+  })
   async signIn(
     @Body() signInDto: SignInDto,
     @Res({ passthrough: true }) res: Response,
@@ -40,7 +58,35 @@ export class AuthController {
   }
 
   @Auth(AuthType.None)
+  @Post('google-authentication')
+  async googleAuthentication(
+    @Body() body: { token: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.googleAuthService.authenticate({ token: body.token });
+    setRefreshCookie(res, refreshToken);
+    return { accessToken, user };
+  }
+
+  @Auth(AuthType.None)
   @Post('signup')
+  @ApiOperation({
+    summary: 'Create a new user account',
+    description: 'Endpoint to create a new user account',
+  })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User account created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        msg: { type: 'string' },
+      },
+      example: { msg: 'Signup successful' },
+    },
+  })
   async createNewUser(@Body() payload: CreateUserDto) {
     await this.authService.signUp(payload);
     return { msg: 'Signup successful' };
@@ -48,6 +94,27 @@ export class AuthController {
 
   @Auth(AuthType.None)
   @Post('refresh')
+  @ApiOperation({
+    summary: 'Refresh access token using refresh token',
+    description:
+      'Endpoint to refresh access token, send refresh token in cookie',
+  })
+  @ApiCookieAuth('refreshToken')
+  @ApiResponse({
+    status: 200,
+    description: 'Access token refreshed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string' },
+      },
+      example: {
+        accessToken:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1dWlkLTEyMzQiLCJpYXQiOjE2ODgwODc2MDAsImV4cCI6MTY4ODA5MTIwMH0.XYZ',
+      },
+    },
+  })
+  @ApiCookieAuth('refreshToken')
   async refresh(
     @Req() req: Request & { cookies: Record<string, string | undefined> },
     @Res({ passthrough: true }) res: Response,

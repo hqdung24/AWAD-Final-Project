@@ -14,6 +14,14 @@ import { environmentValidationSchema } from './config/envinronment.validation';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { DataResponseInterceptor } from './common/interceptors/data-response.interceptor';
 import { ErrorsInterceptor } from './common/interceptors/errors.interceptor';
+import { FriendsModule } from './modules/friends/friends.module';
+import { ConversationsModule } from './modules/conversations/conversations.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { MediaModule } from './modules/media/media.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { PresenceModule } from './modules/presence/presence.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
 @Module({
@@ -44,6 +52,14 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     TagsModule,
     MetaOptionsModule,
     PaginationModule,
+    FriendsModule,
+    ConversationsModule,
+    MessagesModule,
+    MediaModule,
+    NotificationModule,
+    PresenceModule,
+    UploadModule,
+    RealtimeModule,
   ],
   providers: [
     {
