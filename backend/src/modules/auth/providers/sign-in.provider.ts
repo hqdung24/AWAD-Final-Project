@@ -35,8 +35,15 @@ export class SignInProvider {
       user = await this.userService.findOneByUsername(identifier);
     }
 
+    console.log(user);
     if (!user) {
       throw new BadRequestException('User not found');
+    }
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'User does not have a password set. Please use social login.',
+      );
     }
 
     // Further sign-in logic goes here (e.g., password verification, token generation, etc.)
@@ -45,6 +52,7 @@ export class SignInProvider {
       user.password,
     );
 
+    console.log(isPasswordValid);
     if (!isPasswordValid) {
       throw new BadRequestException('Invalid credentials');
     }
