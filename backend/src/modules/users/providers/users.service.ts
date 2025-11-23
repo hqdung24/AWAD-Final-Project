@@ -12,12 +12,8 @@ import { profileConfig } from '../config/profile.config';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { GetUsersParamsDto } from '../dtos/get-user-params.dto';
 import { GoogleUser } from '../interfaces/googleUser';
-import { CreateGoogleUserProvider } from './create-google-user.provider';
-import { CreateUsersProvider } from './create-users.provider';
-import { FindOneUserProvider } from './find-one-user.provider';
-import { FindManyUsersProvider } from './find-many-users.provider';
-import { UpdateUserProvider } from './update-user.provider';
-import { User } from '../user.entity';
+import { UsersRepository } from './users.repository';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -29,20 +25,8 @@ export class UsersService {
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
 
-    //Inject create user provider
-    private readonly createUsersProvider: CreateUsersProvider,
-
-    //Inject find one user provider
-    private readonly findOneUserProvider: FindOneUserProvider,
-
-    //Inject create google user provider
-    private readonly createGoogleUserProvider: CreateGoogleUserProvider,
-
-    //Inject find many users provider
-    private readonly findManyUsersProvider: FindManyUsersProvider,
-
-    //Inject update user provider
-    private readonly updateUserProvider: UpdateUserProvider,
+    // Repository with user DB operations
+    private readonly usersRepository: UsersRepository,
   ) {}
   findAll(getUserParamsDto: GetUsersParamsDto, limit: number, page: number) {
     console.log('users params dto', getUserParamsDto, limit, page);
@@ -63,7 +47,7 @@ export class UsersService {
     );
   }
   async findOneById(id: string) {
-    const user = await this.findOneUserProvider.findOneById(id);
+    const user = await this.usersRepository.findOneById(id);
     if (!user) {
       throw new BadRequestException('User not found with the provided ID');
     }
@@ -71,7 +55,7 @@ export class UsersService {
   }
 
   async findOneByEmail(email: string) {
-    const user = await this.findOneUserProvider.findOneByEmail(email);
+    const user = await this.usersRepository.findOneByEmail(email);
     if (!user) {
       throw new BadRequestException('User not found with the provided email');
     }
@@ -79,12 +63,12 @@ export class UsersService {
   }
 
   async findOneByGoogleId(googleId: string) {
-    const user = await this.findOneUserProvider.findOneByGoogleId(googleId);
+    const user = await this.usersRepository.findOneByGoogleId(googleId);
     return user;
   }
 
   async findOneByUsername(username: string) {
-    const user = await this.findOneUserProvider.findOneByUsername(username);
+    const user = await this.usersRepository.findOneByUsername(username);
     if (!user) {
       throw new BadRequestException(
         'User not found with the provided username',
@@ -94,7 +78,7 @@ export class UsersService {
   }
 
   async findManyByIds(userIds: string[]) {
-    const users = await this.findManyUsersProvider.findManyByIds(userIds);
+    const users = await this.usersRepository.findManyByIds(userIds);
     if (!users || users.length === 0) {
       throw new BadRequestException('No users found for the provided IDs');
     }
@@ -102,7 +86,7 @@ export class UsersService {
   }
 
   async createNew(userData: CreateUserDto) {
-    const result = await this.createUsersProvider.createUser(userData);
+    const result = await this.usersRepository.createUser(userData);
     if (!result) {
       throw new BadRequestException('Failed to create user, please try again');
     }
@@ -110,11 +94,11 @@ export class UsersService {
   }
 
   async createGoogleUser(googleUserData: GoogleUser) {
-    return await this.createGoogleUserProvider.createGoogleUser(googleUserData);
+    return await this.usersRepository.createGoogleUser(googleUserData);
   }
 
   async updateUser(id: string, updateData: Partial<User>) {
-    const result = await this.updateUserProvider.updateUser(id, updateData);
+    const result = await this.usersRepository.updateUser(id, updateData);
 
     if (result.affected && result.affected > 0) {
       const updatedUser = await this.findOneById(id);

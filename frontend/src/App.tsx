@@ -11,6 +11,7 @@ import SignUpPage from './pages/auth/SignUpPage';
 import HomePage from './pages/home/HomePage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
+import MainLayout from './layouts/main-layout/MainLayout';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
   return (
@@ -22,14 +23,24 @@ function App() {
             <ReactQueryDevtools initialIsOpen={false} />
             <SessionSync />
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route element={<MainLayout />}>
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/account"
+                  element={
+                    <ProtectedRoute>
+                      <AccountInfoPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
               <Route
                 path="/signin"
                 element={
@@ -44,14 +55,6 @@ function App() {
                   <PublicRoute>
                     <SignUpPage />
                   </PublicRoute>
-                }
-              />
-              <Route
-                path="/account"
-                element={
-                  <ProtectedRoute>
-                    <AccountInfoPage />
-                  </ProtectedRoute>
                 }
               />
             </Routes>

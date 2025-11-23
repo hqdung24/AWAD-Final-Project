@@ -8,7 +8,7 @@ import {
 import { SignInDto } from '../dtos/signin.dto';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { HashingProvider } from './hashing.provider';
-import { User } from '@/modules/users/user.entity';
+import { User } from '@/modules/users/entities/user.entity';
 @Injectable()
 export class SignInProvider {
   constructor(

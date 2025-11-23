@@ -10,26 +10,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUserStore } from '@/stores/user';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router';
 
 export default function AccountInfoPage() {
   const { me } = useUserStore();
-  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-      <Card className="w-full max-w-2xl">
+    <div className=" bg-background p-6 flex items-center justify-center overflow-hidden">
+      <Card className="w-full max-w-2xl bg-">
         {/*Back button*/}
-
         <CardHeader>
-          <ArrowLeft
-            size="1rem"
-            className="mb-4 cursor-pointer text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              navigate(-1);
-            }}
-          />
-
           <CardTitle>Account Information</CardTitle>
           <CardDescription>
             View and manage your account details

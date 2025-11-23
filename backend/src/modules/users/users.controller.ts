@@ -17,15 +17,12 @@ import { ActiveUser } from '../auth/decorator/active-user.decorator';
 import { AuthUserDto } from '../auth/dtos/signin-response.dto';
 import { GetUsersParamsDto } from './dtos/get-user-params.dto';
 import { UsersService } from './providers/users.service';
-import { Roles } from '../auth/decorator/roles.decorator';
-import { RoleType } from '../auth/enums/roles-type.enum';
 
 @ApiBearerAuth('accessToken')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Roles(RoleType.ADMIN)
   @Get('/me')
   async getMe(@ActiveUser('sub') id: string) {
     const currentUser = await this.usersService.findOneById(id);
