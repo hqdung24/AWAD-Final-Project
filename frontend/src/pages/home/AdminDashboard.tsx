@@ -1,18 +1,26 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Activity, DollarSign, Route, Users } from 'lucide-react';
+import { Activity, ArrowUpRight, Download, DollarSign, Route, Users } from 'lucide-react';
 
 const summaryCards = [
-  { title: 'Total Bookings', value: '1,234', icon: Activity },
-  { title: 'Active Users', value: '856', icon: Users },
-  { title: 'Revenue Today', value: '45.2M', icon: DollarSign },
+  { title: 'Total Bookings', value: '1,234', icon: Activity, delta: '+12%' },
+  { title: 'Active Users', value: '856', icon: Users, delta: '+5%' },
+  { title: 'Revenue Today', value: '45.2M', icon: DollarSign, delta: '+8%' },
 ];
 
 const trendData = [
@@ -40,9 +48,26 @@ const recentBookings = [
 const AdminDashboard = () => {
   return (
     <div className="flex flex-col gap-6 p-6">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-semibold text-primary">Admin Panel</p>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-primary">Admin Panel</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+          <p className="text-muted-foreground text-sm">
+            Monitor bookings, routes, and revenue at a glance.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm">
+            Last 7 days
+          </Button>
+          <Button variant="outline" size="sm">
+            Last 30 days
+          </Button>
+          <Button variant="default" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -52,6 +77,10 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-muted-foreground text-sm">{card.title}</p>
                 <p className="text-3xl font-semibold">{card.value}</p>
+                <div className="text-emerald-600 mt-1 flex items-center gap-1 text-xs font-medium">
+                  <ArrowUpRight className="h-4 w-4" />
+                  {card.delta} vs last period
+                </div>
               </div>
               <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
                 <card.icon className="h-6 w-6" />
@@ -108,7 +137,17 @@ const AdminDashboard = () => {
                   <TableRow key={item.route}>
                     <TableCell className="font-medium">{item.route}</TableCell>
                     <TableCell>{item.bookings}</TableCell>
-                    <TableCell>{item.revenue}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full rounded-full bg-muted">
+                          <div
+                            className="h-2 rounded-full bg-primary"
+                            style={{ width: `${Math.min(item.bookings / 2.5, 100)}%` }}
+                          />
+                        </div>
+                        <span>{item.revenue}</span>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

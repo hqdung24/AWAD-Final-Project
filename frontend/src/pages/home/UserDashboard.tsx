@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Clock, MapPin, Ticket } from 'lucide-react';
+import { ArrowRight, Clock, MapPin, Ticket, Bell } from 'lucide-react';
 
 const upcomingTrips = [
   {
@@ -23,9 +23,12 @@ const upcomingTrips = [
 const UserDashboard = () => {
   return (
     <div className="flex flex-col gap-6 p-6">
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-primary">Your account</p>
         <h1 className="text-3xl font-bold tracking-tight">Upcoming Trips</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage tickets, see what’s next, and jump back into booking quickly.
+        </p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
@@ -77,8 +80,11 @@ const UserDashboard = () => {
         </div>
 
         <Card className="h-fit shadow-sm">
-          <CardHeader>
+          <CardHeader className="space-y-2">
             <CardTitle>Navigation</CardTitle>
+            <div className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
+              You have 2 unread notifications
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 font-medium">
@@ -92,6 +98,10 @@ const UserDashboard = () => {
                 {item}
               </button>
             ))}
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <Bell className="h-4 w-4" />
+              Get alerts for departure changes
+            </div>
           </CardContent>
         </Card>
       </div>
