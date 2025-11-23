@@ -1,16 +1,13 @@
-export const iframeHeight = '800px';
-
-export const description = 'A sidebar with a header and a search form.';
+import { useUserStore } from '@/stores/user';
+import AdminDashboard from './AdminDashboard';
+import UserDashboard from './UserDashboard';
 
 export default function HomePage() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-      </div>
-      <div className="bg-muted/50 min-h-screen flex-1 rounded-xl md:min-h-min" />
-    </div>
-  );
+  const role = useUserStore((s) => s.me?.role ?? 'USER');
+
+  if (role === 'ADMIN') {
+    return <AdminDashboard />;
+  }
+
+  return <UserDashboard />;
 }
