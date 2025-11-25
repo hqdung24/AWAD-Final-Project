@@ -1,0 +1,115 @@
+{
+    "brand": {
+        "name": "BlauChat",
+        "tagline": "Connect, Communicate, Collaborate",
+        "logo": "/logo.svg"
+    },
+    "colors": {
+        "light": {
+            "primary": "212 100% 36%",
+            "primaryForeground": "210 40% 98%",
+            "secondary": "212 100% 92%",
+            "secondaryForeground": "212 100% 24%",
+            "accent": "335 91% 55%",
+            "accentForeground": "0 0% 100%",
+            "background": "220 40% 97%",
+            "foreground": "222 47% 11%",
+            "muted": "210 40% 96%",
+            "mutedForeground": "215 16% 45%",
+            "card": "0 0% 100%",
+            "cardForeground": "222 47% 11%",
+            "border": "215 20% 85%",
+            "input": "215 20% 92%",
+            "ring": "212 100% 36%"
+        },
+        "dark": {
+            "primary": "212 100% 50%",
+            "primaryForeground": "210 40% 98%",
+            "secondary": "212 100% 15%",
+            "secondaryForeground": "212 100% 85%",
+            "accent": "335 91% 60%",
+            "accentForeground": "0 0% 100%",
+            "background": "222 47% 7%",
+            "foreground": "210 40% 98%",
+            "muted": "217 33% 17%",
+            "mutedForeground": "215 20% 65%",
+            "card": "222 47% 11%",
+            "cardForeground": "210 40% 98%",
+            "border": "217 33% 20%",
+            "input": "217 33% 17%",
+            "ring": "212 100% 50%"
+        },
+        "semantic": {
+            "success": "140 100% 50%",
+            "successForeground": "0 0% 100%",
+            "warning": "37.7 92.1% 50.2%",
+            "warningForeground": "0 0% 100%",
+            "error": "0 84.2% 60.2%",
+            "errorForeground": "0 0% 100%",
+            "info": "198.6 88.7% 48.4%",
+            "infoForeground": "0 0% 100%"
+        }
+    },
+    "spacing": {
+        "xs": "0.25rem",
+        "sm": "0.5rem",
+        "md": "1rem",
+        "lg": "1.5rem",
+        "xl": "2rem",
+        "2xl": "3rem",
+        "3xl": "4rem",
+        "4xl": "6rem"
+    },
+    "typography": {
+        "fontFamily": {
+            "sans": "Inter, system-ui, sans-serif",
+            "heading": "Inter, system-ui, sans-serif",
+            "mono": "Fira Code, monospace"
+        },
+        "fontSize": {
+            "xs": "0.75rem",
+            "sm": "0.875rem",
+            "base": "1rem",
+            "lg": "1.125rem",
+            "xl": "1.25rem",
+            "2xl": "1.5rem",
+            "3xl": "1.875rem",
+            "4xl": "2.25rem",
+            "5xl": "3rem"
+        },
+        "fontWeight": {
+            "normal": "400",
+            "medium": "500",
+            "semibold": "600",
+            "bold": "700"
+        },
+        "lineHeight": {
+            "tight": "1.25",
+            "normal": "1.5",
+            "relaxed": "1.75"
+        }
+    },
+    "borderRadius": {
+        "none": "0",
+        "sm": "0.25rem",
+        "md": "0.5rem",
+        "lg": "1rem",
+        "xl": "1.5rem",
+        "full": "9999px"
+    },
+    "breakpoints": {
+        "mobile": "640px",
+        "tablet": "768px",
+        "laptop": "1024px",
+        "desktop": "1280px",
+        "wide": "1536px"
+    },
+    "shadows": {
+        "sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "md": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+        "lg": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+        "xl": "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+        "2xl": "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+        "soft": "0 8px 32px -8px hsl(212 100% 36% / 0.15)"
+    }
+}

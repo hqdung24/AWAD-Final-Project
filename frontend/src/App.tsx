@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Toaster } from 'sonner';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 import AccountInfoPage from './pages/account/AccountInfoPage';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
@@ -15,7 +16,7 @@ import MainLayout from './layouts/main-layout/MainLayout';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
   return (
-    <>
+    <ThemeProvider defaultTheme="light" storageKey="blauchat-theme">
       <Toaster richColors={true} />
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <BrowserRouter>
@@ -61,7 +62,7 @@ function App() {
           </QueryClientProvider>
         </BrowserRouter>
       </GoogleOAuthProvider>
-    </>
+    </ThemeProvider>
   );
 }
 

@@ -1,0 +1,86 @@
+{
+    "auth": {
+        "signin": {
+            "title": "Welcome back",
+            "subtitle": "Enter your credentials to access your account",
+            "emailLabel": "Email or Username",
+            "emailPlaceholder": "Enter your email or username",
+            "passwordLabel": "Password",
+            "passwordPlaceholder": "Enter your password",
+            "submitButton": "Sign In",
+            "forgotPassword": "Forgot password?",
+            "noAccount": "Don't have an account?",
+            "signupLink": "Sign up",
+            "orDivider": "Or continue with",
+            "googleButton": "Continue with Google"
+        },
+        "signup": {
+            "title": "Create an account",
+            "subtitle": "Enter your information to get started",
+            "firstNameLabel": "First Name",
+            "firstNamePlaceholder": "John",
+            "lastNameLabel": "Last Name",
+            "lastNamePlaceholder": "Doe",
+            "usernameLabel": "Username",
+            "usernamePlaceholder": "johndoe",
+            "emailLabel": "Email",
+            "emailPlaceholder": "john@example.com",
+            "passwordLabel": "Password",
+            "passwordPlaceholder": "Create a strong password",
+            "submitButton": "Create Account",
+            "hasAccount": "Already have an account?",
+            "signinLink": "Sign in",
+            "orDivider": "Or sign up with",
+            "googleButton": "Sign up with Google"
+        }
+    },
+    "navigation": {
+        "home": "Home",
+        "dashboard": "Dashboard",
+        "messages": "Messages",
+        "account": "Account",
+        "settings": "Settings",
+        "logout": "Logout"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Something went wrong",
+        "retry": "Try again",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "close": "Close",
+        "search": "Search",
+        "filter": "Filter",
+        "sort": "Sort",
+        "noResults": "No results found",
+        "comingSoon": "Coming soon"
+    },
+    "dashboard": {
+        "welcome": "Welcome back",
+        "stats": {
+            "totalUsers": "Total Users",
+            "activeChats": "Active Chats",
+            "messages": "Messages Today",
+            "onlineUsers": "Online Now"
+        }
+    },
+    "account": {
+        "profile": "Profile",
+        "personalInfo": "Personal Information",
+        "security": "Security",
+        "preferences": "Preferences",
+        "updateSuccess": "Profile updated successfully",
+        "updateError": "Failed to update profile"
+    },
+    "errors": {
+        "required": "This field is required",
+        "invalidEmail": "Please enter a valid email",
+        "passwordMin": "Password must be at least 8 characters",
+        "passwordMismatch": "Passwords do not match",
+        "networkError": "Network error. Please check your connection",
+        "unauthorized": "You are not authorized to perform this action",
+        "notFound": "The requested resource was not found"
+    }
+}

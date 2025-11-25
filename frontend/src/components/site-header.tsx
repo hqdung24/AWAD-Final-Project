@@ -1,6 +1,7 @@
 import { SidebarIcon } from "lucide-react"
 
 import { SearchForm } from "@/components/search-form"
+import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -42,6 +43,7 @@ export function SiteHeader() {
           </BreadcrumbList>
         </Breadcrumb>
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
+        <ThemeToggle />
       </div>
     </header>
   )
