@@ -33,8 +33,6 @@
 - Client/UI still lacks admin-only action gating beyond view changes; actions/widgets are role-differentiated but not enforced beyond dashboard access. Tooling (hooks/Prettier/shared config) and deployments remain gaps.
 
 ### Next steps to reach rubric parity
-1. Add TypeORM entities/repos for booking/trip/route/payment/seat_status and replace raw SQL with typed queries; expand admin-only actions/widgets and client guards.
-2. Extend tests: backend auth/refresh/dashboard happy/fail cases; frontend auth + dashboard rendering/error states.
-3. Add shared Prettier config, lint-staged, Husky to run ESLint/Prettier on commit.
-4. Deploy FE/BE (e.g., Vercel/Netlify + Railway/Render) and document live URLs + env notes.
-5. Keep README/NEXT_STEPS updated with current flows, env vars, and role enforcement details.
+1. Harden role enforcement and client admin guards: apply `@Roles(...)` to all admin-only endpoints, ensure `RoleType` matches stored values, and add frontend admin route/action gating beyond view swaps.
+2. Add shared Prettier config, lint-staged, Husky to run ESLint/Prettier on commit.
+3. Deploy FE/BE (e.g., Vercel/Netlify + Railway/Render) and document live URLs + env notes; keep README/NEXT_STEPS updated with current flows, env vars, and role enforcement details.
