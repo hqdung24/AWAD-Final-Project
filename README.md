@@ -113,9 +113,3 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 
 ## Deployment
 - Not yet deployed. Recommended: Vercel/Netlify for the frontend and Railway/Render for the backend, then set `VITE_API_URL` and cookie domains accordingly.
-
-## Next steps (to reach full rubric)
-- Apply `@Roles` to admin-only controllers/endpoints and add client-side admin guards.
-- Replace dashboard mock data with real API endpoints (bookings, routes, revenue).
-- Add Prettier + lint-staged + Husky pre-commit to run lint/format; expand tests.
-- Publish live deployments and update URLs here; add `NEXT_STEPS.md` checklist if required.
