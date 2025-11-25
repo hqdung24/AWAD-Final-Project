@@ -16,14 +16,36 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Activity, ArrowUpRight, Download, DollarSign, Route, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, Download, DollarSign, Route, Users } from 'lucide-react';
 import { fetchAdminDashboard, type AdminDashboard } from '@/services/dashboardService';
 
 const AdminDashboard = () => {
-  const { data, isLoading } = useQuery<AdminDashboard>({
+  const { data, isLoading, error } = useQuery<AdminDashboard>({
     queryKey: ['admin-dashboard'],
     queryFn: fetchAdminDashboard,
+    retry: false,
   });
+
+  if (error) {
+    const isForbidden = (error as any)?.status === 403;
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {isForbidden ? 'Admins only' : 'Dashboard unavailable'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            {isForbidden
+              ? 'You need admin privileges to view this dashboard. Switch to a user view or sign in with an admin account.'
+              : 'We could not load dashboard data right now. Please retry later.'}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const summaryCards =
     data?.summaryCards.map((item, idx) => {

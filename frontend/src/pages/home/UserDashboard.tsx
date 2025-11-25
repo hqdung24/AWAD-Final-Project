@@ -2,14 +2,36 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Clock, MapPin, Ticket, Bell } from 'lucide-react';
+import { ArrowRight, Bell, Clock, MapPin, Ticket, TriangleAlert } from 'lucide-react';
 import { fetchUserDashboard, type UserDashboard } from '@/services/dashboardService';
 
 const UserDashboard = () => {
-  const { data, isLoading } = useQuery<UserDashboard>({
+  const { data, isLoading, error } = useQuery<UserDashboard>({
     queryKey: ['user-dashboard'],
     queryFn: fetchUserDashboard,
+    retry: false,
   });
+
+  if (error) {
+    const isForbidden = (error as any)?.status === 403;
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <TriangleAlert className="h-5 w-5 text-destructive" />
+            <div className="space-y-1">
+              <CardTitle>{isForbidden ? 'Access denied' : 'Dashboard unavailable'}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {isForbidden
+                  ? 'You need to be signed in with a user or admin account to view your dashboard.'
+                  : 'We could not load your dashboard right now. Please retry shortly.'}
+              </p>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const upcomingTrips =
     data?.upcomingTrips ??
