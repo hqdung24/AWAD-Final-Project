@@ -11,6 +11,7 @@ import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
 import { environmentValidationSchema } from './config/envinronment.validation';
 import { UploadModule } from './modules/upload/upload.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
 @Module({
@@ -38,6 +39,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     UsersModule,
     AuthModule,
     UploadModule,
+    DashboardModule,
   ],
   providers: [
     {

@@ -1,26 +1,42 @@
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Clock, MapPin, Ticket, Bell } from 'lucide-react';
-
-const upcomingTrips = [
-  {
-    route: 'HCM → Hanoi',
-    datetime: '15 Nov 2025, 08:00',
-    seats: 'A1, A2',
-    bookingId: 'BK20251115001',
-    actions: ['View E-ticket', 'Cancel'],
-  },
-  {
-    route: 'Hanoi → Hue',
-    datetime: '20 Nov 2025, 14:00',
-    seats: 'B3',
-    bookingId: 'BK20251115010',
-    actions: ['View E-ticket', 'Modify'],
-  },
-];
+import { fetchUserDashboard, type UserDashboard } from '@/services/dashboardService';
 
 const UserDashboard = () => {
+  const { data, isLoading } = useQuery<UserDashboard>({
+    queryKey: ['user-dashboard'],
+    queryFn: fetchUserDashboard,
+  });
+
+  const upcomingTrips =
+    data?.upcomingTrips ??
+    [
+      {
+        route: 'HCM → Hanoi',
+        datetime: '15 Nov 2025, 08:00',
+        seats: 'A1, A2',
+        bookingId: 'BK20251115001',
+        actions: ['View E-ticket', 'Cancel'],
+      },
+      {
+        route: 'Hanoi → Hue',
+        datetime: '20 Nov 2025, 14:00',
+        seats: 'B3',
+        bookingId: 'BK20251115010',
+        actions: ['View E-ticket', 'Modify'],
+      },
+    ];
+
+  const notifications =
+    data?.notifications ??
+    [
+      { type: 'upcoming', message: 'You have 2 unread notifications' },
+      { type: 'alert', message: 'Get alerts for departure changes' },
+    ];
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-3">
@@ -29,6 +45,7 @@ const UserDashboard = () => {
         <p className="text-muted-foreground text-sm">
           Manage tickets, see what’s next, and jump back into booking quickly.
         </p>
+        {isLoading && <p className="text-xs text-muted-foreground">Loading your trips…</p>}
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
@@ -83,7 +100,7 @@ const UserDashboard = () => {
           <CardHeader className="space-y-2">
             <CardTitle>Navigation</CardTitle>
             <div className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
-              You have 2 unread notifications
+              {notifications.find((n) => n.type === 'upcoming')?.message ?? 'Stay updated on your trips'}
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -100,7 +117,8 @@ const UserDashboard = () => {
             ))}
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
               <Bell className="h-4 w-4" />
-              Get alerts for departure changes
+              {notifications.find((n) => n.type === 'alert')?.message ??
+                'Get alerts for departure changes'}
             </div>
           </CardContent>
         </Card>

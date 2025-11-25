@@ -242,6 +242,34 @@
           "Upload"
         ]
       }
+    },
+    "/dashboard/admin": {
+      "get": {
+        "operationId": "DashboardController_getAdminDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/dashboard/user": {
+      "get": {
+        "operationId": "DashboardController_getUserDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {

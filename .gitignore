@@ -124,6 +124,7 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+.vscode
 
 # yarn v3
 .pnp.*
@@ -139,5 +140,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Local documentation not tracked
-README.md
+project.md
 G03 - Authentication, Authorization, Layout & Dashboard.md

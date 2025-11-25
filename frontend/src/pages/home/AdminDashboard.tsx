@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -16,36 +17,51 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Activity, ArrowUpRight, Download, DollarSign, Route, Users } from 'lucide-react';
-
-const summaryCards = [
-  { title: 'Total Bookings', value: '1,234', icon: Activity, delta: '+12%' },
-  { title: 'Active Users', value: '856', icon: Users, delta: '+5%' },
-  { title: 'Revenue Today', value: '45.2M', icon: DollarSign, delta: '+8%' },
-];
-
-const trendData = [
-  { day: 'Mon', bookings: 120 },
-  { day: 'Tue', bookings: 150 },
-  { day: 'Wed', bookings: 170 },
-  { day: 'Thu', bookings: 140 },
-  { day: 'Fri', bookings: 210 },
-  { day: 'Sat', bookings: 180 },
-  { day: 'Sun', bookings: 200 },
-];
-
-const topRoutes = [
-  { route: 'HCM → Hanoi', bookings: 234, revenue: '8.2M' },
-  { route: 'HCM → Dalat', bookings: 189, revenue: '3.4M' },
-  { route: 'HCM → Can Tho', bookings: 142, revenue: '2.8M' },
-];
-
-const recentBookings = [
-  { id: 'BK20251115001', user: 'Tran Anh', route: 'HCM → Hanoi', status: 'Paid' },
-  { id: 'BK20251115002', user: 'Le Minh', route: 'HCM → Dalat', status: 'Pending' },
-  { id: 'BK20251115003', user: 'Nguyen Ha', route: 'Hanoi → Hue', status: 'Cancelled' },
-];
+import { fetchAdminDashboard, type AdminDashboard } from '@/services/dashboardService';
 
 const AdminDashboard = () => {
+  const { data, isLoading } = useQuery<AdminDashboard>({
+    queryKey: ['admin-dashboard'],
+    queryFn: fetchAdminDashboard,
+  });
+
+  const summaryCards =
+    data?.summaryCards.map((item, idx) => {
+      const icons = [Activity, Users, DollarSign];
+      return {
+        ...item,
+        icon: icons[idx] ?? Activity,
+        display: item.currency === 'VND' ? `${(item.value / 1_000_000).toFixed(1)}M` : item.value.toLocaleString(),
+      };
+    }) ??
+    [
+      { title: 'Total Bookings', value: 1234, delta: 0.12, display: '1,234', icon: Activity },
+      { title: 'Active Users', value: 856, delta: 0.05, display: '856', icon: Users },
+      { title: 'Revenue Today', value: 45200000, delta: 0.08, display: '45.2M', icon: DollarSign },
+    ];
+
+  const trendData = data?.trend ?? [
+    { day: 'Mon', bookings: 120 },
+    { day: 'Tue', bookings: 150 },
+    { day: 'Wed', bookings: 170 },
+    { day: 'Thu', bookings: 140 },
+    { day: 'Fri', bookings: 210 },
+    { day: 'Sat', bookings: 180 },
+    { day: 'Sun', bookings: 200 },
+  ];
+
+  const topRoutes = data?.topRoutes ?? [
+    { route: 'HCM → Hanoi', bookings: 234, revenue: 8_200_000 },
+    { route: 'HCM → Dalat', bookings: 189, revenue: 3_400_000 },
+    { route: 'HCM → Can Tho', bookings: 142, revenue: 2_800_000 },
+  ];
+
+  const recentBookings = data?.recentBookings ?? [
+    { id: 'BK20251115001', user: 'Tran Anh', route: 'HCM → Hanoi', status: 'Paid' },
+    { id: 'BK20251115002', user: 'Le Minh', route: 'HCM → Dalat', status: 'Pending' },
+    { id: 'BK20251115003', user: 'Nguyen Ha', route: 'Hanoi → Hue', status: 'Cancelled' },
+  ];
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -55,6 +71,7 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground text-sm">
             Monitor bookings, routes, and revenue at a glance.
           </p>
+          {isLoading && <p className="text-xs text-muted-foreground">Loading live metrics…</p>}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm">
@@ -76,10 +93,12 @@ const AdminDashboard = () => {
             <CardContent className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-muted-foreground text-sm">{card.title}</p>
-                <p className="text-3xl font-semibold">{card.value}</p>
+                <p className="text-3xl font-semibold">
+                  {'display' in card ? (card as { display: string }).display : card.value}
+                </p>
                 <div className="text-emerald-600 mt-1 flex items-center gap-1 text-xs font-medium">
                   <ArrowUpRight className="h-4 w-4" />
-                  {card.delta} vs last period
+                  {(card.delta ? `${Math.round(card.delta * 100)}%` : '+0%')} vs last period
                 </div>
               </div>
               <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
@@ -145,7 +164,11 @@ const AdminDashboard = () => {
                             style={{ width: `${Math.min(item.bookings / 2.5, 100)}%` }}
                           />
                         </div>
-                        <span>{item.revenue}</span>
+                        <span>
+                          {item.revenue >= 1_000_000
+                            ? `${(item.revenue / 1_000_000).toFixed(1)}M`
+                            : item.revenue.toLocaleString()}
+                        </span>
                       </div>
                     </TableCell>
                   </TableRow>
