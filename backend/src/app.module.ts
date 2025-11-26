@@ -34,6 +34,10 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
         autoLoadEntities: config.get('database.autoLoadEntities'),
         synchronize: config.get('database.synchronize'),
         logging: true, // tắt nếu không cần
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     UsersModule,
@@ -52,4 +56,4 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
