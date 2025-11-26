@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignup, useGoogleAuthentication } from '@/hooks/useSession';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { Link } from 'react-router';
 const signupSchema = z
   .object({
     firstName: z.string().min(1, 'First name is required'),
@@ -187,7 +188,7 @@ export function SignupForm({
               </div>
 
               <FieldDescription className="text-center">
-                Already have an account? <a href="/signin">Sign in</a>
+                Already have an account? <Link to="/signin">Sign in</Link>
               </FieldDescription>
             </FieldGroup>
           </form>

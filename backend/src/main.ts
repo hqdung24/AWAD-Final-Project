@@ -12,8 +12,12 @@ async function bootstrap() {
   console.log('NODE ENV', process.env.NODE_ENV);
 
   //Enable cors
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3900'];
+
   app.enableCors({
-    origin: true,
+    origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
     credentials: true,
   });
   //Enable cookie parser

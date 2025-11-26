@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { useSignin, useGoogleAuthentication } from '@/hooks/useSession';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { SigninPayloadSchema } from '@/schemas';
 
@@ -123,7 +123,7 @@ export function SignInForm({
                 />
               </div>
               <FieldDescription className="text-center">
-                Don’t have an account? <a href="/signup">Create one</a>
+                Don't have an account? <Link to="/signup">Create one</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
