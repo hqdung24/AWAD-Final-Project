@@ -25,7 +25,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useSignout } from '@/hooks/useSession';
 import { useUserStore } from '@/stores/user';
 import { useNavigate } from 'react-router';

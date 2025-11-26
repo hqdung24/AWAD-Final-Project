@@ -15,9 +15,4 @@ export default defineConfig({
     port: 3900,
     open: true,
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-  },
 });
