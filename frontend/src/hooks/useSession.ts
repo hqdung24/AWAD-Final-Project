@@ -12,15 +12,18 @@ import { useUserStore } from '@/stores/user';
 import { notify } from '@/lib/notify';
 import { extractApiError } from '@/lib/api-error';
 import { useNavigate } from 'react-router-dom';
+import type { RoleType } from '@/enum/role';
 
 export function useSession() {
   const setMe = useUserStore((s) => s.setMe);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const setRole = useAuthStore((s) => s.setRole);
   return useQuery({
     queryKey: ['me'],
     enabled: !!accessToken, // chỉ chạy khi có access token
     queryFn: async () => {
       const me = await getMe();
+      setRole(me.role as RoleType);
       if (!me) throw new Error('Failed to fetch user data');
       setMe(me);
       return me;
@@ -32,6 +35,7 @@ export function useSession() {
 export function useGoogleAuthentication() {
   const qc = useQueryClient();
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const setRole = useAuthStore((s) => s.setRole);
   const setMe = useUserStore((s) => s.setMe);
   return useMutation({
     mutationFn: async (token: string) => {
@@ -39,6 +43,7 @@ export function useGoogleAuthentication() {
     },
     onSuccess: async ({ accessToken, user }) => {
       setAccessToken(accessToken);
+      setRole(user.role as RoleType);
       setMe(user);
       notify.success('Signed in with Google!');
       await qc.invalidateQueries({ queryKey: ['me'] });
@@ -52,12 +57,15 @@ export function useGoogleAuthentication() {
 export function useSignin() {
   const qc = useQueryClient();
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const setRole = useAuthStore((s) => s.setRole);
   const setMe = useUserStore((s) => s.setMe);
 
   return useMutation({
     mutationFn: signin,
     onSuccess: async ({ accessToken, user }) => {
       setAccessToken(accessToken);
+      console.log('role: ', user.role);
+      setRole(user.role as RoleType);
       setMe(user);
       notify.success('Signed in!');
       await qc.invalidateQueries({ queryKey: ['me'] });

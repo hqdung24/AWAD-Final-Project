@@ -26,14 +26,15 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '@/stores/auth';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const { me } = useUserStore();
-  const role = me?.role ?? 'USER';
+  const role = useAuthStore((s) => s.role);
 
   const adminNav = [
-    { title: 'Overview', url: '/', icon: PieChart },
+    { title: 'Overview', url: '/dashboard', icon: PieChart },
     { title: 'Routes', url: '#routes', icon: RouteIcon },
     { title: 'Trips', url: '#trips', icon: BusFront },
     { title: 'Buses', url: '#buses', icon: BusFront },
@@ -45,7 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ];
 
   const userNav = [
-    { title: 'Upcoming', url: '/', icon: BusFront },
+    { title: 'Upcoming', url: '/dashboard', icon: BusFront },
     { title: 'History', url: '#history', icon: Map },
     { title: 'Profile', url: '/account', icon: Users },
     { title: 'Payments', url: '#payments', icon: ChartNoAxesCombined },
@@ -54,7 +55,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navItems = (role === 'ADMIN' ? adminNav : userNav).map((item) => ({
     ...item,
-    isActive: location.pathname === '/' ? item.url === '/' : item.url === location.pathname,
+    isActive:
+      location.pathname === '/'
+        ? item.url === '/'
+        : item.url === location.pathname,
   }));
 
   const displayName = `${me?.firstName ?? 'User'} ${me?.lastName ?? ''}`.trim();

@@ -5,7 +5,7 @@ export const MeSchema = z.object({
   email: z.string().email(),
   firstName: z.string(),
   lastName: z.string(),
-  role: z.string().default('USER'),
+  role: z.string(),
 });
 export type Me = z.infer<typeof MeSchema>;
 

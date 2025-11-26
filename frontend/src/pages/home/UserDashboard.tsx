@@ -1,63 +1,50 @@
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Bell, Clock, MapPin, Ticket, TriangleAlert } from 'lucide-react';
-import { fetchUserDashboard, type UserDashboard } from '@/services/dashboardService';
-
-const UserDashboard = () => {
-  const { data, isLoading, error } = useQuery<UserDashboard>({
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  fetchUserDashboard,
+  type UserDashboard as UserDashboardData,
+} from '@/services/dashboardService';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowRight, Bell, Clock, MapPin, Ticket } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+function UserDashboard() {
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useQuery<UserDashboardData>({
     queryKey: ['user-dashboard'],
     queryFn: fetchUserDashboard,
     retry: false,
   });
 
   if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const isForbidden = (error as any)?.status === 403;
-    return (
-      <div className="flex flex-col gap-4 p-6">
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader className="flex flex-row items-center gap-2">
-            <TriangleAlert className="h-5 w-5 text-destructive" />
-            <div className="space-y-1">
-              <CardTitle>{isForbidden ? 'Access denied' : 'Dashboard unavailable'}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {isForbidden
-                  ? 'You need to be signed in with a user or admin account to view your dashboard.'
-                  : 'We could not load your dashboard right now. Please retry shortly.'}
-              </p>
-            </div>
-          </CardHeader>
-        </Card>
-      </div>
-    );
+    if (isForbidden) {
+      navigate('/403');
+    }
   }
 
-  const upcomingTrips =
-    data?.upcomingTrips ??
-    [
-      {
-        route: 'HCM → Hanoi',
-        datetime: '15 Nov 2025, 08:00',
-        seats: 'A1, A2',
-        bookingId: 'BK20251115001',
-        actions: ['View E-ticket', 'Cancel'],
-      },
-      {
-        route: 'Hanoi → Hue',
-        datetime: '20 Nov 2025, 14:00',
-        seats: 'B3',
-        bookingId: 'BK20251115010',
-        actions: ['View E-ticket', 'Modify'],
-      },
-    ];
+  const upcomingTrips = data?.upcomingTrips ?? [
+    {
+      route: 'HCM → Hanoi',
+      datetime: '15 Nov 2025, 08:00',
+      seats: 'A1, A2',
+      bookingId: 'BK20251115001',
+      actions: ['View E-ticket', 'Cancel'],
+    },
+    {
+      route: 'Hanoi → Hue',
+      datetime: '20 Nov 2025, 14:00',
+      seats: 'B3',
+      bookingId: 'BK20251115010',
+      actions: ['View E-ticket', 'Modify'],
+    },
+  ];
 
-  const notifications =
-    data?.notifications ??
-    [
-      { type: 'upcoming', message: 'You have 2 unread notifications' },
-      { type: 'alert', message: 'Get alerts for departure changes' },
-    ];
+  const notifications = data?.notifications ?? [
+    { type: 'upcoming', message: 'You have 2 unread notifications' },
+    { type: 'alert', message: 'Get alerts for departure changes' },
+  ];
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -67,7 +54,9 @@ const UserDashboard = () => {
         <p className="text-muted-foreground text-sm">
           Manage tickets, see what’s next, and jump back into booking quickly.
         </p>
-        {isLoading && <p className="text-xs text-muted-foreground">Loading your trips…</p>}
+        {isLoading && (
+          <p className="text-xs text-muted-foreground">Loading your trips…</p>
+        )}
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
@@ -110,7 +99,9 @@ const UserDashboard = () => {
 
           <Card className="border-dashed">
             <CardContent className="flex flex-col gap-2 p-6 text-center">
-              <p className="text-muted-foreground text-sm">No more upcoming trips</p>
+              <p className="text-muted-foreground text-sm">
+                No more upcoming trips
+              </p>
               <Button className="inline-flex items-center gap-2 self-center">
                 Search New Trip <ArrowRight className="h-4 w-4" />
               </Button>
@@ -122,7 +113,8 @@ const UserDashboard = () => {
           <CardHeader className="space-y-2">
             <CardTitle>Navigation</CardTitle>
             <div className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary">
-              {notifications.find((n) => n.type === 'upcoming')?.message ?? 'Stay updated on your trips'}
+              {notifications.find((n) => n.type === 'upcoming')?.message ??
+                'Stay updated on your trips'}
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -147,6 +139,6 @@ const UserDashboard = () => {
       </div>
     </div>
   );
-};
+}
 
 export default UserDashboard;
