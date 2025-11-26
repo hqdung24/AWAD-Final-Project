@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="760" viewBox="0 0 960 760" fill="none">
+  <style>
+    .frame { stroke: #2563eb; stroke-width: 2; fill: none; }
+    .panel { stroke: #1f2937; stroke-width: 1.5; fill: #f8fafc; rx: 10; }
+    .card { stroke: #1f2937; stroke-width: 1.2; fill: white; rx: 12; }
+    .stat { stroke: #1f2937; stroke-width: 1; rx: 12; }
+    .stat1 { fill: #eef2ff; }
+    .stat2 { fill: #ecfeff; }
+    .stat3 { fill: #f0fdf4; }
+    .stat4 { fill: #fff7ed; }
+    .text { font-family: "Inter", "Segoe UI", Arial, sans-serif; fill: #111827; }
+    .title { font-size: 20px; font-weight: 700; }
+    .subtitle { font-size: 16px; font-weight: 600; }
+    .body { font-size: 14px; }
+  </style>
+  <rect x="10" y="10" width="940" height="740" class="frame"/>
+  <text x="24" y="32" class="text title">Homepage (HomePageNew.tsx)</text>
+  <rect x="30" y="50" width="900" height="80" class="panel"/>
+  <text x="48" y="94" class="text subtitle">Welcome back, User! — Here's what's happening with your chats today</text>
+  <text x="690" y="92" class="text body">[Settings]   [New Chat]</text>
+  <rect x="30" y="150" width="900" height="170" stroke="#1f2937" stroke-dasharray="6 6" stroke-width="1.5" fill="none" rx="14"/>
+  <rect x="46" y="170" width="205" height="130" class="stat stat1"/>
+  <rect x="266" y="170" width="205" height="130" class="stat stat2"/>
+  <rect x="486" y="170" width="205" height="130" class="stat stat3"/>
+  <rect x="706" y="170" width="205" height="130" class="stat stat4"/>
+  <text x="62" y="196" class="text subtitle">Total Messages</text>
+  <text x="62" y="220" class="text title">1,284</text>
+  <text x="62" y="244" class="text body">Messages sent this month · ↑12%</text>
+  <text x="282" y="196" class="text subtitle">Active Chats</text>
+  <text x="282" y="220" class="text title">24</text>
+  <text x="282" y="244" class="text body">Ongoing conversations · ↑8%</text>
+  <text x="502" y="196" class="text subtitle">Online Friends</text>
+  <text x="502" y="220" class="text title">18</text>
+  <text x="502" y="244" class="text body">Currently online</text>
+  <text x="722" y="196" class="text subtitle">Unread Messages</text>
+  <text x="722" y="220" class="text title">7</text>
+  <text x="722" y="244" class="text body">Requires attention · ↓5%</text>
+  <rect x="30" y="340" width="900" height="390" class="card" rx="14"/>
+  <rect x="46" y="356" width="540" height="360" class="card"/>
+  <text x="64" y="388" class="text subtitle">Recent Chats</text>
+  <text x="64" y="416" class="text body">• Design Team — Great work on the mockups! (2m · 3)</text>
+  <text x="64" y="442" class="text body">• Project Alpha — Meeting scheduled for tomorrow (15m)</text>
+  <text x="64" y="468" class="text body">• Sarah Johnson — Thanks for the update (1h · 1)</text>
+  <text x="64" y="494" class="text body">• Marketing Group — Campaign launched successfully (3h)</text>
+  <rect x="604" y="356" width="310" height="360" class="card"/>
+  <text x="624" y="388" class="text subtitle">Quick Actions</text>
+  <rect x="624" y="408" width="270" height="70" fill="#eef2ff" stroke="#1f2937" stroke-width="1" rx="10"/>
+  <text x="642" y="438" class="text subtitle">Create Group</text>
+  <text x="642" y="462" class="text body">Start a group conversation</text>
+  <rect x="624" y="488" width="270" height="70" fill="#ecfeff" stroke="#1f2937" stroke-width="1" rx="10"/>
+  <text x="642" y="518" class="text subtitle">Add Contact</text>
+  <text x="642" y="542" class="text body">Connect with someone new</text>
+  <rect x="624" y="568" width="270" height="70" fill="#f0fdf4" stroke="#1f2937" stroke-width="1" rx="10"/>
+  <text x="642" y="598" class="text subtitle">Share Files</text>
+  <text x="642" y="622" class="text body">Upload and share documents</text>
+</svg>
