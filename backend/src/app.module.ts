@@ -12,6 +12,9 @@ import { databaseConfig } from './config/database.config';
 import { environmentValidationSchema } from './config/envinronment.validation';
 import { UploadModule } from './modules/upload/upload.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AdminRoutesModule } from './modules/admin-routes/admin-routes.module';
+import { TripManagementModule } from './modules/trip-management/trip-management.module';
+import { BusManagementModule } from './modules/bus-management/bus-management.module';
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
 @Module({
@@ -44,6 +47,9 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     AuthModule,
     UploadModule,
     DashboardModule,
+    AdminRoutesModule,
+    TripManagementModule,
+    BusManagementModule,
   ],
   providers: [
     {

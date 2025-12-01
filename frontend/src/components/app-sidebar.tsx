@@ -35,9 +35,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const adminNav = [
     { title: 'Overview', url: '/dashboard', icon: PieChart },
-    { title: 'Routes', url: '#routes', icon: RouteIcon },
-    { title: 'Trips', url: '#trips', icon: BusFront },
-    { title: 'Buses', url: '#buses', icon: BusFront },
+    { title: 'Routes', url: '/routes', icon: RouteIcon },
+    { title: 'Trips', url: '/trips', icon: BusFront },
+    { title: 'Buses', url: '/buses', icon: BusFront },
     { title: 'Operators', url: '#operators', icon: Users },
     { title: 'Users', url: '/account', icon: Users },
     { title: 'Analytics', url: '#analytics', icon: ChartNoAxesCombined },
