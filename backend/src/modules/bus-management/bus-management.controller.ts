@@ -15,6 +15,7 @@ import { Roles } from '../auth/decorator/roles.decorator';
 import { RoleType } from '../auth/enums/roles-type.enum';
 import { BusManagementService } from './bus-management.service';
 import { BusAssignmentDto, CreateBusDto, UpdateBusDto } from './dtos/bus.dto';
+import { SeatMapDto } from './dtos/seat-map.dto';
 
 @ApiTags('Buses')
 @ApiBearerAuth('accessToken')
@@ -57,5 +58,15 @@ export class BusManagementController {
   @Delete('assignments/:id')
   deleteAssignment(@Param('id') id: string) {
     return this.busService.deleteAssignment(id);
+  }
+
+  @Get(':id/seat-map')
+  getSeatMap(@Param('id') id: string) {
+    return this.busService.getSeatMap(id);
+  }
+
+  @Patch(':id/seat-map')
+  updateSeatMap(@Param('id') id: string, @Body() dto: SeatMapDto) {
+    return this.busService.updateSeatMap(id, dto);
   }
 }

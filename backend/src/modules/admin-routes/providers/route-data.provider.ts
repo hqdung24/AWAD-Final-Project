@@ -3,9 +3,18 @@ export type RouteRecord = {
   operatorId: string;
   origin: string;
   destination: string;
+  stops?: StopRecord[];
   distanceKm: number;
   estimatedMinutes: number;
   notes?: string;
+};
+
+export type StopRecord = {
+  id: string;
+  name: string;
+  type: 'pickup' | 'dropoff';
+  order: number;
+  note?: string;
 };
 
 export const ROUTE_DATA_PROVIDER = 'ROUTE_DATA_PROVIDER';

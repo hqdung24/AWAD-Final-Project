@@ -770,6 +770,70 @@
           "Buses"
         ]
       }
+    },
+    "/buses/{id}/seat-map": {
+      "get": {
+        "operationId": "BusManagementController_getSeatMap",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Buses"
+        ]
+      },
+      "patch": {
+        "operationId": "BusManagementController_updateSeatMap",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatMapDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "tags": [
+          "Buses"
+        ]
+      }
     }
   },
   "info": {
@@ -867,6 +931,10 @@
         "properties": {}
       },
       "BusAssignmentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SeatMapDto": {
         "type": "object",
         "properties": {}
       }

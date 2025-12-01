@@ -24,12 +24,31 @@ export class AdminRoutesService {
   }
 
   create(payload: CreateRouteDto): Promise<RouteRecord> {
-    return this.routeDataProvider.create(payload);
+    return this.routeDataProvider.create({
+      ...payload,
+      stops: payload.stops?.map((s) => ({
+        id: s.id ?? '',
+        name: s.name,
+        type: s.type,
+        order: s.order,
+        note: s.note,
+      })),
+    });
   }
 
   async update(id: string, payload: UpdateRouteDto): Promise<RouteRecord> {
     await this.get(id); // ensure exists
-    return this.routeDataProvider.update(id, payload);
+    return this.routeDataProvider.update(id, {
+      ...payload,
+      stops:
+        (payload as any)?.stops?.map((s: any) => ({
+          id: s.id ?? '',
+          name: s.name,
+          type: s.type,
+          order: s.order,
+          note: s.note,
+        })) ?? undefined,
+    });
   }
 
   async remove(id: string): Promise<void> {

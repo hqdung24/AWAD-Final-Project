@@ -16,6 +16,14 @@ export type BusAssignmentRecord = {
   endTime: string; // ISO
 };
 
+export type SeatRecord = {
+  id: string;
+  seatCode: string;
+  seatType: string;
+  isActive: boolean;
+  price?: number;
+};
+
 export const BUS_DATA_PROVIDER = 'BUS_DATA_PROVIDER';
 
 export interface BusDataProvider {
@@ -26,4 +34,6 @@ export interface BusDataProvider {
   listAssignments(busId?: string): Promise<BusAssignmentRecord[]>;
   assignBus(payload: Omit<BusAssignmentRecord, 'id'>): Promise<BusAssignmentRecord>;
   deleteAssignment(id: string): Promise<void>;
+  getSeatMap(busId: string): Promise<SeatRecord[]>;
+  updateSeatMap(busId: string, seats: SeatRecord[]): Promise<SeatRecord[]>;
 }

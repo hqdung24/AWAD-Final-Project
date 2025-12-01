@@ -5,14 +5,16 @@ Provide basic CRUD for admin routes, buses, and trips with mock data today, and 
 
 ## Approach A: No real data yet (mock provider)
 - Implemented an in-memory data provider that mimics the real schema (id, operatorId, origin, destination, distanceKm, estimatedMinutes, notes).
+- Routes include pickup/dropoff stops with ordering and notes; persisted in responses and UI.
 - API endpoints (protected by ADMIN + Bearer):
   - Routes: `GET/POST/PATCH/DELETE /routes`
   - Trips: `GET/POST/PATCH/DELETE /trips`, `GET /trips/buses`
   - Buses: `GET/POST/PATCH/DELETE /buses`, assignments: `GET /buses/assignments/all`, `POST /buses/:id/assign`, `DELETE /buses/assignments/:id` with conflict checks.
+- Seat maps: `GET /buses/:id/seat-map`, `PATCH /buses/:id/seat-map` to configure per-seat type/price/active state; mock seat maps are pre-seeded.
 - Frontend admin pages:
   - `/routes` for route CRUD
   - `/trips` for trip scheduling (route + bus, departure/arrival, base price, status)
-  - `/buses` for bus CRUD and bus-to-route assignments with overlap prevention.
+  - `/buses` for bus CRUD, bus-to-route assignments with overlap prevention, and seat map configuration (edit seat type/price/active).
 
 ## Approach B: Real data later (pluggable provider)
 - Data layer is abstracted via `ROUTE_DATA_PROVIDER` interface:

@@ -13,6 +13,11 @@ export class InMemoryRouteProvider implements RouteDataProvider {
       operatorId: '00000000-0000-0000-0000-000000000001',
       origin: 'Ho Chi Minh City',
       destination: 'Hanoi',
+      stops: [
+        { id: randomUUID(), name: 'HCM Station', type: 'pickup', order: 1 },
+        { id: randomUUID(), name: 'Da Nang Stop', type: 'dropoff', order: 2 },
+        { id: randomUUID(), name: 'Hanoi Station', type: 'dropoff', order: 3 },
+      ],
       distanceKm: 1700,
       estimatedMinutes: 1500,
       notes: 'Mock route seeded for admin CRUD.',
@@ -22,6 +27,11 @@ export class InMemoryRouteProvider implements RouteDataProvider {
       operatorId: '00000000-0000-0000-0000-000000000002',
       origin: 'Da Nang',
       destination: 'Hue',
+      stops: [
+        { id: randomUUID(), name: 'Da Nang City', type: 'pickup', order: 1 },
+        { id: randomUUID(), name: 'Lang Co', type: 'dropoff', order: 2 },
+        { id: randomUUID(), name: 'Hue Center', type: 'dropoff', order: 3 },
+      ],
       distanceKm: 100,
       estimatedMinutes: 120,
       notes: 'Coastal scenic route',
@@ -37,7 +47,11 @@ export class InMemoryRouteProvider implements RouteDataProvider {
   }
 
   async create(payload: Omit<RouteRecord, 'id'>): Promise<RouteRecord> {
-    const record: RouteRecord = { id: randomUUID(), ...payload };
+    const record: RouteRecord = {
+      id: randomUUID(),
+      ...payload,
+      stops: payload.stops?.map((s) => ({ ...s, id: s.id ?? randomUUID() })),
+    };
     this.routes.push(record);
     return record;
   }
@@ -50,7 +64,13 @@ export class InMemoryRouteProvider implements RouteDataProvider {
     if (idx === -1) {
       throw new Error('Route not found');
     }
-    const updated = { ...this.routes[idx], ...payload };
+    const updated = {
+      ...this.routes[idx],
+      ...payload,
+      stops: payload.stops
+        ? payload.stops.map((s) => ({ ...s, id: s.id ?? randomUUID() }))
+        : this.routes[idx].stops,
+    };
     this.routes[idx] = updated;
     return updated;
   }

@@ -5,6 +5,7 @@ import {
   type BusAssignmentRecord,
   type BusDataProvider,
   type BusRecord,
+  type SeatRecord,
 } from './bus-data.provider';
 
 @Injectable()
@@ -74,6 +75,27 @@ export class InMemoryBusProvider implements BusDataProvider {
     }
   }
 
+  private seatMaps: Record<string, SeatRecord[]> = {};
+
+  private ensureSeatMap(busId: string) {
+    if (!this.seatMaps[busId]) {
+      const seats: SeatRecord[] = [];
+      const baseCodes =
+        this.buses.find((b) => b.id === busId)?.seatCapacity ?? 0;
+      for (let i = 1; i <= Math.max(baseCodes, 12); i++) {
+        const code = `A${i}`;
+        seats.push({
+          id: randomUUID(),
+          seatCode: code,
+          seatType: i <= 4 ? 'vip' : 'standard',
+          isActive: i !== 3, // demo: seat 3 inactive
+          price: i <= 4 ? 100000 : 0,
+        });
+      }
+      this.seatMaps[busId] = seats;
+    }
+  }
+
   async listBuses(): Promise<BusRecord[]> {
     return [...this.buses];
   }
@@ -127,5 +149,22 @@ export class InMemoryBusProvider implements BusDataProvider {
 
   async deleteAssignment(id: string): Promise<void> {
     this.assignments = this.assignments.filter((a) => a.id !== id);
+  }
+
+  async getSeatMap(busId: string): Promise<SeatRecord[]> {
+    this.ensureSeatMap(busId);
+    return [...(this.seatMaps[busId] ?? [])];
+  }
+
+  async updateSeatMap(busId: string, seats: SeatRecord[]): Promise<SeatRecord[]> {
+    this.seatMaps[busId] = seats.map((s) => ({
+      ...s,
+      id: s.id ?? randomUUID(),
+      seatCode: s.seatCode,
+      seatType: s.seatType,
+      isActive: s.isActive ?? true,
+      price: s.price ?? 0,
+    }));
+    return [...this.seatMaps[busId]];
   }
 }

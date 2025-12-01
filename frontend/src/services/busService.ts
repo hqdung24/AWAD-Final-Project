@@ -18,6 +18,14 @@ export type BusAssignment = {
   endTime: string;
 };
 
+export type Seat = {
+  id?: string;
+  seatCode: string;
+  seatType: string;
+  isActive: boolean;
+  price?: number;
+};
+
 export async function listBuses(): Promise<Bus[]> {
   const res = await http.get('/buses');
   return (res as { data: Bus[] }).data;
@@ -56,4 +64,14 @@ export async function assignBus(
 
 export async function deleteAssignment(id: string): Promise<void> {
   await http.delete(`/buses/assignments/${id}`);
+}
+
+export async function getSeatMap(busId: string): Promise<Seat[]> {
+  const res = await http.get(`/buses/${busId}/seat-map`);
+  return (res as { data: Seat[] }).data;
+}
+
+export async function updateSeatMap(busId: string, seats: Seat[]): Promise<Seat[]> {
+  const res = await http.patch(`/buses/${busId}/seat-map`, { seats });
+  return (res as { data: Seat[] }).data;
 }

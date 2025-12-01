@@ -1,11 +1,37 @@
 import {
+  IsArray,
+  IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class StopDto {
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsEnum(['pickup', 'dropoff'])
+  type!: 'pickup' | 'dropoff';
+
+  @IsNumber()
+  @Min(0)
+  order!: number;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
 
 export class RouteDto {
   @IsUUID()
@@ -35,6 +61,12 @@ export class RouteDto {
   @IsInt()
   @Min(0)
   estimatedMinutes: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => StopDto)
+  stops?: StopDto[];
 }
 
 export class CreateRouteDto extends RouteDto {}

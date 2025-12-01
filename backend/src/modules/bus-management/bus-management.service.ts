@@ -4,8 +4,10 @@ import {
   type BusDataProvider,
   type BusRecord,
   type BusAssignmentRecord,
+  type SeatRecord,
 } from './providers/bus-data.provider';
 import { CreateBusDto, UpdateBusDto, BusAssignmentDto } from './dtos/bus.dto';
+import { SeatMapDto } from './dtos/seat-map.dto';
 
 @Injectable()
 export class BusManagementService {
@@ -53,5 +55,22 @@ export class BusManagementService {
 
   async deleteAssignment(id: string): Promise<void> {
     await this.busProvider.deleteAssignment(id);
+  }
+
+  getSeatMap(busId: string): Promise<SeatRecord[]> {
+    return this.busProvider.getSeatMap(busId);
+  }
+
+  updateSeatMap(busId: string, dto: SeatMapDto): Promise<SeatRecord[]> {
+    return this.busProvider.updateSeatMap(
+      busId,
+      dto.seats.map((s) => ({
+        id: s.id ?? '',
+        seatCode: s.seatCode,
+        seatType: s.seatType,
+        isActive: s.isActive,
+        price: s.price,
+      })),
+    );
   }
 }

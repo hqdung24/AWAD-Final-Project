@@ -16,6 +16,7 @@ import {
   deleteAdminRoute,
   type AdminRoute,
 } from '@/services/adminRoutesService';
+import type { RouteStop } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const initialRouteForm: AdminRoute = {
@@ -30,8 +31,12 @@ const initialRouteForm: AdminRoute = {
 
 export default function RoutesPage() {
   const qc = useQueryClient();
-  const [createForm, setCreateForm] = useState<AdminRoute>(initialRouteForm);
-  const [editForm, setEditForm] = useState<AdminRoute | null>(null);
+  const [createForm, setCreateForm] = useState<AdminRoute & { stops?: RouteStop[] }>(
+    initialRouteForm,
+  );
+  const [editForm, setEditForm] = useState<(AdminRoute & { stops?: RouteStop[] }) | null>(
+    null,
+  );
 
   const {
     data: adminRoutes = [],
@@ -119,6 +124,30 @@ export default function RoutesPage() {
                 />
               </label>
             </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Stops (CSV: name|type|order)
+                <textarea
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border min-h-[80px]"
+                  placeholder="HCM Station|pickup|1&#10;Da Nang|dropoff|2"
+                  onChange={(e) => {
+                    const lines = e.target.value
+                      .split('\n')
+                      .map((l) => l.trim())
+                      .filter(Boolean);
+                    const stops: RouteStop[] = lines
+                      .map((line) => {
+                        const [name, type, order] = line.split('|').map((s) => s.trim());
+                        if (!name || (type !== 'pickup' && type !== 'dropoff') || !order)
+                          return null;
+                        return { name, type: type as 'pickup' | 'dropoff', order: Number(order) };
+                      })
+                      .filter((s): s is RouteStop => Boolean(s));
+                    setCreateForm((prev) => ({ ...prev, stops }));
+                  }}
+                />
+              </label>
+            </div>
             <div className="grid gap-2 md:grid-cols-3 items-center">
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                 Distance (km)
@@ -179,6 +208,7 @@ export default function RoutesPage() {
                     notes: createForm.notes,
                     distanceKm: createForm.distanceKm,
                     estimatedMinutes: createForm.estimatedMinutes,
+                    stops: createForm.stops,
                   })
                 }
                 disabled={
@@ -201,16 +231,17 @@ export default function RoutesPage() {
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Origin</TableHead>
-                <TableHead>Destination</TableHead>
-                <TableHead>Operator</TableHead>
-                <TableHead>Distance (km)</TableHead>
-                <TableHead>ETA (min)</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Origin</TableHead>
+                  <TableHead>Destination</TableHead>
+                  <TableHead>Stops</TableHead>
+                  <TableHead>Operator</TableHead>
+                  <TableHead>Distance (km)</TableHead>
+                  <TableHead>ETA (min)</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -248,6 +279,22 @@ export default function RoutesPage() {
                         />
                       ) : (
                         route.destination
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {route.stops && route.stops.length > 0 ? (
+                        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                          {route.stops
+                            .slice()
+                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                            .map((s) => (
+                              <span key={s.id ?? s.name}>
+                                {s.order}. {s.name} ({s.type})
+                              </span>
+                            ))}
+                        </div>
+                      ) : (
+                        '—'
                       )}
                     </TableCell>
                     <TableCell>
