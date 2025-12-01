@@ -270,6 +270,147 @@
           "Dashboard"
         ]
       }
+    },
+    "/admin/routes": {
+      "get": {
+        "operationId": "AdminRoutesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List routes (mock-backed now, DB-ready later)",
+        "tags": [
+          "Admin Routes"
+        ]
+      },
+      "post": {
+        "operationId": "AdminRoutesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRouteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Create route",
+        "tags": [
+          "Admin Routes"
+        ]
+      }
+    },
+    "/admin/routes/{id}": {
+      "get": {
+        "operationId": "AdminRoutesController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Get route by id",
+        "tags": [
+          "Admin Routes"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminRoutesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRouteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Update route",
+        "tags": [
+          "Admin Routes"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminRoutesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Delete route",
+        "tags": [
+          "Admin Routes"
+        ]
+      }
     }
   },
   "info": {
@@ -341,6 +482,14 @@
           "email",
           "password"
         ]
+      },
+      "CreateRouteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateRouteDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

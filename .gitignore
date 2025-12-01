@@ -140,5 +140,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Local documentation not tracked
-project.md
 G03 - Authentication, Authorization, Layout & Dashboard.md
+week2_trip_management.md
+ERD.png 
