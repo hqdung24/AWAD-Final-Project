@@ -16,6 +16,8 @@ import MainLayout from './layouts/main-layout/MainLayout';
 import { useAuthStore } from './stores/auth';
 import AdminDashboard from './pages/home/AdminDashboard';
 import UserDashboard from './pages/home/UserDashboard';
+import TripsPage from './pages/admin/TripsPage';
+import RoutesPage from './pages/admin/RoutesPage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -51,6 +53,22 @@ function App() {
                         <UserDashboard />
                       </ProtectedRoute>
                     )
+                  }
+                />
+                <Route
+                  path="/trips"
+                  element={
+                    <ProtectedRoute roles={['ADMIN']}>
+                      <TripsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/routes"
+                  element={
+                    <ProtectedRoute roles={['ADMIN']}>
+                      <RoutesPage />
+                    </ProtectedRoute>
                   }
                 />
                 <Route
