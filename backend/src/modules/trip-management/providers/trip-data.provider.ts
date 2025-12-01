@@ -12,9 +12,8 @@ export type TripRecord = {
   busId: string;
   departureTime: string; // ISO string
   arrivalTime: string; // ISO string
-  seatLayout?: string;
+  basePrice: number;
   status?: string;
-  stops: StopRecord[];
 };
 
 export type BusRecord = {

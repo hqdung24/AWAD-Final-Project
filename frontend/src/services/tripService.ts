@@ -14,9 +14,8 @@ export type Trip = {
   busId: string;
   departureTime: string;
   arrivalTime: string;
-  seatLayout?: string;
+  basePrice: number;
   status?: string;
-  stops: Stop[];
 };
 
 export type Bus = {

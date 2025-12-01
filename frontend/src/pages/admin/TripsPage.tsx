@@ -29,9 +29,8 @@ const initialTripForm: Partial<Trip> = {
   busId: '',
   departureTime: '',
   arrivalTime: '',
+  basePrice: 0,
   status: 'scheduled',
-  seatLayout: '',
-  stops: [],
 };
 
 export default function TripsPage() {
@@ -89,9 +88,8 @@ export default function TripsPage() {
           busId: tripForm.busId,
           departureTime: tripForm.departureTime,
           arrivalTime: tripForm.arrivalTime,
+          basePrice: tripForm.basePrice,
           status: tripForm.status,
-          seatLayout: tripForm.seatLayout,
-          stops: tripForm.stops ?? [],
         },
       });
     } else {
@@ -100,9 +98,8 @@ export default function TripsPage() {
         busId: tripForm.busId,
         departureTime: tripForm.departureTime,
         arrivalTime: tripForm.arrivalTime,
+        basePrice: tripForm.basePrice ?? 0,
         status: tripForm.status,
-        seatLayout: tripForm.seatLayout,
-        stops: tripForm.stops ?? [],
       });
     }
   };
@@ -190,14 +187,21 @@ export default function TripsPage() {
               />
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Seat Layout
+              Base price (VND)
               <input
                 className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.seatLayout ?? ''}
+                value={tripForm.basePrice ?? 0}
+                type="number"
+                min={0}
                 onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, seatLayout: e.target.value }))
+                  setTripForm((prev) => ({
+                    ...prev,
+                    basePrice: Number.isFinite(Number(e.target.value))
+                      ? Number(e.target.value)
+                      : 0,
+                  }))
                 }
-                placeholder="2x1"
+                placeholder="450000"
               />
             </label>
             <div className="flex items-end gap-2">
@@ -258,23 +262,29 @@ export default function TripsPage() {
                       <TableCell>{bus ? `${bus.name} (${bus.capacity})` : trip.busId}</TableCell>
                       <TableCell>{new Date(trip.departureTime).toLocaleString()}</TableCell>
                       <TableCell>{new Date(trip.arrivalTime).toLocaleString()}</TableCell>
-                      <TableCell>{trip.status ?? '—'}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{trip.status ?? '—'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {trip.basePrice.toLocaleString()} VND
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            setEditingTripId(trip.id);
-                            setTripForm({
-                              routeId: trip.routeId,
-                              busId: trip.busId,
-                              departureTime: trip.departureTime.slice(0, 16),
-                              arrivalTime: trip.arrivalTime.slice(0, 16),
-                              status: trip.status,
-                              seatLayout: trip.seatLayout,
-                              stops: trip.stops ?? [],
-                            });
-                          }}
+                        onClick={() => {
+                          setEditingTripId(trip.id);
+                          setTripForm({
+                            routeId: trip.routeId,
+                            busId: trip.busId,
+                            departureTime: trip.departureTime.slice(0, 16),
+                            arrivalTime: trip.arrivalTime.slice(0, 16),
+                            status: trip.status,
+                            basePrice: trip.basePrice,
+                          });
+                        }}
                         >
                           Edit
                         </Button>

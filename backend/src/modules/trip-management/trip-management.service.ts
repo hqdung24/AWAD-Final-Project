@@ -32,14 +32,6 @@ export class TripManagementService {
     try {
       return await this.tripProvider.createTrip({
         ...dto,
-        stops:
-          dto.stops?.map((s) => ({
-            id: s.id ?? '',
-            name: s.name,
-            type: s.type,
-            order: s.order,
-            note: s.note,
-          })) ?? [],
       });
     } catch (e) {
       throw new BadRequestException((e as Error).message);
@@ -51,14 +43,6 @@ export class TripManagementService {
     try {
       return await this.tripProvider.updateTrip(id, {
         ...dto,
-        stops:
-          dto.stops?.map((s) => ({
-            id: s.id ?? '',
-            name: s.name,
-            type: s.type,
-            order: s.order,
-            note: s.note,
-          })) ?? [],
       });
     } catch (e) {
       throw new BadRequestException((e as Error).message);

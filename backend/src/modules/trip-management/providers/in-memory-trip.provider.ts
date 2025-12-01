@@ -22,13 +22,8 @@ export class InMemoryTripProvider implements TripDataProvider {
       busId: this.buses[0].id,
       departureTime: new Date(Date.now() + 86_400_000).toISOString(),
       arrivalTime: new Date(Date.now() + 86_400_000 + 12 * 3_600_000).toISOString(),
-      seatLayout: this.buses[0].seatLayout,
+      basePrice: 450000,
       status: 'scheduled',
-      stops: [
-        { id: randomUUID(), name: 'HCM Station', type: 'pickup', order: 1 },
-        { id: randomUUID(), name: 'Da Nang Stop', type: 'dropoff', order: 2 },
-        { id: randomUUID(), name: 'Hanoi Station', type: 'dropoff', order: 3 },
-      ],
     },
   ];
 
@@ -64,7 +59,6 @@ export class InMemoryTripProvider implements TripDataProvider {
     const record: TripRecord = {
       ...payload,
       id: randomUUID(),
-      stops: payload.stops?.map((s) => ({ ...s, id: s.id ?? randomUUID() })) ?? [],
     };
     this.trips.push(record);
     return record;
@@ -79,9 +73,6 @@ export class InMemoryTripProvider implements TripDataProvider {
     const merged: TripRecord = {
       ...this.trips[idx],
       ...payload,
-      stops:
-        payload.stops?.map((s) => ({ ...s, id: s.id ?? randomUUID() })) ??
-        this.trips[idx].stops,
     };
     if (
       payload.busId ||

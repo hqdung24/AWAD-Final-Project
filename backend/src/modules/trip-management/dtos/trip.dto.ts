@@ -55,17 +55,11 @@ export class TripDto {
 
   @IsOptional()
   @IsString()
-  seatLayout?: string;
-
-  @IsOptional()
-  @IsString()
   status?: string;
 
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => StopDto)
-  stops?: StopDto[];
+  @IsNumber()
+  @Min(0)
+  basePrice!: number;
 }
 
 export class CreateTripDto extends TripDto {}
@@ -90,14 +84,12 @@ export class UpdateTripDto {
   @IsOptional()
   @IsString()
   seatLayout?: string;
-
   @IsOptional()
   @IsString()
   status?: string;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => StopDto)
-  stops?: StopDto[];
+  @IsNumber()
+  @Min(0)
+  basePrice?: number;
 }
