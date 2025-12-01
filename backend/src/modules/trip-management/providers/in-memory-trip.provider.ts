@@ -25,6 +25,24 @@ export class InMemoryTripProvider implements TripDataProvider {
       basePrice: 450000,
       status: 'scheduled',
     },
+    {
+      id: randomUUID(),
+      routeId: 'route-hcm-dalat',
+      busId: this.buses[1].id,
+      departureTime: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      arrivalTime: new Date(Date.now() + 2 * 86_400_000 + 8 * 3_600_000).toISOString(),
+      basePrice: 320000,
+      status: 'scheduled',
+    },
+    {
+      id: randomUUID(),
+      routeId: 'route-hanoi-hue',
+      busId: this.buses[0].id,
+      departureTime: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+      arrivalTime: new Date(Date.now() + 3 * 86_400_000 + 10 * 3_600_000).toISOString(),
+      basePrice: 380000,
+      status: 'scheduled',
+    },
   ];
 
   async listTrips(): Promise<TripRecord[]> {
@@ -79,15 +97,7 @@ export class InMemoryTripProvider implements TripDataProvider {
       payload.departureTime ||
       payload.arrivalTime
     ) {
-      if (
-        this.hasConflict(
-          {
-            ...merged,
-            id: undefined as any,
-          },
-          id,
-        )
-      ) {
+      if (this.hasConflict(merged, id)) {
         throw new Error('Scheduling conflict for this bus');
       }
     }

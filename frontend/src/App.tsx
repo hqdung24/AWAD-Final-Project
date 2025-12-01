@@ -18,6 +18,7 @@ import AdminDashboard from './pages/home/AdminDashboard';
 import UserDashboard from './pages/home/UserDashboard';
 import TripsPage from './pages/admin/TripsPage';
 import RoutesPage from './pages/admin/RoutesPage';
+import BusesPage from './pages/admin/BusesPage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -68,6 +69,14 @@ function App() {
                   element={
                     <ProtectedRoute roles={['ADMIN']}>
                       <RoutesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/buses"
+                  element={
+                    <ProtectedRoute roles={['ADMIN']}>
+                      <BusesPage />
                     </ProtectedRoute>
                   }
                 />
