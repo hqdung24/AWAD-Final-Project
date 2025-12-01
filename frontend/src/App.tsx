@@ -9,7 +9,8 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 import AccountInfoPage from './pages/Account/AccountInfoPage';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
-import HomePageNew from './pages/home/HomePageNew';
+import LandingPage from './pages/home/LandingPage';
+import SearchResults from './pages/search/SearchResults';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import MainLayout from './layouts/main-layout/MainLayout';
@@ -37,8 +38,16 @@ function App() {
                 <Route
                   path="/"
                   element={
-                    <ProtectedRoute>
-                      <HomePageNew />
+                    <ProtectedRoute roles={['USER']}>
+                      <LandingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/search"
+                  element={
+                    <ProtectedRoute roles={['USER']}>
+                      <SearchResults />
                     </ProtectedRoute>
                   }
                 />
