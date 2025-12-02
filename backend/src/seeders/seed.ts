@@ -17,7 +17,7 @@ import { Payment } from '@/modules/payment/entities/payment.entity';
 import { Notification } from '@/modules/notification/entities/notification.entity';
 import { Feedback } from '@/modules/feedback/entities/feedback.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
-
+import { RoutePoint } from '@/modules/route/entities/route-point.entity';
 // Load environment variables
 const ENV = process.env.NODE_ENV || 'development';
 config({ path: `.env.${ENV}` });
@@ -44,6 +44,7 @@ const AppDataSource = new DataSource({
     Payment,
     Notification,
     Feedback,
+    RoutePoint,
   ],
   synchronize: false,
   namingStrategy: new SnakeNamingStrategy(),
@@ -111,14 +112,14 @@ async function seed() {
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
 
-    // // Clear existing data (in reverse order of dependencies)
-    // console.log('🗑️  Clearing existing data...');
-    // await AppDataSource.getRepository(Trip).clear();
-    // await AppDataSource.getRepository(Seat).clear();
-    // await AppDataSource.getRepository(Bus).clear();
-    // await AppDataSource.getRepository(Route).clear();
-    // await AppDataSource.getRepository(Operator).clear();
-    // console.log('✅ Existing data cleared');
+    // Clear existing data (in reverse order of dependencies)
+    console.log('🗑️  Clearing existing data...');
+    await AppDataSource.getRepository(Trip).clear();
+    await AppDataSource.getRepository(Seat).clear();
+    await AppDataSource.getRepository(Bus).clear();
+    await AppDataSource.getRepository(Route).clear();
+    await AppDataSource.getRepository(Operator).clear();
+    console.log('✅ Existing data cleared');
 
     // 1. Seed Operators
     console.log('📦 Seeding operators...');
