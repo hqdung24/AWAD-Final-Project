@@ -24,7 +24,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "swagger:json": "ts-node -r tsconfig-paths/register src/scripts/generate-swagger.ts"
+    "swagger:json": "ts-node -r tsconfig-paths/register src/scripts/generate-swagger.ts",
+    "seed:win": "ts-node --project tsconfig.json -r tsconfig-paths/register src/seeders/seed.ts"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.0",

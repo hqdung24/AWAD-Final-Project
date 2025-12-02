@@ -6,6 +6,7 @@ export class AuthUserDto {
   @Expose() email!: string;
   @Expose() firstName!: string;
   @Expose() lastName!: string;
+  @Expose() role!: string;
 
   constructor(partial: Partial<AuthUserDto>) {
     Object.assign(this, partial);

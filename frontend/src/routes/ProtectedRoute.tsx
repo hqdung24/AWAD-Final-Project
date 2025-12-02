@@ -17,6 +17,11 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   // Check role
+  if (roles && role === undefined) {
+    // wait for role to hydrate (avoid false 403)
+    return null;
+  }
+
   const hasRole = roles ? roles.includes(role as RoleType) : true;
   if (!hasRole) return <Navigate to="/403" />;
 

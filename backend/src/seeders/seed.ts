@@ -112,6 +112,7 @@ async function seed() {
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
 
+    /*
     // Clear existing data (in reverse order of dependencies)
     console.log('🗑️  Clearing existing data...');
     await AppDataSource.getRepository(Trip).clear();
@@ -119,7 +120,7 @@ async function seed() {
     await AppDataSource.getRepository(Bus).clear();
     await AppDataSource.getRepository(Route).clear();
     await AppDataSource.getRepository(Operator).clear();
-    console.log('✅ Existing data cleared');
+    console.log('✅ Existing data cleared'); */
 
     // 1. Seed Operators
     console.log('📦 Seeding operators...');
