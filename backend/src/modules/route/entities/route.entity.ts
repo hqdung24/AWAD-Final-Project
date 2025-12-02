@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Operator } from '@/modules/operator/entities/operator.entity';
 import { Trip } from '@/modules/trip/entities/trip.entity';
+import { RoutePoint } from './route-point.entity';
 
 @Entity('routes')
 export class Route {
@@ -45,4 +46,9 @@ export class Route {
 
   @OneToMany(() => Trip, (trip) => trip.route)
   trips: Trip[];
+
+  @OneToMany(() => RoutePoint, (routePoint) => routePoint.route, {
+    nullable: true,
+  })
+  routePoints: RoutePoint[];
 }

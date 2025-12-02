@@ -358,90 +358,66 @@
         ]
       }
     },
-    "/admin/routes": {
-      "get": {
-        "operationId": "AdminRoutesController_list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
+    "/admin/routes/{routeId}/points": {
+      "post": {
+        "description": "Adds a pickup or dropoff point to a specific route. Points can be ordered using the orderIndex field.",
+        "operationId": "RoutePointController_addRoutePoint",
+        "parameters": [
           {
-            "accessToken": []
+            "name": "routeId",
+            "required": true,
+            "in": "path",
+            "description": "Route UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
           }
         ],
-        "summary": "List routes (mock-backed now, DB-ready later)",
-        "tags": [
-          "Admin Routes"
-        ]
-      },
-      "post": {
-        "operationId": "AdminRoutesController_create",
-        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateRouteDto"
+                "$ref": "#/components/schemas/CreateRoutePointDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Route point created successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Route not found"
           }
         },
         "security": [
           {
-            "accessToken": []
+            "bearer": []
           }
         ],
-        "summary": "Create route",
+        "summary": "Add a route point",
         "tags": [
-          "Admin Routes"
+          "Admin - Route Points"
         ]
       }
     },
-    "/admin/routes/{id}": {
-      "get": {
-        "operationId": "AdminRoutesController_get",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "summary": "Get route by id",
-        "tags": [
-          "Admin Routes"
-        ]
-      },
+    "/admin/route-points/{id}": {
       "patch": {
-        "operationId": "AdminRoutesController_update",
+        "description": "Updates information for a specific route point including name, address, coordinates, type, or order index.",
+        "operationId": "RoutePointController_updateRoutePoint",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Route Point UUID",
             "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
               "type": "string"
             }
           }
@@ -451,51 +427,436 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateRouteDto"
+                "$ref": "#/components/schemas/UpdateRoutePointDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Route point updated successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Route point not found"
           }
         },
         "security": [
           {
-            "accessToken": []
+            "bearer": []
           }
         ],
-        "summary": "Update route",
+        "summary": "Update a route point",
         "tags": [
-          "Admin Routes"
+          "Admin - Route Points"
         ]
       },
       "delete": {
-        "operationId": "AdminRoutesController_remove",
+        "description": "Permanently deletes a route point. This action cannot be undone.",
+        "operationId": "RoutePointController_deleteRoutePoint",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Route Point UUID",
             "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Route point deleted successfully"
+          },
+          "404": {
+            "description": "Route point not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a route point",
+        "tags": [
+          "Admin - Route Points"
+        ]
+      }
+    },
+    "/admin/buses/{id}/seats": {
+      "get": {
+        "description": "Retrieve all seats for a specific bus. Accessible by admins and moderators.",
+        "operationId": "SeatController_getSeatsByBus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Bus ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "List of seats retrieved successfully"
+          },
+          "404": {
+            "description": "Bus not found or inactive"
           }
         },
         "security": [
           {
-            "accessToken": []
+            "bearer": []
           }
         ],
-        "summary": "Delete route",
+        "summary": "Get all seats for a bus",
         "tags": [
-          "Admin Routes"
+          "Admin - Seats"
+        ]
+      },
+      "post": {
+        "description": "Create a new seat for a specific bus. Accessible only by admins.",
+        "operationId": "SeatController_createSeat",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Bus ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Seat created successfully"
+          },
+          "404": {
+            "description": "Bus not found or inactive"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new seat for a bus",
+        "tags": [
+          "Admin - Seats"
+        ]
+      }
+    },
+    "/admin/seats/{id}": {
+      "patch": {
+        "description": "Update details of a specific seat. Accessible only by admins.",
+        "operationId": "SeatController_updateSeat",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Seat ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seat updated successfully"
+          },
+          "404": {
+            "description": "Seat not found or inactive"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update seat information",
+        "tags": [
+          "Admin - Seats"
+        ]
+      }
+    },
+    "/admin/trips": {
+      "post": {
+        "description": "Creates a new trip with route, bus, time schedule, and base price. Automatically generates seat statuses for all seats in the bus.",
+        "operationId": "TripController_createTrip",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Trip created successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Route or Bus not found"
+          },
+          "409": {
+            "description": "Bus scheduling conflict or inactive route/bus"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new trip",
+        "tags": [
+          "Admin - Trips"
+        ]
+      },
+      "get": {
+        "description": "Retrieves a paginated list of trips with optional filters for route, bus, and status.",
+        "operationId": "TripController_getTrips",
+        "parameters": [
+          {
+            "name": "routeId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by route ID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "busId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by bus ID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by trip status",
+            "schema": {
+              "example": "scheduled",
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "cancelled",
+                "completed",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trips retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [],
+                    "total": 0,
+                    "page": 1,
+                    "limit": 10,
+                    "totalPages": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get list of trips",
+        "tags": [
+          "Admin - Trips"
+        ]
+      }
+    },
+    "/admin/trips/{id}": {
+      "get": {
+        "description": "Retrieves detailed information about a specific trip including route, bus, and seat statuses.",
+        "operationId": "TripController_getTripById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Trip UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip details retrieved successfully"
+          },
+          "404": {
+            "description": "Trip not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get trip details",
+        "tags": [
+          "Admin - Trips"
+        ]
+      },
+      "patch": {
+        "description": "Updates trip details such as route, bus, schedule, price, or status. Validates bus scheduling conflicts if time or bus is changed.",
+        "operationId": "TripController_updateTrip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Trip UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trip updated successfully"
+          },
+          "404": {
+            "description": "Trip not found"
+          },
+          "409": {
+            "description": "Bus scheduling conflict"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update trip information",
+        "tags": [
+          "Admin - Trips"
+        ]
+      }
+    },
+    "/admin/trips/{id}/cancel": {
+      "patch": {
+        "description": "Cancels a scheduled trip. Cannot cancel trips that are already completed or cancelled.",
+        "operationId": "TripController_cancelTrip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Trip UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip cancelled successfully"
+          },
+          "404": {
+            "description": "Trip not found or already cancelled/completed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a trip",
+        "tags": [
+          "Admin - Trips"
         ]
       }
     }
@@ -629,13 +990,217 @@
           "token"
         ]
       },
-      "CreateRouteDto": {
+      "CreateRoutePointDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of route point",
+            "enum": [
+              "pickup",
+              "dropoff"
+            ],
+            "example": "pickup"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the route point",
+            "example": "Bến xe Miền Đông"
+          },
+          "address": {
+            "type": "string",
+            "description": "Full address of the route point",
+            "example": "292 Đinh Bộ Lĩnh, Phường 26, Bình Thạnh, TP.HCM"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "Latitude coordinate",
+            "example": 10.8142
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Longitude coordinate",
+            "example": 106.7053
+          },
+          "orderIndex": {
+            "type": "number",
+            "description": "Order index for sorting points",
+            "example": 1,
+            "minimum": 0,
+            "default": 0
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "address",
+          "orderIndex"
+        ]
       },
-      "UpdateRouteDto": {
+      "UpdateRoutePointDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of route point",
+            "enum": [
+              "pickup",
+              "dropoff"
+            ],
+            "example": "pickup"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the route point",
+            "example": "Bến xe Miền Đông"
+          },
+          "address": {
+            "type": "string",
+            "description": "Full address of the route point",
+            "example": "292 Đinh Bộ Lĩnh, Phường 26, Bình Thạnh, TP.HCM"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "Latitude coordinate",
+            "example": 10.8142
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Longitude coordinate",
+            "example": 106.7053
+          },
+          "orderIndex": {
+            "type": "number",
+            "description": "Order index for sorting points",
+            "example": 1,
+            "minimum": 0,
+            "default": 0
+          }
+        }
+      },
+      "CreateSeatDto": {
+        "type": "object",
+        "properties": {
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code (e.g., A1, A2, B1, B2)",
+            "example": "A1"
+          },
+          "seatType": {
+            "type": "string",
+            "description": "Seat type",
+            "enum": [
+              "STANDARD",
+              "PREMIUM",
+              "VIP"
+            ],
+            "example": "STANDARD"
+          }
+        },
+        "required": [
+          "seatCode",
+          "seatType"
+        ]
+      },
+      "UpdateSeatDto": {
+        "type": "object",
+        "properties": {
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code (e.g., A1, A2, B1, B2)",
+            "example": "A1"
+          },
+          "seatType": {
+            "type": "string",
+            "description": "Seat type",
+            "enum": [
+              "STANDARD",
+              "PREMIUM",
+              "VIP"
+            ],
+            "example": "STANDARD"
+          }
+        }
+      },
+      "CreateTripDto": {
+        "type": "object",
+        "properties": {
+          "routeId": {
+            "type": "string",
+            "description": "Route ID for the trip",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "busId": {
+            "type": "string",
+            "description": "Bus ID for the trip",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "departureTime": {
+            "type": "string",
+            "description": "Departure date and time (ISO 8601 format)",
+            "example": "2025-12-05T08:00:00Z"
+          },
+          "arrivalTime": {
+            "type": "string",
+            "description": "Arrival date and time (ISO 8601 format)",
+            "example": "2025-12-05T14:30:00Z"
+          },
+          "basePrice": {
+            "type": "number",
+            "description": "Base price for the trip in VND",
+            "example": 250000,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "routeId",
+          "busId",
+          "departureTime",
+          "arrivalTime",
+          "basePrice"
+        ]
+      },
+      "UpdateTripDto": {
+        "type": "object",
+        "properties": {
+          "routeId": {
+            "type": "string",
+            "description": "Route ID for the trip",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "busId": {
+            "type": "string",
+            "description": "Bus ID for the trip",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "departureTime": {
+            "type": "string",
+            "description": "Departure date and time (ISO 8601 format)",
+            "example": "2025-12-05T08:00:00Z"
+          },
+          "arrivalTime": {
+            "type": "string",
+            "description": "Arrival date and time (ISO 8601 format)",
+            "example": "2025-12-05T14:30:00Z"
+          },
+          "basePrice": {
+            "type": "number",
+            "description": "Base price for the trip in VND",
+            "example": 250000,
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "description": "Trip status",
+            "enum": [
+              "scheduled",
+              "cancelled",
+              "completed",
+              "archived"
+            ],
+            "example": "scheduled"
+          }
+        }
       }
     }
   }

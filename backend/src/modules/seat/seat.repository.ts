@@ -9,4 +9,67 @@ export class SeatRepository {
     @InjectRepository(Seat)
     private readonly repository: Repository<Seat>,
   ) {}
+
+  async findByBusId(busId: string): Promise<Seat[]> {
+    return await this.repository.find({
+      where: { busId, isActive: true },
+      order: { seatCode: 'ASC' },
+    });
+  }
+
+  async findById(id: string): Promise<Seat | null> {
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['bus'],
+    });
+  }
+
+  async findAll(filters: {
+    busId?: string;
+    isActive?: boolean;
+    page: number;
+    limit: number;
+  }): Promise<[Seat[], number]> {
+    const { busId, isActive, page, limit } = filters;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.repository
+      .createQueryBuilder('seat')
+      .leftJoinAndSelect('seat.bus', 'bus')
+      .skip(skip)
+      .take(limit)
+      .orderBy('seat.seatCode', 'ASC');
+
+    if (busId) {
+      queryBuilder.andWhere('seat.busId = :busId', { busId });
+    }
+
+    if (isActive !== undefined) {
+      queryBuilder.andWhere('seat.isActive = :isActive', { isActive });
+    }
+
+    return await queryBuilder.getManyAndCount();
+  }
+
+  async create(seatData: Partial<Seat>): Promise<Seat> {
+    const seat = this.repository.create(seatData);
+    return await this.repository.save(seat);
+  }
+
+  async update(id: string, updateData: Partial<Seat>): Promise<Seat | null> {
+    await this.repository.update(id, updateData);
+    return await this.findById(id);
+  }
+
+  async softDelete(id: string): Promise<Seat | null> {
+    await this.repository.update(id, {
+      isActive: false,
+      deletedAt: new Date(),
+    });
+    return await this.findById(id);
+  }
+
+  async save(seat: Seat): Promise<Seat> {
+    return await this.repository.save(seat);
+  }
 }
