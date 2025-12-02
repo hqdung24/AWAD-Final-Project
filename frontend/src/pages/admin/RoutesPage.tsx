@@ -16,7 +16,7 @@ import {
   deleteAdminRoute,
   type AdminRoute,
 } from '@/services/adminRoutesService';
-import type { RouteStop } from '@/services/routeStops';
+import { listRoutesWithStops, type RouteStop, type RouteWithStops } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const initialRouteForm: AdminRoute = {
@@ -38,13 +38,24 @@ export default function RoutesPage() {
     null,
   );
 
-  const {
-    data: adminRoutes = [],
-    isLoading: routesLoading,
-  } = useQuery<AdminRoute[]>({
+  const { data: adminRoutesResult, isLoading: routesLoading } = useQuery<
+    AdminRoute[] | RouteWithStops[]
+  >({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: async () => {
+      // prefer full routes with stops; fall back to admin routes if needed
+      try {
+        return await listRoutesWithStops();
+      } catch (e) {
+        return await listAdminRoutes();
+      }
+    },
   });
+  const adminRoutes: (AdminRoute & { stops?: RouteStop[] })[] =
+    (adminRoutesResult as { data?: (AdminRoute & { stops?: RouteStop[] })[] } | undefined)
+      ?.data ??
+    (adminRoutesResult as (AdminRoute & { stops?: RouteStop[] })[]) ??
+    [];
 
   const createMutation = useMutation({
     mutationFn: createAdminRoute,

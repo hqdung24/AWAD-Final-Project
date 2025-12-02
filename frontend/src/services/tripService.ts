@@ -25,26 +25,35 @@ export type Bus = {
   seatLayout?: string;
 };
 
-export async function listTrips(): Promise<Trip[]> {
-  const res = await http.get('/trips');
-  return (res as { data: Trip[] }).data;
+export type TripListResponse = {
+  data: Trip[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export async function listTrips(): Promise<TripListResponse> {
+  const res = await http.get('/admin/trips');
+  return (res as { data: TripListResponse }).data;
 }
 
 export async function listBuses(): Promise<Bus[]> {
-  const res = await http.get('/trips/buses');
+  // Buses are exposed under the bus controller
+  const res = await http.get('/bus');
   return (res as { data: Bus[] }).data;
 }
 
 export async function createTrip(payload: Omit<Trip, 'id'>): Promise<Trip> {
-  const res = await http.post('/trips', payload);
+  const res = await http.post('/admin/trips', payload);
   return (res as { data: Trip }).data;
 }
 
 export async function updateTrip(id: string, payload: Partial<Omit<Trip, 'id'>>): Promise<Trip> {
-  const res = await http.patch(`/trips/${id}`, payload);
+  const res = await http.patch(`/admin/trips/${id}`, payload);
   return (res as { data: Trip }).data;
 }
 
 export async function deleteTrip(id: string): Promise<void> {
-  await http.delete(`/trips/${id}`);
+  await http.delete(`/admin/trips/${id}`);
 }
