@@ -35,19 +35,19 @@ export class SeatStatus {
   @ManyToOne(() => Trip, (trip) => trip.seatStatuses, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'tripId' })
+  @JoinColumn()
   trip: Trip;
 
   @ManyToOne(() => Seat, (seat) => seat.seatStatuses, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'seatId' })
+  @JoinColumn()
   seat: Seat;
 
   @ManyToOne(() => Booking, (booking) => booking.seatStatuses, {
     onDelete: 'RESTRICT',
     nullable: true,
   })
-  @JoinColumn({ name: 'bookingId' })
+  @JoinColumn()
   booking: Booking;
 }

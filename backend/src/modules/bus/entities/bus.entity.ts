@@ -41,7 +41,7 @@ export class Bus {
   @ManyToOne(() => Operator, (operator) => operator.buses, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'operatorId' })
+  @JoinColumn()
   operator: Operator;
 
   @OneToMany(() => Seat, (seat) => seat.bus)

@@ -40,7 +40,7 @@ export class Route {
   @ManyToOne(() => Operator, (operator) => operator.routes, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'operatorId' })
+  @JoinColumn()
   operator: Operator;
 
   @OneToMany(() => Trip, (trip) => trip.route)

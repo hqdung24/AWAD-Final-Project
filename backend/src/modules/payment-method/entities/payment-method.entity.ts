@@ -33,6 +33,6 @@ export class PaymentMethod {
   @ManyToOne(() => User, (user) => user.paymentMethods, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn()
   user: User;
 }

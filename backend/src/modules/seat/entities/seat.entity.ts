@@ -34,7 +34,7 @@ export class Seat {
   @ManyToOne(() => Bus, (bus) => bus.seats, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'busId' })
+  @JoinColumn()
   bus: Bus;
 
   @OneToMany(() => SeatStatus, (seatStatus) => seatStatus.seat)

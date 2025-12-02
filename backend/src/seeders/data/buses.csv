@@ -1,0 +1,11 @@
+plate_number,model,type,capacity,operator_name,amenities
+51A-111.11,Thaco Universe,standard,40,Phương Trang,"[""wifi"",""air_conditioner"",""usb_charging""]"
+51A-222.22,Thaco Mobihome,sleeper,32,Phương Trang,"[""wifi"",""air_conditioner"",""usb_charging"",""blanket"",""water""]"
+51A-333.33,Thaco Universe,standard,40,Phương Trang,"[""wifi"",""air_conditioner""]"
+51A-444.44,Thaco Mobihome,sleeper,32,Phương Trang,"[""wifi"",""air_conditioner"",""usb_charging"",""blanket"",""water""]"
+29B-111.11,Hyundai Universe,standard,40,Thành Bưởi,"[""wifi"",""air_conditioner"",""usb_charging""]"
+29B-222.22,Hyundai Aero,sleeper,32,Thành Bưởi,"[""wifi"",""air_conditioner"",""usb_charging"",""blanket""]"
+29B-333.33,Hyundai Universe,standard,40,Thành Bưởi,"[""air_conditioner""]"
+51B-111.11,Mercedes Sprinter,vip,18,Limousine VIP,"[""wifi"",""air_conditioner"",""usb_charging"",""massage"",""entertainment"",""water"",""snack""]"
+51B-222.22,Ford Transit Limousine,vip,12,Limousine VIP,"[""wifi"",""air_conditioner"",""usb_charging"",""massage"",""entertainment"",""water"",""snack"",""blanket""]"
+51B-333.33,Mercedes Sprinter,vip,18,Limousine VIP,"[""wifi"",""air_conditioner"",""usb_charging"",""massage"",""entertainment""]"

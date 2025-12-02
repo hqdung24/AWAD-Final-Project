@@ -35,6 +35,6 @@ export class Payment {
   @ManyToOne(() => Booking, (booking) => booking.payments, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'bookingId' })
+  @JoinColumn()
   booking: Booking;
 }
