@@ -15,7 +15,9 @@
             "accessToken": []
           }
         ],
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/users/{id}": {
@@ -64,7 +66,9 @@
           }
         ],
         "summary": "Fetch user by id",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/auth/signin": {
@@ -94,7 +98,9 @@
           }
         },
         "summary": "Sign in to an existing user account",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/google-authentication": {
@@ -106,7 +112,9 @@
             "description": ""
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/signup": {
@@ -145,7 +153,9 @@
           }
         },
         "summary": "Create a new user account",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/refresh": {
@@ -182,7 +192,9 @@
           }
         ],
         "summary": "Refresh access token using refresh token",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/signout": {
@@ -194,7 +206,9 @@
             "description": ""
           }
         },
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/request-password-reset": {
@@ -213,7 +227,9 @@
                     "format": "email"
                   }
                 },
-                "required": ["email"],
+                "required": [
+                  "email"
+                ],
                 "example": {
                   "email": "user@example.com"
                 }
@@ -227,7 +243,9 @@
           }
         },
         "summary": "Request password reset email",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/reset-password": {
@@ -250,7 +268,9 @@
           }
         },
         "summary": "Reset user password",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/auth/verify-email": {
@@ -273,7 +293,9 @@
           }
         },
         "summary": "Verify user email address",
-        "tags": ["Auth"]
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/upload/file": {
@@ -303,7 +325,9 @@
           }
         },
         "summary": "Upload a file",
-        "tags": ["Upload"]
+        "tags": [
+          "Upload"
+        ]
       }
     },
     "/dashboard/admin": {
@@ -315,7 +339,9 @@
             "description": ""
           }
         },
-        "tags": ["Dashboard"]
+        "tags": [
+          "Dashboard"
+        ]
       }
     },
     "/dashboard/user": {
@@ -327,7 +353,9 @@
             "description": ""
           }
         },
-        "tags": ["Dashboard"]
+        "tags": [
+          "Dashboard"
+        ]
       }
     },
     "/admin/routes": {
@@ -345,7 +373,9 @@
           }
         ],
         "summary": "List routes (mock-backed now, DB-ready later)",
-        "tags": ["Admin Routes"]
+        "tags": [
+          "Admin Routes"
+        ]
       },
       "post": {
         "operationId": "AdminRoutesController_create",
@@ -371,7 +401,9 @@
           }
         ],
         "summary": "Create route",
-        "tags": ["Admin Routes"]
+        "tags": [
+          "Admin Routes"
+        ]
       }
     },
     "/admin/routes/{id}": {
@@ -398,7 +430,9 @@
           }
         ],
         "summary": "Get route by id",
-        "tags": ["Admin Routes"]
+        "tags": [
+          "Admin Routes"
+        ]
       },
       "patch": {
         "operationId": "AdminRoutesController_update",
@@ -433,7 +467,9 @@
           }
         ],
         "summary": "Update route",
-        "tags": ["Admin Routes"]
+        "tags": [
+          "Admin Routes"
+        ]
       },
       "delete": {
         "operationId": "AdminRoutesController_remove",
@@ -458,400 +494,9 @@
           }
         ],
         "summary": "Delete route",
-        "tags": ["Admin Routes"]
-      }
-    },
-    "/trips": {
-      "get": {
-        "operationId": "TripManagementController_list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      },
-      "post": {
-        "operationId": "TripManagementController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTripDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      }
-    },
-    "/trips/buses": {
-      "get": {
-        "operationId": "TripManagementController_listBuses",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      }
-    },
-    "/trips/{id}": {
-      "get": {
-        "operationId": "TripManagementController_get",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      },
-      "patch": {
-        "operationId": "TripManagementController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTripDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      },
-      "delete": {
-        "operationId": "TripManagementController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Trips"]
-      }
-    },
-    "/buses": {
-      "get": {
-        "operationId": "BusManagementController_list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      },
-      "post": {
-        "operationId": "BusManagementController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      }
-    },
-    "/buses/{id}": {
-      "patch": {
-        "operationId": "BusManagementController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      },
-      "delete": {
-        "operationId": "BusManagementController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      }
-    },
-    "/buses/assignments/all": {
-      "get": {
-        "operationId": "BusManagementController_listAssignments",
-        "parameters": [
-          {
-            "name": "busId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      }
-    },
-    "/buses/{id}/assign": {
-      "post": {
-        "operationId": "BusManagementController_assign",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusAssignmentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      }
-    },
-    "/buses/assignments/{id}": {
-      "delete": {
-        "operationId": "BusManagementController_deleteAssignment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      }
-    },
-    "/buses/{id}/seat-map": {
-      "get": {
-        "operationId": "BusManagementController_getSeatMap",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
-      },
-      "patch": {
-        "operationId": "BusManagementController_updateSeatMap",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SeatMapDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "accessToken": []
-          }
-        ],
-        "tags": ["Buses"]
+        "tags": [
+          "Admin Routes"
+        ]
       }
     }
   },
@@ -894,7 +539,10 @@
             "description": "The password of the user"
           }
         },
-        "required": ["emailOrUsername", "password"]
+        "required": [
+          "emailOrUsername",
+          "password"
+        ]
       },
       "SignInResponseDto": {
         "type": "object",
@@ -929,7 +577,13 @@
             "example": "strongPassword123"
           }
         },
-        "required": ["firstName", "lastName", "username", "email", "password"]
+        "required": [
+          "firstName",
+          "lastName",
+          "username",
+          "email",
+          "password"
+        ]
       },
       "VerifyTokenResetPasswordDto": {
         "type": "object",
@@ -950,7 +604,11 @@
             "description": "The new password for resetting the user account"
           }
         },
-        "required": ["email", "token", "password"]
+        "required": [
+          "email",
+          "token",
+          "password"
+        ]
       },
       "VerifyTokenDto": {
         "type": "object",
@@ -966,37 +624,16 @@
             "description": "The verification token to be verified"
           }
         },
-        "required": ["email", "token"]
+        "required": [
+          "email",
+          "token"
+        ]
       },
       "CreateRouteDto": {
         "type": "object",
         "properties": {}
       },
       "UpdateRouteDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateTripDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateTripDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateBusDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateBusDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "BusAssignmentDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "SeatMapDto": {
         "type": "object",
         "properties": {}
       }

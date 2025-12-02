@@ -25,7 +25,6 @@ export class UploadController {
   @ApiOperation({ summary: 'Upload a file' })
   @Post('file')
   public uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
     return this.uploadService.uploadFile(file);
   }
 }
