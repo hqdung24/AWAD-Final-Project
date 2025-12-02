@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit, forwardRef } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
-import { jwtConfig } from '../config/jwt.config';
+import { jwtConfig } from '../../../config/jwt.config';
 import { GoogleTokenDto } from './dtos/google-token.dto';
 import { UsersService } from '@/modules/users/providers/users.service';
 import { GenerateTokensProvider } from '../providers/generate-tokens.provider';

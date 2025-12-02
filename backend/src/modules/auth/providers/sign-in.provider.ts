@@ -36,6 +36,7 @@ export class SignInProvider {
     }
 
     console.log(user);
+    console.log(password);
     if (!user) {
       throw new BadRequestException('User not found');
     }

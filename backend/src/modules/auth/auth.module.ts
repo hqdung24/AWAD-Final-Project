@@ -6,7 +6,7 @@ import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
 import { SignInProvider } from './providers/sign-in.provider';
 import { ConfigModule } from '@nestjs/config';
-import { jwtConfig } from '@/modules/auth/config/jwt.config';
+import { jwtConfig } from '@/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { GenerateTokensProvider } from './providers/generate-tokens.provider';
 import { RefreshTokensProvider } from './providers/refresh-tokens.provider';
@@ -17,6 +17,8 @@ import { GoogleAuthenticationController } from './social/google-authentication.c
 import { GoogleAuthenticationService } from './social/google-authentication.service';
 import { AccessControlProvider } from './providers/access-control.provider';
 import { RoleGuard } from './guard/role-based.guard';
+import { EmailProvider } from './providers/email-provider.provider';
+import { appConfig } from '@/config/app.config';
 @Module({
   controllers: [AuthController, GoogleAuthenticationController],
   providers: [
@@ -33,10 +35,12 @@ import { RoleGuard } from './guard/role-based.guard';
     RoleGuard,
     GoogleAuthenticationService,
     AccessControlProvider,
+    EmailProvider,
   ],
   imports: [
     forwardRef(() => UsersModule),
     ConfigModule.forFeature(jwtConfig),
+    ConfigModule.forFeature(appConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
   exports: [AuthService, HashingProvider],

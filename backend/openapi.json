@@ -15,9 +15,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       }
     },
     "/users/{id}": {
@@ -66,9 +64,7 @@
           }
         ],
         "summary": "Fetch user by id",
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       }
     },
     "/auth/signin": {
@@ -98,9 +94,7 @@
           }
         },
         "summary": "Sign in to an existing user account",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/google-authentication": {
@@ -112,9 +106,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/signup": {
@@ -153,9 +145,7 @@
           }
         },
         "summary": "Create a new user account",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/refresh": {
@@ -192,9 +182,7 @@
           }
         ],
         "summary": "Refresh access token using refresh token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/signout": {
@@ -206,9 +194,86 @@
             "description": ""
           }
         },
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/request-password-reset": {
+      "post": {
+        "operationId": "AuthController_requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": ["email"],
+                "example": {
+                  "email": "user@example.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Request password reset email",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTokenResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Reset user password",
+        "tags": ["Auth"]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Verify user email address",
+        "tags": ["Auth"]
       }
     },
     "/upload/file": {
@@ -238,9 +303,7 @@
           }
         },
         "summary": "Upload a file",
-        "tags": [
-          "Upload"
-        ]
+        "tags": ["Upload"]
       }
     },
     "/dashboard/admin": {
@@ -252,9 +315,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       }
     },
     "/dashboard/user": {
@@ -266,9 +327,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Dashboard"
-        ]
+        "tags": ["Dashboard"]
       }
     },
     "/admin/routes": {
@@ -286,9 +345,7 @@
           }
         ],
         "summary": "List routes (mock-backed now, DB-ready later)",
-        "tags": [
-          "Admin Routes"
-        ]
+        "tags": ["Admin Routes"]
       },
       "post": {
         "operationId": "AdminRoutesController_create",
@@ -314,9 +371,7 @@
           }
         ],
         "summary": "Create route",
-        "tags": [
-          "Admin Routes"
-        ]
+        "tags": ["Admin Routes"]
       }
     },
     "/admin/routes/{id}": {
@@ -343,9 +398,7 @@
           }
         ],
         "summary": "Get route by id",
-        "tags": [
-          "Admin Routes"
-        ]
+        "tags": ["Admin Routes"]
       },
       "patch": {
         "operationId": "AdminRoutesController_update",
@@ -380,9 +433,7 @@
           }
         ],
         "summary": "Update route",
-        "tags": [
-          "Admin Routes"
-        ]
+        "tags": ["Admin Routes"]
       },
       "delete": {
         "operationId": "AdminRoutesController_remove",
@@ -407,9 +458,7 @@
           }
         ],
         "summary": "Delete route",
-        "tags": [
-          "Admin Routes"
-        ]
+        "tags": ["Admin Routes"]
       }
     },
     "/trips": {
@@ -426,9 +475,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       },
       "post": {
         "operationId": "TripManagementController_create",
@@ -453,9 +500,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       }
     },
     "/trips/buses": {
@@ -472,9 +517,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       }
     },
     "/trips/{id}": {
@@ -500,9 +543,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       },
       "patch": {
         "operationId": "TripManagementController_update",
@@ -536,9 +577,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       },
       "delete": {
         "operationId": "TripManagementController_remove",
@@ -562,9 +601,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Trips"
-        ]
+        "tags": ["Trips"]
       }
     },
     "/buses": {
@@ -581,9 +618,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       },
       "post": {
         "operationId": "BusManagementController_create",
@@ -608,9 +643,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     },
     "/buses/{id}": {
@@ -646,9 +679,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       },
       "delete": {
         "operationId": "BusManagementController_remove",
@@ -672,9 +703,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     },
     "/buses/assignments/all": {
@@ -700,9 +729,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     },
     "/buses/{id}/assign": {
@@ -738,9 +765,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     },
     "/buses/assignments/{id}": {
@@ -766,9 +791,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     },
     "/buses/{id}/seat-map": {
@@ -794,9 +817,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       },
       "patch": {
         "operationId": "BusManagementController_updateSeatMap",
@@ -830,9 +851,7 @@
             "accessToken": []
           }
         ],
-        "tags": [
-          "Buses"
-        ]
+        "tags": ["Buses"]
       }
     }
   },
@@ -845,7 +864,7 @@
   "tags": [],
   "servers": [
     {
-      "url": "http://localhost:3600/api"
+      "url": "http://localhost:3000/api"
     }
   ],
   "components": {
@@ -863,7 +882,19 @@
     "schemas": {
       "SignInDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "emailOrUsername": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email address or username of the user"
+          },
+          "password": {
+            "type": "string",
+            "example": "strongPassword123",
+            "description": "The password of the user"
+          }
+        },
+        "required": ["emailOrUsername", "password"]
       },
       "SignInResponseDto": {
         "type": "object",
@@ -898,13 +929,44 @@
             "example": "strongPassword123"
           }
         },
-        "required": [
-          "firstName",
-          "lastName",
-          "username",
-          "email",
-          "password"
-        ]
+        "required": ["firstName", "lastName", "username", "email", "password"]
+      },
+      "VerifyTokenResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email address associated with the user account"
+          },
+          "token": {
+            "type": "string",
+            "example": "verification-token-12345",
+            "description": "The verification token to be verified"
+          },
+          "password": {
+            "type": "string",
+            "example": "newPassword123",
+            "description": "The new password for resetting the user account"
+          }
+        },
+        "required": ["email", "token", "password"]
+      },
+      "VerifyTokenDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email address associated with the user account"
+          },
+          "token": {
+            "type": "string",
+            "example": "verification-token-12345",
+            "description": "The verification token to be verified"
+          }
+        },
+        "required": ["email", "token"]
       },
       "CreateRouteDto": {
         "type": "object",

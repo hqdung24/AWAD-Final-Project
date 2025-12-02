@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { jwtConfig } from '@/modules/auth/config/jwt.config';
+import { jwtConfig } from '@/config/jwt.config';
 import {
   CanActivate,
   ExecutionContext,
