@@ -3,9 +3,11 @@ import { TripRepository } from './trip.repository';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripQueryDto } from './dto/trip-query.dto';
+import { SearchTripQueryDto } from './dto/search-trip-query.dto';
 import { Trip } from './entities/trip.entity';
 import { TripValidationProvider } from './providers/trip-validation.provider';
 import { SeatStatusGeneratorProvider } from './providers/seat-status-generator.provider';
+import { TripSearchProvider } from './providers/trip-search.provider';
 
 @Injectable()
 export class TripService {
@@ -13,6 +15,7 @@ export class TripService {
     private readonly tripRepository: TripRepository,
     private readonly tripValidationProvider: TripValidationProvider,
     private readonly seatStatusGenerator: SeatStatusGeneratorProvider,
+    private readonly tripSearchProvider: TripSearchProvider,
   ) {}
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -154,5 +157,47 @@ export class TripService {
       status: 'cancelled',
     });
     return updatedTrip!; // ensure exists
+  }
+
+  // Public API methods for users to search and view trips
+  async searchTrips(query: SearchTripQueryDto): Promise<{
+    data: Trip[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    availableSeats?: number[];
+  }> {
+    const result = await this.tripSearchProvider.searchTrips(query);
+
+    // Calculate available seats for each trip
+    const tripsWithSeats = result.trips.map((trip) => {
+      const availableSeats = trip.seatStatuses
+        ? trip.seatStatuses.filter((ss) => ss.state === 'available').length
+        : 0;
+
+      return {
+        ...trip,
+        availableSeatsCount: availableSeats,
+      };
+    });
+
+    return {
+      data: tripsWithSeats,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: Math.ceil(result.total / result.limit),
+    };
+  }
+
+  async getTripDetail(id: string): Promise<Trip> {
+    const trip = await this.tripSearchProvider.getTripDetail(id);
+
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${id} not found`);
+    }
+
+    return trip;
   }
 }

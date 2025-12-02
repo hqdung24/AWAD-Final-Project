@@ -114,13 +114,13 @@ async function seed() {
 
     /*
     // Clear existing data (in reverse order of dependencies)
-    console.log('🗑️  Clearing existing data...');
-    await AppDataSource.getRepository(Trip).clear();
-    await AppDataSource.getRepository(Seat).clear();
-    await AppDataSource.getRepository(Bus).clear();
-    await AppDataSource.getRepository(Route).clear();
-    await AppDataSource.getRepository(Operator).clear();
-    console.log('✅ Existing data cleared'); */
+    // console.log('🗑️  Clearing existing data...');
+    // await AppDataSource.getRepository(Trip).clear();
+    // await AppDataSource.getRepository(Seat).clear();
+    // await AppDataSource.getRepository(Bus).clear();
+    // await AppDataSource.getRepository(Route).clear();
+    // await AppDataSource.getRepository(Operator).clear();
+    // console.log('✅ Existing data cleared'); */
 
     // 1. Seed Operators
     console.log('📦 Seeding operators...');
@@ -217,6 +217,7 @@ async function seed() {
     // 5. Seed Trips
     console.log('📦 Seeding trips...');
     const tripRows = readCSV<TripRow>('trips.csv');
+    const tripMap = new Map<string, Trip>();
 
     for (const row of tripRows) {
       const route = routeMap.get(
@@ -244,9 +245,40 @@ async function seed() {
       trip.basePrice = parseFloat(row.base_price);
       trip.status = row.status;
 
-      await AppDataSource.getRepository(Trip).save(trip);
+      const savedTrip = await AppDataSource.getRepository(Trip).save(trip);
+      tripMap.set(`${row.bus_plate}-${row.departure_time}`, savedTrip);
       console.log(
         `  ✓ Created trip: ${row.route_origin} → ${row.route_destination} at ${row.departure_time}`,
+      );
+    }
+
+    // 6. Seed Seat Statuses (auto-generate for each trip)
+    console.log('📦 Seeding seat statuses...');
+    let seatStatusCount = 0;
+
+    for (const [key, trip] of tripMap) {
+      // Get all seats for this trip's bus
+      // key does not matter here, temporary variable to satisfy linter
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _key = key;
+
+      const seats = await AppDataSource.getRepository(Seat).find({
+        where: { busId: trip.busId, isActive: true },
+      });
+
+      // Create seat status for each seat
+      for (const seat of seats) {
+        const seatStatus = new SeatStatus();
+        seatStatus.tripId = trip.id;
+        seatStatus.seatId = seat.id;
+        seatStatus.state = 'available';
+
+        await AppDataSource.getRepository(SeatStatus).save(seatStatus);
+        seatStatusCount++;
+      }
+
+      console.log(
+        `  ✓ Created ${seats.length} seat statuses for trip ${trip.id}`,
       );
     }
 
@@ -257,7 +289,8 @@ async function seed() {
     console.log(`   - Routes: ${routeMap.size}`);
     console.log(`   - Buses: ${busMap.size}`);
     console.log(`   - Seats: ${seatCount}`);
-    console.log(`   - Trips: ${tripRows.length}`);
+    console.log(`   - Trips: ${tripMap.size}`);
+    console.log(`   - Seat Statuses: ${seatStatusCount}`);
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     process.exit(1);

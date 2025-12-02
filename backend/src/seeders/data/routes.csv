@@ -1,21 +1,16 @@
 origin,destination,distance,duration,operator_name
-TP.HCM,Đà Lạt,320,6.5,Phương Trang
-TP.HCM,Vũng Tàu,95,2,Phương Trang
-TP.HCM,Nha Trang,450,9,Phương Trang
-TP.HCM,Phan Thiết,220,4.5,Phương Trang
-TP.HCM,Mũi Né,240,5,Phương Trang
-Hà Nội,Hải Phòng,120,2.5,Thành Bưởi
-Hà Nội,Ninh Bình,90,2,Thành Bưởi
-Hà Nội,Hạ Long,180,3.5,Thành Bưởi
-Hà Nội,Sapa,350,7,Thành Bưởi
-Hà Nội,Thanh Hóa,180,3.5,Thành Bưởi
-TP.HCM,Cần Thơ,170,3.5,Limousine VIP
-TP.HCM,Tây Ninh,100,2,Limousine VIP
-TP.HCM,Bến Tre,85,2,Limousine VIP
-TP.HCM,Long Xuyên,190,4,Limousine VIP
-TP.HCM,Châu Đốc,250,5,Limousine VIP
-Đà Nẵng,Hội An,30,0.5,Phương Trang
-Đà Nẵng,Huế,100,2.5,Phương Trang
-Đà Nẵng,Quy Nhơn,300,6,Thành Bưởi
-Cần Thơ,Cà Mau,180,4,Limousine VIP
-Cần Thơ,Rạch Giá,120,2.5,Limousine VIP
+Ho Chi Minh City,Dalat,320,6.5,Phương Trang
+Ho Chi Minh City,Nha Trang,450,9,Phương Trang
+Ho Chi Minh City,Can Tho,170,3.5,Limousine VIP
+Hanoi,Hai Phong,120,2.5,Thành Bưởi
+Hanoi,Da Nang,760,14,Thành Bưởi
+Da Nang,Hue,100,2.5,Phương Trang
+Da Nang,Nha Trang,550,10,Phương Trang
+Da Nang,Ho Chi Minh City,950,18,Phương Trang
+Nha Trang,Ho Chi Minh City,450,9,Phương Trang
+Nha Trang,Da Nang,550,10,Phương Trang
+Dalat,Ho Chi Minh City,320,6.5,Phương Trang
+Hue,Da Nang,100,2.5,Phương Trang
+Hue,Hanoi,660,13,Thành Bưởi
+Can Tho,Ho Chi Minh City,170,3.5,Limousine VIP
+Hai Phong,Hanoi,120,2.5,Thành Bưởi

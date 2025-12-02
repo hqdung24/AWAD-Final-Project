@@ -20,6 +20,8 @@ import UserDashboard from './pages/home/UserDashboard';
 import TripsPage from './pages/admin/TripsPage';
 import RoutesPage from './pages/admin/RoutesPage';
 import BusesPage from './pages/admin/BusesPage';
+import ForbiddenPage from './pages/errors/403';
+import NotFoundPage from './pages/errors/404';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -114,6 +116,8 @@ function App() {
                   </PublicRoute>
                 }
               />
+              <Route path="/403" element={<ForbiddenPage />} />
+              <Route path="/404" element={<NotFoundPage />} />
             </Routes>
           </QueryClientProvider>
         </BrowserRouter>

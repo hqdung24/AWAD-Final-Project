@@ -713,6 +713,61 @@
               "example": 10,
               "type": "number"
             }
+          },
+          {
+            "description": "Filter by route ID",
+            "required": false,
+            "name": "routeId",
+            "in": "query",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by bus ID",
+            "required": false,
+            "name": "busId",
+            "in": "query",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440001",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by trip status",
+            "required": false,
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "example": "scheduled",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Number of items per page",
+            "required": false,
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
           }
         ],
         "responses": {
@@ -857,6 +912,402 @@
         "summary": "Cancel a trip",
         "tags": [
           "Admin - Trips"
+        ]
+      }
+    },
+    "/trips/search": {
+      "get": {
+        "description": "Search and filter trips based on origin, destination, date, price, time slots, bus types, and amenities. Returns trips from the specified date onwards (not just on that exact date). Supports pagination and sorting. All filters are optional.",
+        "operationId": "PublicTripController_searchTrips",
+        "parameters": [
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "description": "Origin city (must match route origin exactly)",
+            "schema": {
+              "example": "Ho Chi Minh City",
+              "type": "string"
+            }
+          },
+          {
+            "name": "destination",
+            "required": false,
+            "in": "query",
+            "description": "Destination city (must match route destination exactly)",
+            "schema": {
+              "example": "Hanoi",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Departure date (returns trips from this date onwards, format: YYYY-MM-DD)",
+            "schema": {
+              "example": "2025-12-03",
+              "type": "string"
+            }
+          },
+          {
+            "name": "passengers",
+            "required": false,
+            "in": "query",
+            "description": "Number of passengers (for checking available seats)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minPrice",
+            "required": false,
+            "in": "query",
+            "description": "Minimum price filter",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "description": "Maximum price filter",
+            "schema": {
+              "minimum": 0,
+              "example": 500000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "timeSlots",
+            "required": false,
+            "in": "query",
+            "description": "Filter by departure time slots (comma-separated)",
+            "schema": {
+              "example": "morning,afternoon",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "morning",
+                  "afternoon",
+                  "evening",
+                  "night"
+                ]
+              }
+            }
+          },
+          {
+            "name": "busTypes",
+            "required": false,
+            "in": "query",
+            "description": "Filter by bus types (comma-separated)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "amenities",
+            "required": false,
+            "in": "query",
+            "description": "Filter by required amenities (comma-separated, trip must have ALL specified amenities)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort results by",
+            "schema": {
+              "default": "price_asc",
+              "example": "price_asc",
+              "type": "string",
+              "enum": [
+                "price_asc",
+                "price_desc",
+                "time_asc",
+                "time_desc",
+                "duration_asc",
+                "duration_desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of trips matching search criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "departureTime": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "arrivalTime": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "basePrice": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "availableSeatsCount": {
+                            "type": "number"
+                          },
+                          "route": {
+                            "type": "object",
+                            "properties": {
+                              "origin": {
+                                "type": "string"
+                              },
+                              "destination": {
+                                "type": "string"
+                              },
+                              "distance": {
+                                "type": "number"
+                              },
+                              "duration": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "bus": {
+                            "type": "object",
+                            "properties": {
+                              "plateNumber": {
+                                "type": "string"
+                              },
+                              "model": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "capacity": {
+                                "type": "number"
+                              },
+                              "amenities": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters"
+          }
+        },
+        "summary": "Search for available trips",
+        "tags": [
+          "Trips - Public"
+        ]
+      }
+    },
+    "/trips/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific trip including route, bus, and seat availability. Returns full seat status information for seat selection.",
+        "operationId": "PublicTripController_getTripDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Trip UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "departureTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "arrivalTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "basePrice": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "route": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "origin": {
+                          "type": "string"
+                        },
+                        "destination": {
+                          "type": "string"
+                        },
+                        "distance": {
+                          "type": "number"
+                        },
+                        "duration": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "bus": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "plateNumber": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "capacity": {
+                          "type": "number"
+                        },
+                        "amenities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "seatStatuses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "available",
+                              "booked",
+                              "locked"
+                            ]
+                          },
+                          "seat": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "seatCode": {
+                                "type": "string"
+                              },
+                              "seatType": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trip not found"
+          }
+        },
+        "summary": "Get trip details",
+        "tags": [
+          "Trips - Public"
         ]
       }
     }
@@ -1091,8 +1542,8 @@
             "description": "Seat type",
             "enum": [
               "STANDARD",
-              "PREMIUM",
-              "VIP"
+              "VIP",
+              "PREMIUM"
             ],
             "example": "STANDARD"
           }
@@ -1115,8 +1566,8 @@
             "description": "Seat type",
             "enum": [
               "STANDARD",
-              "PREMIUM",
-              "VIP"
+              "VIP",
+              "PREMIUM"
             ],
             "example": "STANDARD"
           }
