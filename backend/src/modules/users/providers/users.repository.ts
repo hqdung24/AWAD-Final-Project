@@ -28,6 +28,7 @@ export class UsersRepository {
         firstName: googleUser.firstName,
         lastName: googleUser.lastName,
         googleId: googleUser.googleId,
+        role: 'ADMIN',
       });
       return this.usersRepository.save(newUser);
     } catch (error) {

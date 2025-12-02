@@ -32,6 +32,6 @@ export class Notification {
   @ManyToOne(() => Booking, (booking) => booking.notifications, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'bookingId' })
+  @JoinColumn()
   booking: Booking;
 }

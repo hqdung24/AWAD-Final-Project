@@ -9,6 +9,6 @@ import { BusRepository } from './bus.repository';
   imports: [TypeOrmModule.forFeature([Bus])],
   controllers: [BusController],
   providers: [BusService, BusRepository],
-  exports: [BusService, BusRepository],
+  exports: [BusService],
 })
 export class BusModule {}

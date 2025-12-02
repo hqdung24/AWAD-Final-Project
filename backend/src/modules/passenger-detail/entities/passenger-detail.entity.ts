@@ -29,6 +29,6 @@ export class PassengerDetail {
   @ManyToOne(() => Booking, (booking) => booking.passengerDetails, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'bookingId' })
+  @JoinColumn()
   booking: Booking;
 }

@@ -1,0 +1,21 @@
+origin,destination,distance,duration,operator_name
+TP.HCM,Đà Lạt,320,6.5,Phương Trang
+TP.HCM,Vũng Tàu,95,2,Phương Trang
+TP.HCM,Nha Trang,450,9,Phương Trang
+TP.HCM,Phan Thiết,220,4.5,Phương Trang
+TP.HCM,Mũi Né,240,5,Phương Trang
+Hà Nội,Hải Phòng,120,2.5,Thành Bưởi
+Hà Nội,Ninh Bình,90,2,Thành Bưởi
+Hà Nội,Hạ Long,180,3.5,Thành Bưởi
+Hà Nội,Sapa,350,7,Thành Bưởi
+Hà Nội,Thanh Hóa,180,3.5,Thành Bưởi
+TP.HCM,Cần Thơ,170,3.5,Limousine VIP
+TP.HCM,Tây Ninh,100,2,Limousine VIP
+TP.HCM,Bến Tre,85,2,Limousine VIP
+TP.HCM,Long Xuyên,190,4,Limousine VIP
+TP.HCM,Châu Đốc,250,5,Limousine VIP
+Đà Nẵng,Hội An,30,0.5,Phương Trang
+Đà Nẵng,Huế,100,2.5,Phương Trang
+Đà Nẵng,Quy Nhơn,300,6,Thành Bưởi
+Cần Thơ,Cà Mau,180,4,Limousine VIP
+Cần Thơ,Rạch Giá,120,2.5,Limousine VIP

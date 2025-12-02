@@ -34,12 +34,12 @@ export class Feedback {
   @ManyToOne(() => Trip, (trip) => trip.feedbacks, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'tripId' })
+  @JoinColumn()
   trip: Trip;
 
   @ManyToOne(() => User, (user) => user.feedbacks, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn()
   user: User;
 }

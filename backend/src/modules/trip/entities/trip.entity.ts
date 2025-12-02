@@ -41,13 +41,13 @@ export class Trip {
   @ManyToOne(() => Route, (route) => route.trips, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'routeId' })
+  @JoinColumn()
   route: Route;
 
   @ManyToOne(() => Bus, (bus) => bus.trips, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'busId' })
+  @JoinColumn()
   bus: Bus;
 
   @OneToMany(() => Booking, (booking) => booking.trip)

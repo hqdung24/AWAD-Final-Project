@@ -9,4 +9,81 @@ export class SeatStatusRepository {
     @InjectRepository(SeatStatus)
     private readonly repository: Repository<SeatStatus>,
   ) {}
+
+  async save(seatStatus: SeatStatus): Promise<SeatStatus> {
+    return await this.repository.save(seatStatus);
+  }
+
+  async findById(id: string): Promise<SeatStatus | null> {
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['trip', 'seat'],
+    });
+  }
+
+  async findByTripId(tripId: string): Promise<SeatStatus[]> {
+    return await this.repository.find({
+      where: { tripId },
+      relations: ['seat'],
+      order: { seat: { seatCode: 'ASC' } },
+    });
+  }
+
+  async findBySeatId(seatId: string): Promise<SeatStatus[]> {
+    return await this.repository.find({
+      where: { seatId },
+      relations: ['trip'],
+      order: { trip: { departureTime: 'DESC' } },
+    });
+  }
+
+  async findAll(filters: {
+    tripId?: string;
+    seatId?: string;
+    status?: string;
+    page: number;
+    limit: number;
+  }): Promise<[SeatStatus[], number]> {
+    const { tripId, seatId, status, page, limit } = filters;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.repository
+      .createQueryBuilder('seatStatus')
+      .leftJoinAndSelect('seatStatus.trip', 'trip')
+      .leftJoinAndSelect('seatStatus.seat', 'seat')
+      .skip(skip)
+      .take(limit)
+      .orderBy('trip.departureTime', 'DESC');
+
+    if (tripId) {
+      queryBuilder.andWhere('seatStatus.tripId = :tripId', { tripId });
+    }
+
+    if (seatId) {
+      queryBuilder.andWhere('seatStatus.seatId = :seatId', { seatId });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('seatStatus.status = :status', { status });
+    }
+
+    return await queryBuilder.getManyAndCount();
+  }
+
+  async create(seatStatusData: Partial<SeatStatus>): Promise<SeatStatus> {
+    const seatStatus = this.repository.create(seatStatusData);
+    return await this.repository.save(seatStatus);
+  }
+
+  async update(
+    id: string,
+    updateData: Partial<SeatStatus>,
+  ): Promise<SeatStatus | null> {
+    await this.repository.update(id, updateData);
+    return await this.findById(id);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
 }

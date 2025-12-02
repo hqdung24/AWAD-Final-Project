@@ -10,7 +10,10 @@ import { type Express } from 'express';
 import { UploadService } from './providers/upload.service';
 import { Auth } from '../auth/decorator/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
+import { Roles } from '../auth/decorator/roles.decorator';
+import { RoleType } from '../auth/enums/roles-type.enum';
 @Auth(AuthType.None)
+@Roles(RoleType.ADMIN, RoleType.USER, RoleType.MODERATOR)
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
