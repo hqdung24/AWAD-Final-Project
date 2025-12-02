@@ -1,10 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-type SummaryCard = { title: string; value: number; delta?: number; currency?: string };
+type SummaryCard = {
+  title: string;
+  value: number;
+  delta?: number;
+  currency?: string;
+};
 type TrendPoint = { day: string; bookings: number };
 type TopRoute = { route: string; bookings: number; revenue: number };
-type RecentBooking = { id: string; user: string; route: string; status: string };
+type RecentBooking = {
+  id: string;
+  user: string;
+  route: string;
+  status: string;
+};
 
 @Injectable()
 export class DashboardService {
@@ -30,7 +40,12 @@ export class DashboardService {
       summaryCards: [
         { title: 'Total Bookings', value: 1234, delta: 0.12 },
         { title: 'Active Users', value: 856, delta: 0.05 },
-        { title: 'Revenue Today', value: 45200000, currency: 'VND', delta: 0.08 },
+        {
+          title: 'Revenue Today',
+          value: 45200000,
+          currency: 'VND',
+          delta: 0.08,
+        },
       ],
       trend: [
         { day: 'Mon', bookings: 120 },
@@ -47,9 +62,24 @@ export class DashboardService {
         { route: 'HCM → Can Tho', bookings: 142, revenue: 2800000 },
       ],
       recentBookings: [
-        { id: 'BK20251115001', user: 'Tran Anh', route: 'HCM → Hanoi', status: 'Paid' },
-        { id: 'BK20251115002', user: 'Le Minh', route: 'HCM → Dalat', status: 'Pending' },
-        { id: 'BK20251115003', user: 'Nguyen Ha', route: 'Hanoi → Hue', status: 'Cancelled' },
+        {
+          id: 'BK20251115001',
+          user: 'Tran Anh',
+          route: 'HCM → Hanoi',
+          status: 'Paid',
+        },
+        {
+          id: 'BK20251115002',
+          user: 'Le Minh',
+          route: 'HCM → Dalat',
+          status: 'Pending',
+        },
+        {
+          id: 'BK20251115003',
+          user: 'Nguyen Ha',
+          route: 'Hanoi → Hue',
+          status: 'Cancelled',
+        },
       ],
     };
   }
@@ -88,7 +118,11 @@ export class DashboardService {
         `select count(*)::int as count from users`,
       );
 
-      cards.push({ title: 'Active Users', value: Number(userCount ?? 0), delta: 0 });
+      cards.push({
+        title: 'Active Users',
+        value: Number(userCount ?? 0),
+        delta: 0,
+      });
 
       const hasBookings = await this.hasTable('booking');
       const hasPayments = await this.hasTable('payment');
@@ -106,7 +140,11 @@ export class DashboardService {
           `select count(*)::int as total_bookings from booking`,
         );
         totalBookings = Number(bookingAgg?.total_bookings ?? 0);
-        cards.unshift({ title: 'Total Bookings', value: totalBookings, delta: 0 });
+        cards.unshift({
+          title: 'Total Bookings',
+          value: totalBookings,
+          delta: 0,
+        });
 
         const trendRaw = await this.dataSource.query(
           `
@@ -199,7 +237,9 @@ export class DashboardService {
       const summaryCards: SummaryCard[] = [];
       const bookingsCard = cards.find((c) => c.title === 'Total Bookings');
       if (bookingsCard) summaryCards.push(bookingsCard);
-      summaryCards.push(cards.find((c) => c.title === 'Active Users') ?? cards[0]);
+      summaryCards.push(
+        cards.find((c) => c.title === 'Active Users') ?? cards[0],
+      );
       const revenueCard = cards.find((c) => c.title === 'Revenue Today');
       if (revenueCard) summaryCards.push(revenueCard);
 
@@ -210,7 +250,9 @@ export class DashboardService {
         recentBookings,
       };
     } catch (error) {
-      this.logger.warn(`Falling back to mock admin dashboard: ${String(error)}`);
+      this.logger.warn(
+        `Falling back to mock admin dashboard: ${String(error)}`,
+      );
       return fallback;
     }
   }
@@ -233,7 +275,7 @@ export class DashboardService {
         ? 'left join seat_status ss on ss.booking_id = b.id'
         : '';
       const seatSelect = hasSeatStatus
-        ? 'coalesce(string_agg(ss.seat_code, \', \'), \'\')'
+        ? "coalesce(string_agg(ss.seat_code, ', '), '')"
         : `''`;
 
       const upcomingTripsRaw = await this.dataSource.query(
@@ -265,7 +307,10 @@ export class DashboardService {
               datetime: row.departure ?? '',
               seats: row.seats || '—',
               bookingId: String(row.booking_id),
-              actions: ['View E-ticket', row.status === 'PAID' ? 'Cancel' : 'Modify'],
+              actions: [
+                'View E-ticket',
+                row.status === 'PAID' ? 'Cancel' : 'Modify',
+              ],
             }))
           : fallback.upcomingTrips;
 

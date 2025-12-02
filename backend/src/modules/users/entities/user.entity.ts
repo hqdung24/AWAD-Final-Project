@@ -3,9 +3,14 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { PaymentMethod } from '@/modules/payment-method/entities/payment-method.entity';
+import { Booking } from '@/modules/booking/entities/booking.entity';
+import { Feedback } from '@/modules/feedback/entities/feedback.entity';
 
 @Entity('users')
 export class User {
@@ -20,6 +25,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 100, nullable: false, unique: true })
   email: string;
+
+  @Column({ type: 'varchar', length: 15, nullable: false, unique: true })
+  phone: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true, select: false })
   password: string;
@@ -48,8 +56,14 @@ export class User {
   @Column({ type: 'varchar', length: 200, nullable: true, default: null })
   verificationToken?: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
-  lastSeenAt?: Date;
+  @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.user)
+  paymentMethods: PaymentMethod[];
+
+  @OneToMany(() => Booking, (booking) => booking.user)
+  bookings: Booking[];
+
+  @OneToMany(() => Feedback, (feedback) => feedback.user)
+  feedbacks: Feedback[];
 
   @CreateDateColumn()
   createdAt: Date;
