@@ -1,0 +1,28 @@
+## Week 2 Self‑Evaluation (Trip Management & Search)
+
+### Context
+- Backend: NestJS modules for trips, seats, buses, routes (`backend/src/modules/*`). Trip creation validates route/bus existence and scheduling conflicts, then auto-creates seat statuses (`backend/src/modules/trip/trip.service.ts`, `trip-validation.provider.ts`, `seat-status-generator.provider.ts`).
+- Frontend: React + Vite with admin pages for routes/buses/trips and a protected landing/search flow (`frontend/src/App.tsx`). Search results page renders cards and filter UI but still relies on placeholder logic (`frontend/src/pages/search/SearchResults.tsx`).
+- Several frontend services target endpoints that the backend does not expose (e.g., `/buses`, `/admin/routes`, `/trips/search`), so end-to-end flows are currently broken.
+
+### Requirement-by-requirement check
+- **Admin trip scheduling interface** — Partial. Admin endpoints exist for create/list/update/cancel trips and enforce bus conflict checks (`backend/src/modules/trip/trip.controller.ts`, `trip.service.ts`). Admin UI provides a CRUD form (`frontend/src/pages/admin/TripsPage.tsx`) but calls `/trips` instead of `/admin/trips`, so it won’t hit the protected backend routes.
+- **Bus assignment & scheduling logic** — Partial. Trip creation/update checks for overlapping bus schedules (`backend/src/modules/trip/providers/trip-validation.provider.ts`), but there is no bus-assignment model or endpoints (`backend/src/modules/bus/bus.controller.ts` is empty). Frontend assignment UI (`frontend/src/pages/admin/BusesPage.tsx`) calls non-existent `/buses/*assign*` APIs.
+- **Route configuration with pickup/dropoff points** — Missing. Entities exist (`backend/src/modules/route/entities/route.entity.ts`, `route-point.entity.ts`), yet the admin controller is commented out (`backend/src/modules/admin-routes/admin-routes.controller.ts`) and there are no create/update routes for points. Frontend routes page (`frontend/src/pages/admin/RoutesPage.tsx`) uses `/admin/routes`/`/routes` endpoints that are absent.
+- **Seat map configuration tool** — Missing. Seat CRUD is exposed only for simple seat records (`backend/src/modules/seat/seat.controller.ts`); no seat layout or pricing editor. Frontend seat-map UI (`frontend/src/pages/admin/BusesPage.tsx`) depends on `/buses/*seat-map*` APIs that are not implemented server-side.
+- **Trip search API with filtering** — Missing. Public controller advertises `/trips/search` and `/trips/:id` (`backend/src/modules/trip/trip.controller.ts`) but `TripService` lacks `searchTrips`/`getTripDetail` implementations. The `TripSearchProvider` only filters by origin/destination/date and comments out price/time/amenities/availability filters (`backend/src/modules/trip/providers/trip-search.provider.ts`), so search currently fails compilation/runtime.
+- **Search interface with autocomplete for cities** — Partial. Landing page has a static `<Select>` city list and validation (`frontend/src/pages/home/LandingPage.tsx`), but no autocomplete or API-backed suggestions; page is behind auth via `ProtectedRoute`, not public.
+- **Advanced filtering (time, price, bus type, amenities)** — Missing. UI toggles exist, yet filtering logic is stubbed (`const sortedTrips = trips;` etc. in `frontend/src/pages/search/SearchResults.tsx`). Backend filters for price/time/bus type/amenities are commented out in `trip-search.provider.ts`.
+- **Search result sorting & pagination** — Missing. Frontend sets `totalPages = 1` and leaves sorting/pagination TODOs (`frontend/src/pages/search/SearchResults.tsx`). Backend sorts in `TripSearchProvider`, but the service/controller wiring is absent so it’s unreachable.
+- **Responsive landing page with search form** — Partial. `frontend/src/pages/home/LandingPage.tsx` is responsive and validates inputs, but lacks autocomplete and anonymous access; search params simply redirect to `/search`.
+- **Trip search results interface** — Partial. `frontend/src/pages/search/SearchResults.tsx` renders result cards and loading/error states, but depends on the broken `/trips/search` API and ignores filters/sorting/pagination.
+- **Trip details page** — Missing. No route/component for trip detail on the frontend; backend `TripService` lacks the `getTripDetail` method referenced by the public controller.
+- **Database indexes for search** — Missing. Entities index IDs (`routeId`, `busId`, etc.) but not `origin`, `destination`, or `departureTime` columns needed for search performance.
+- **Caching for popular routes** — Missing. No Redis/configured caching layer.
+- **Database connection pooling** — Missing. TypeORM uses defaults; no explicit pooling config tuned for concurrency.
+
+### Overall assessment
+Trip creation with seat-status seeding and bus conflict checks is in place, but most week‑2 search and admin tools are non-functional: route/bus/seat map endpoints are absent, the public search/detail APIs are unimplemented despite controller stubs, and the frontend calls mismatched/missing endpoints with filtering/sorting left as TODOs. End-to-end trip discovery and admin management flows cannot work in their current state.
+
+### Next steps
+1) Implement `TripService.searchTrips`/`getTripDetail` using `TripSearchProvider`, compute available seats, and align DTOs with frontend schemas. 2) Expose real admin routes/buses/seat-map endpoints (or update FE services to existing APIs) and secure them with admin roles. 3) Wire frontend search filtering/sorting/pagination to API params and add a trip detail page that consumes `/trips/:id`. 4) Add DB indexes on route origin/destination/departure time, and plan caching/connection pooling for search-heavy queries.
