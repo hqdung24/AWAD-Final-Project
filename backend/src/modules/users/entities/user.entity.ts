@@ -27,7 +27,7 @@ export class User {
   @Column({ type: 'varchar', length: 100, nullable: true })
   googleId: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, default: '' })
   avatarUrl?: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -44,6 +44,9 @@ export class User {
 
   @Column({ type: 'boolean', default: true })
   isActive?: boolean;
+
+  @Column({ type: 'varchar', length: 200, nullable: true, default: null })
+  verificationToken?: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   lastSeenAt?: Date;

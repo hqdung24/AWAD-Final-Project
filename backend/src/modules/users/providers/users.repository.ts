@@ -116,7 +116,12 @@ export class UsersRepository {
     if (!user) {
       throw new Error('User not found');
     }
-
+    //handle password update
+    if (updateData.password) {
+      updateData.password = await this.hashingProvider.hash(
+        updateData.password,
+      );
+    }
     const updatedUser = Object.assign(user, updateData);
 
     const updatedUserResult: UpdateResult = await this.usersRepository.update(

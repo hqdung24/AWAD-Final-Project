@@ -26,6 +26,10 @@ import { SignInDto } from './dtos/signin.dto';
 import { AuthType } from './enums/auth-type.enum';
 import { AuthService } from './providers/auth.service';
 import { GoogleAuthenticationService } from './social/google-authentication.service';
+import {
+  VerifyTokenDto,
+  VerifyTokenResetPasswordDto,
+} from './dtos/verify-token.dto';
 @Auth(AuthType.None)
 @Controller('auth')
 export class AuthController {
@@ -137,5 +141,46 @@ export class AuthController {
     //clear refresh token cookie
     clearRefreshCookie(res);
     return { msg: 'Signout successful' };
+  }
+
+  @Auth(AuthType.None)
+  @Post('request-password-reset')
+  @ApiOperation({ summary: 'Request password reset email' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', format: 'email' },
+      },
+      required: ['email'],
+      example: { email: 'user@example.com' },
+    },
+  })
+  async requestPasswordReset(@Body() body: { email: string }) {
+    const { email } = body;
+    await this.authService.sendPasswordResetEmail(email);
+    return { msg: 'Password reset email sent if the email is registered' };
+  }
+
+  @Auth(AuthType.None)
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiBody({ type: VerifyTokenResetPasswordDto })
+  async resetPassword(@Body() body: VerifyTokenResetPasswordDto) {
+    const { email, token, password: newPassword } = body;
+    await this.authService.updatePassword(email, newPassword, token);
+    return { msg: 'Password reset successful' };
+  }
+
+  @Auth(AuthType.None)
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify user email address' })
+  @ApiBody({
+    type: VerifyTokenDto,
+  })
+  async verifyEmail(@Body() body: VerifyTokenDto) {
+    const { email, token } = body;
+    const verifiedUser = await this.authService.verifyUser(email, token);
+    return { msg: 'Email verified successfully', user: verifiedUser };
   }
 }

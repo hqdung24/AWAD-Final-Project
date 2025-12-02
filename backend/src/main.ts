@@ -40,7 +40,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .setTitle('Nest Auth API Documentation')
     .setDescription('The description of my application')
-    .addServer('http://localhost:3600/api')
+    .addServer('http://localhost:3000/api')
     .addCookieAuth('refreshToken')
     .addBearerAuth(
       {
