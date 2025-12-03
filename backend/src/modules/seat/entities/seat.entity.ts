@@ -23,7 +23,7 @@ export class Seat {
   seatCode: string;
 
   @Column()
-  seatType: string; // standard / vip
+  seatType: string; // standard / vip / window / aisle
 
   @Column({ default: true })
   isActive: boolean;

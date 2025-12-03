@@ -1,5 +1,5 @@
 export enum SeatType {
   STANDARD = 'STANDARD',
-  VIP = 'VIP',
   PREMIUM = 'PREMIUM',
+  VIP = 'VIP',
 }

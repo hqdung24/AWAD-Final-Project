@@ -26,10 +26,10 @@ export class SeatStatus {
   @Column()
   state: string; // available / locked / booked
 
-  @Column({ nullable: true, type: 'uuid', default: null })
+  @Column({ nullable: true })
   bookingId: string;
 
-  @Column({ type: 'timestamp', nullable: true, default: null })
+  @Column({ type: 'timestamp', nullable: true })
   lockedUntil: Date;
 
   @ManyToOne(() => Trip, (trip) => trip.seatStatuses, {

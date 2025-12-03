@@ -84,10 +84,7 @@ export default function LandingPage() {
                       setSearchForm((prev) => ({ ...prev, from: value }))
                     }
                   >
-                    <SelectTrigger
-                      id="from"
-                      className="h-11 text-base px-3 py-2 w-full"
-                    >
+                    <SelectTrigger id="from" className="h-11 text-base px-3 py-2 w-full">
                       <SelectValue placeholder="Origin City" />
                     </SelectTrigger>
                     <SelectContent>
@@ -111,10 +108,7 @@ export default function LandingPage() {
                       setSearchForm((prev) => ({ ...prev, to: value }))
                     }
                   >
-                    <SelectTrigger
-                      id="to"
-                      className="h-11 text-base px-3 py-2 w-full"
-                    >
+                    <SelectTrigger id="to" className="h-11 text-base px-3 py-2 w-full">
                       <SelectValue placeholder="Destination" />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,10 +241,7 @@ export default function LandingPage() {
                     </span>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    from{' '}
-                    <span className="text-primary font-bold text-lg">
-                      {route.price}
-                    </span>
+                    from <span className="text-primary font-bold text-lg">{route.price}</span>
                   </p>
                 </CardContent>
               </Card>
