@@ -190,6 +190,46 @@ export class TripService {
     });
   }
 
+  async getTripDetails(id: string): Promise<any> {
+    const trip = await this.tripRepository.findByIdWithRoutePoints(id);
+
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${id} not found`);
+    }
+
+    const availableSeats = trip.seatStatuses?.filter(
+      (ss) => ss.state === 'available',
+    ).length || 0;
+
+    // Group route points by type
+    const routePoints = {
+      pickup: trip.route?.routePoints?.filter(rp => rp.type === 'pickup')
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map(rp => ({ name: rp.name, address: rp.address, note: rp.address })) || [],
+      dropoff: trip.route?.routePoints?.filter(rp => rp.type === 'dropoff')
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map(rp => ({ name: rp.name, address: rp.address, note: rp.address })) || [],
+    };
+
+    return {
+      id: trip.id,
+      from: trip.route?.origin || '',
+      to: trip.route?.destination || '',
+      departureTime: trip.departureTime,
+      arrivalTime: trip.arrivalTime,
+      duration: this.calculateDuration(trip.departureTime, trip.arrivalTime),
+      price: Number(trip.basePrice),
+      busType: trip.bus?.busType || 'Standard',
+      company: trip.bus?.operator?.name || 'Unknown',
+      amenities: this.parseAmenities(trip.bus?.amenitiesJson),
+      seatsAvailable: availableSeats,
+      busModel: trip.bus?.model,
+      plateNumber: trip.bus?.plateNumber,
+      distanceKm: trip.route?.distanceKm,
+      routePoints,
+    };
+  }
+
   private calculateDuration(departure: Date, arrival: Date): string {
     const diff = new Date(arrival).getTime() - new Date(departure).getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));

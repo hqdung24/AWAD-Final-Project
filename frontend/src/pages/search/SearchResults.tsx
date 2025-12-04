@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { notify } from '@/lib/notify';
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const from = searchParams.get('from') || '';
   const to = searchParams.get('to') || '';
   const date = searchParams.get('date') || '';
@@ -360,7 +361,12 @@ export default function SearchResults() {
                           <p className="text-2xl font-bold text-primary">{formatPrice(trip.price)}</p>
                           <p className="text-xs text-muted-foreground">{trip.seatsAvailable} seats left</p>
                         </div>
-                        <Button className="w-full md:w-auto">Select</Button>
+                        <Button 
+                          className="w-full md:w-auto"
+                          onClick={() => navigate(`/search/${trip.id}?from=${from}&to=${to}&date=${date}&passengers=${passengers}`)}
+                        >
+                          Select
+                        </Button>
                       </div>
                     </div>
                   </CardContent>

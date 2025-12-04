@@ -11,6 +11,7 @@ import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import LandingPage from './pages/home/LandingPage';
 import SearchResults from './pages/search/SearchResults';
+import TripDetails from './pages/search/TripDetails';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import MainLayout from './layouts/main-layout/MainLayout';
@@ -48,6 +49,14 @@ function App() {
                   element={
                     <ProtectedRoute roles={['USER']}>
                       <SearchResults />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/search/:id"
+                  element={
+                    <ProtectedRoute roles={['USER']}>
+                      <TripDetails />
                     </ProtectedRoute>
                   }
                 />

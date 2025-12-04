@@ -203,7 +203,7 @@ export default function LandingPage() {
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="date" className="text-sm font-medium">
-                    Ngày đi:
+                    Start Date:
                   </Label>
                   <div className="relative">
                     <DatePicker
@@ -217,7 +217,7 @@ export default function LandingPage() {
                     />
                     {!searchForm.date && (
                       <p className="text-xs text-destructive mt-1 font-medium">
-                        Ngày đi phải từ hôm nay trở đi
+                        Start date must be today or later
                       </p>
                     )}
                   </div>
@@ -226,7 +226,7 @@ export default function LandingPage() {
                 {/* Passengers */}
                 <div className="space-y-2">
                   <Label htmlFor="passengers" className="text-sm font-medium">
-                    Số hành khách:
+                    Number of Passengers:
                   </Label>
                   <div className="flex items-center gap-2">
                     <Button
@@ -285,7 +285,7 @@ export default function LandingPage() {
                 className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
                 size="lg"
               >
-                Tìm chuyến xe
+                FIND TRIPS
               </Button>
             </CardContent>
           </Card>

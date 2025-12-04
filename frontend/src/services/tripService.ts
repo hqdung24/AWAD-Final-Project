@@ -57,3 +57,29 @@ export async function updateTrip(id: string, payload: Partial<Omit<Trip, 'id'>>)
 export async function deleteTrip(id: string): Promise<void> {
   await http.delete(`/admin/trips/${id}`);
 }
+
+export interface TripDetails {
+  id: string;
+  from: string;
+  to: string;
+  departureTime: string;
+  arrivalTime: string;
+  duration: string;
+  price: number;
+  busType: string;
+  company: string;
+  amenities: string[];
+  seatsAvailable: number;
+  busModel?: string;
+  plateNumber?: string;
+  distanceKm?: number;
+  routePoints?: {
+    pickup: Array<{ name: string; address?: string; note?: string }>;
+    dropoff: Array<{ name: string; address?: string; note?: string }>;
+  };
+}
+
+export async function getTripDetails(id: string): Promise<TripDetails> {
+  const res = await http.get(`/trips/${id}`);
+  return (res as { data: TripDetails }).data;
+}

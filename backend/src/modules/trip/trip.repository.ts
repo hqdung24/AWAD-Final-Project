@@ -22,6 +22,20 @@ export class TripRepository {
     });
   }
 
+  async findByIdWithRoutePoints(id: string): Promise<Trip | null> {
+    return await this.repository.findOne({
+      where: { id },
+      relations: [
+        'route',
+        'route.routePoints',
+        'route.operator',
+        'bus',
+        'bus.operator',
+        'seatStatuses',
+      ],
+    });
+  }
+
   async findAll(filters: {
     routeId?: string;
     busId?: string;

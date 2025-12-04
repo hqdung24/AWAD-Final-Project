@@ -695,6 +695,66 @@
         ]
       }
     },
+    "/trips/{id}": {
+      "get": {
+        "description": "Public endpoint to retrieve detailed information about a specific trip including route, bus, operator, amenities, and available seats.",
+        "operationId": "TripController_getTripDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Trip UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid",
+                    "from": "TP.HCM",
+                    "to": "Đà Lạt",
+                    "departureTime": "2025-12-05T08:00:00Z",
+                    "arrivalTime": "2025-12-05T14:30:00Z",
+                    "duration": "6h 30m",
+                    "price": 250000,
+                    "busType": "Sleeper",
+                    "company": "Phương Trang",
+                    "amenities": [
+                      "wifi",
+                      "air_conditioning",
+                      "water"
+                    ],
+                    "seatsAvailable": 15,
+                    "busModel": "Thaco Universe",
+                    "plateNumber": "51A-111.11",
+                    "distanceKm": 308,
+                    "routePoints": {
+                      "pickup": [],
+                      "dropoff": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trip not found"
+          }
+        },
+        "summary": "Get trip details by ID (Public)",
+        "tags": [
+          "Trips"
+        ]
+      }
+    },
     "/trips/admin": {
       "get": {
         "description": "Admin endpoint: Retrieves a paginated list of trips with optional filters for route, bus, and status.",
