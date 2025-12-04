@@ -88,4 +88,67 @@ export class TripRepository {
   async save(trip: Trip): Promise<Trip> {
     return await this.repository.save(trip);
   }
+
+  async searchTrips(filters: {
+    from?: string;
+    to?: string;
+    date?: string;
+    passengers?: number;
+  }): Promise<Trip[]> {
+    const { from, to, date, passengers } = filters;
+
+    console.log('🔍 Search filters received:', { from, to, date, passengers });
+
+    const queryBuilder = this.repository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.route', 'route')
+      .leftJoinAndSelect('trip.bus', 'bus')
+      .leftJoinAndSelect('bus.operator', 'operator')
+      .leftJoinAndSelect('trip.seatStatuses', 'seatStatus')
+      .where('trip.status = :status', { status: 'scheduled' });
+
+    // Filter by origin
+    if (from) {
+      queryBuilder.andWhere('route.origin ILIKE :from', { from: `%${from}%` });
+    }
+
+    // Filter by destination
+    if (to) {
+      queryBuilder.andWhere('route.destination ILIKE :to', { to: `%${to}%` });
+    }
+
+    // Filter by date (departure date)
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      queryBuilder.andWhere(
+        'trip.departureTime >= :startOfDay AND trip.departureTime <= :endOfDay',
+        { startOfDay, endOfDay },
+      );
+    }
+
+    const sql = queryBuilder.getSql();
+    console.log('📝 Generated SQL:', sql);
+    console.log('📊 Query parameters:', queryBuilder.getParameters());
+
+    const trips = await queryBuilder.getMany();
+    console.log(`✅ Found ${trips.length} trips before seat filtering`);
+
+    // Filter by available seats if passengers specified
+    if (passengers) {
+      const filtered = trips.filter((trip) => {
+        const availableSeats = trip.seatStatuses?.filter(
+          (ss) => ss.state === 'available',
+        ).length || 0;
+        return availableSeats >= passengers;
+      });
+      console.log(`✅ After seat filtering: ${filtered.length} trips`);
+      return filtered;
+    }
+
+    return trips;
+  }
 }

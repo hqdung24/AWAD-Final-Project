@@ -1,15 +1,8 @@
-﻿import { useState } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BusFront, Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,30 +16,96 @@ export default function LandingPage() {
     passengers: '1',
   });
 
+  const [fromSuggestions, setFromSuggestions] = useState<string[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<string[]>([]);
+  const [showFromSuggestions, setShowFromSuggestions] = useState(false);
+  const [showToSuggestions, setShowToSuggestions] = useState(false);
+  const fromInputRef = useRef<HTMLInputElement>(null);
+  const toInputRef = useRef<HTMLInputElement>(null);
+
   const popularRoutes = [
-    { from: 'HCM', to: 'Hanoi', price: '350k' },
-    { from: 'HCM', to: 'Dalat', price: '180k' },
-    { from: 'Hanoi', to: 'HP', price: '120k' },
+    { from: 'TP.HCM', to: 'Đà Lạt', price: '250k' },
+    { from: 'TP.HCM', to: 'Nha Trang', price: '280k' },
+    { from: 'Hà Nội', to: 'Hải Phòng', price: '150k' },
   ];
 
-  const cities = [
-    'Ho Chi Minh City',
-    'Hanoi',
-    'Da Nang',
-    'Hai Phong',
-    'Can Tho',
-    'Dalat',
+  const vietnameseCities = [
+    'TP.HCM',
+    'Hà Nội',
+    'Đà Nẵng',
+    'Hải Phòng',
+    'Cần Thơ',
+    'Đà Lạt',
     'Nha Trang',
-    'Hue',
+    'Huế',
+    'Vũng Tàu',
+    'Phan Thiết',
+    'Mũi Né',
+    'Ninh Bình',
+    'Hạ Long',
+    'Sapa',
+    'Thanh Hóa',
+    'Tây Ninh',
+    'Bến Tre',
+    'Long Xuyên',
+    'Châu Đốc',
+    'Hội An',
+    'Quy Nhơn',
+    'Cà Mau',
+    'Rạch Giá',
   ];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fromInputRef.current && !fromInputRef.current.contains(event.target as Node)) {
+        setShowFromSuggestions(false);
+      }
+      if (toInputRef.current && !toInputRef.current.contains(event.target as Node)) {
+        setShowToSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filterCities = (input: string): string[] => {
+    if (!input.trim()) return vietnameseCities;
+    const normalizedInput = input.toLowerCase().trim();
+    return vietnameseCities.filter((city) =>
+      city.toLowerCase().includes(normalizedInput)
+    );
+  };
+
+  const handleFromChange = (value: string) => {
+    setSearchForm((prev) => ({ ...prev, from: value }));
+    setFromSuggestions(filterCities(value));
+    setShowFromSuggestions(true);
+  };
+
+  const handleToChange = (value: string) => {
+    setSearchForm((prev) => ({ ...prev, to: value }));
+    setToSuggestions(filterCities(value));
+    setShowToSuggestions(true);
+  };
+
+  const selectFromCity = (city: string) => {
+    setSearchForm((prev) => ({ ...prev, from: city }));
+    setShowFromSuggestions(false);
+  };
+
+  const selectToCity = (city: string) => {
+    setSearchForm((prev) => ({ ...prev, to: city }));
+    setShowToSuggestions(false);
+  };
 
   const handleSearch = () => {
     if (!searchForm.date) {
-      alert('Please select a date for your trip');
+      alert('Please select a departure date');
       return;
     }
     if (!searchForm.from || !searchForm.to) {
-      alert('Please select both origin and destination');
+      alert('Please select both departure and destination points');
       return;
     }
     // Navigate to search results with params
@@ -66,7 +125,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 bg-gradient-primary bg-clip-text text-transparent">
-            FIND YOUR PERFECT BUS TRIP
+            FIND THE RIGHT TRIP
           </h1>
 
           {/* Search Card */}
@@ -74,57 +133,77 @@ export default function LandingPage() {
             <CardContent className="p-6 md:p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {/* From */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative" ref={fromInputRef}>
                   <Label htmlFor="from" className="text-sm font-medium">
-                    From:
+                    From
                   </Label>
-                  <Select
+                  <Input
+                    id="from"
+                    type="text"
+                    placeholder="Enter departure..."
                     value={searchForm.from}
-                    onValueChange={(value) =>
-                      setSearchForm((prev) => ({ ...prev, from: value }))
-                    }
-                  >
-                    <SelectTrigger id="from" className="h-11 text-base px-3 py-2 w-full">
-                      <SelectValue placeholder="Origin City" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((city) => (
-                        <SelectItem key={city} value={city}>
+                    onChange={(e) => handleFromChange(e.target.value)}
+                    onFocus={() => {
+                      setFromSuggestions(filterCities(searchForm.from));
+                      setShowFromSuggestions(true);
+                    }}
+                    className="h-11 text-base"
+                    autoComplete="off"
+                  />
+                  {showFromSuggestions && fromSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                      {fromSuggestions.map((city) => (
+                        <button
+                          key={city}
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-sm"
+                          onClick={() => selectFromCity(city)}
+                        >
                           {city}
-                        </SelectItem>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
                 </div>
 
                 {/* To */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative" ref={toInputRef}>
                   <Label htmlFor="to" className="text-sm font-medium">
-                    To:
+                    To
                   </Label>
-                  <Select
+                  <Input
+                    id="to"
+                    type="text"
+                    placeholder="Enter destination..."
                     value={searchForm.to}
-                    onValueChange={(value) =>
-                      setSearchForm((prev) => ({ ...prev, to: value }))
-                    }
-                  >
-                    <SelectTrigger id="to" className="h-11 text-base px-3 py-2 w-full">
-                      <SelectValue placeholder="Destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((city) => (
-                        <SelectItem key={city} value={city}>
+                    onChange={(e) => handleToChange(e.target.value)}
+                    onFocus={() => {
+                      setToSuggestions(filterCities(searchForm.to));
+                      setShowToSuggestions(true);
+                    }}
+                    className="h-11 text-base"
+                    autoComplete="off"
+                  />
+                  {showToSuggestions && toSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                      {toSuggestions.map((city) => (
+                        <button
+                          key={city}
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-sm"
+                          onClick={() => selectToCity(city)}
+                        >
                           {city}
-                        </SelectItem>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="date" className="text-sm font-medium">
-                    Date:
+                    Ngày đi:
                   </Label>
                   <div className="relative">
                     <DatePicker
@@ -138,7 +217,7 @@ export default function LandingPage() {
                     />
                     {!searchForm.date && (
                       <p className="text-xs text-destructive mt-1 font-medium">
-                        Date must be today or later
+                        Ngày đi phải từ hôm nay trở đi
                       </p>
                     )}
                   </div>
@@ -147,7 +226,7 @@ export default function LandingPage() {
                 {/* Passengers */}
                 <div className="space-y-2">
                   <Label htmlFor="passengers" className="text-sm font-medium">
-                    Passengers:
+                    Số hành khách:
                   </Label>
                   <div className="flex items-center gap-2">
                     <Button
@@ -206,7 +285,7 @@ export default function LandingPage() {
                 className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
                 size="lg"
               >
-                Search Trips
+                Tìm chuyến xe
               </Button>
             </CardContent>
           </Card>
@@ -217,7 +296,7 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
-            POPULAR ROUTES
+            TUYẾN ĐƯỜNG PHỔ BIẾN
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {popularRoutes.map((route, index) => (
@@ -237,11 +316,11 @@ export default function LandingPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <MapPin className="h-5 w-5 text-primary" />
                     <span className="font-semibold">
-                      {route.from} to {route.to}
+                      {route.from} → {route.to}
                     </span>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    from <span className="text-primary font-bold text-lg">{route.price}</span>
+                    Từ <span className="text-primary font-bold text-lg">{route.price}</span>
                   </p>
                 </CardContent>
               </Card>
@@ -254,14 +333,14 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
-            WHY CHOOSE US
+            TẠI SAO CHỌN CHÚNG TÔI
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col items-center text-center space-y-3 p-6 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <BusFront className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg">Real-time Availability</h3>
+              <h3 className="font-semibold text-lg">Cập nhật theo thời gian thực</h3>
             </div>
             <div className="flex flex-col items-center text-center space-y-3 p-6 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
@@ -279,13 +358,13 @@ export default function LandingPage() {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-lg">Secure Payment</h3>
+              <h3 className="font-semibold text-lg">Thanh toán an toàn</h3>
             </div>
             <div className="flex flex-col items-center text-center space-y-3 p-6 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-info" />
               </div>
-              <h3 className="font-semibold text-lg">24/7 Support</h3>
+              <h3 className="font-semibold text-lg">Hỗ trợ 24/7</h3>
             </div>
           </div>
         </div>
@@ -295,7 +374,7 @@ export default function LandingPage() {
       <footer className="border-t mt-12">
         <div className="container mx-auto px-4 py-6">
           <div className="max-w-4xl mx-auto text-center text-sm text-muted-foreground">
-            <p>About | Contact | Terms | Privacy</p>
+            <p>Về chúng tôi | Liên hệ | Điều khoản | Bảo mật</p>
           </div>
         </div>
       </footer>

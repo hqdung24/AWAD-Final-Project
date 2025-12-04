@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,76 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Bus, Clock, Wifi, Snowflake, Coffee, Armchair } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-
-// Mock data - replace with API call later
-const mockTrips = [
-  { id: 1, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '08:00', arrivalTime: '20:00', duration: '12h', price: 350000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 12 },
-  { id: 2, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '18:00', arrivalTime: '06:00', duration: '12h', price: 380000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 8 },
-  { id: 3, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '22:00', arrivalTime: '10:00', duration: '12h', price: 320000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac'], seatsAvailable: 15 },
-  { id: 4, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '06:00', arrivalTime: '18:00', duration: '12h', price: 400000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 5 },
-  { id: 5, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '09:30', arrivalTime: '21:30', duration: '12h', price: 340000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 20 },
-  { id: 6, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '14:00', arrivalTime: '02:00', duration: '12h', price: 365000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 10 },
-  { id: 7, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '20:00', arrivalTime: '08:00', duration: '12h', price: 390000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 6 },
-  { id: 8, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '07:00', arrivalTime: '19:00', duration: '12h', price: 330000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac'], seatsAvailable: 18 },
-  { id: 9, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '11:00', arrivalTime: '23:00', duration: '12h', price: 355000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac', 'water'], seatsAvailable: 25 },
-  { id: 10, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '16:00', arrivalTime: '04:00', duration: '12h', price: 375000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 9 },
-  { id: 11, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '23:00', arrivalTime: '11:00', duration: '12h', price: 310000, busType: 'Seat', company: 'Mai Linh', amenities: ['ac'], seatsAvailable: 22 },
-  { id: 12, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '05:00', arrivalTime: '17:00', duration: '12h', price: 420000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 4 },
-  { id: 13, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '10:00', arrivalTime: '22:00', duration: '12h', price: 345000, busType: 'Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 14 },
-  { id: 14, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '15:00', arrivalTime: '03:00', duration: '12h', price: 360000, busType: 'VIP Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 7 },
-  { id: 15, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '19:00', arrivalTime: '07:00', duration: '12h', price: 385000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 5 },
-  { id: 16, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '12:00', arrivalTime: '00:00', duration: '12h', price: 325000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 28 },
-  { id: 17, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '21:00', arrivalTime: '09:00', duration: '12h', price: 370000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 11 },
-  { id: 18, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '08:30', arrivalTime: '20:30', duration: '12h', price: 410000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 6 },
-  { id: 19, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '13:00', arrivalTime: '01:00', duration: '12h', price: 335000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 24 },
-  { id: 20, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '17:00', arrivalTime: '05:00', duration: '12h', price: 395000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 7 },
-  { id: 21, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '09:00', arrivalTime: '21:00', duration: '12h', price: 348000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 13 },
-  { id: 22, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '23:30', arrivalTime: '11:30', duration: '12h', price: 315000, busType: 'Seat', company: 'Mai Linh', amenities: ['ac'], seatsAvailable: 26 },
-  { id: 23, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '06:30', arrivalTime: '18:30', duration: '12h', price: 405000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 5 },
-  { id: 24, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '11:30', arrivalTime: '23:30', duration: '12h', price: 358000, busType: 'Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 16 },
-  { id: 25, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '15:30', arrivalTime: '03:30', duration: '12h', price: 368000, busType: 'VIP Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 8 },
-  { id: 26, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '19:30', arrivalTime: '07:30', duration: '12h', price: 378000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac'], seatsAvailable: 12 },
-  { id: 27, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '07:30', arrivalTime: '19:30', duration: '12h', price: 338000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac', 'water'], seatsAvailable: 21 },
-  { id: 28, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '12:30', arrivalTime: '00:30', duration: '12h', price: 352000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 10 },
-  { id: 29, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '20:30', arrivalTime: '08:30', duration: '12h', price: 388000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 6 },
-  { id: 30, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '05:30', arrivalTime: '17:30', duration: '12h', price: 415000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 4 },
-  { id: 31, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '10:30', arrivalTime: '22:30', duration: '12h', price: 342000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 19 },
-  { id: 32, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '14:30', arrivalTime: '02:30', duration: '12h', price: 362000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac'], seatsAvailable: 14 },
-  { id: 33, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '18:30', arrivalTime: '06:30', duration: '12h', price: 382000, busType: 'VIP Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 7 },
-  { id: 34, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '22:30', arrivalTime: '10:30', duration: '12h', price: 318000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 23 },
-  { id: 35, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '08:15', arrivalTime: '20:15', duration: '12h', price: 353000, busType: 'Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 11 },
-  { id: 36, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '13:30', arrivalTime: '01:30', duration: '12h', price: 372000, busType: 'VIP Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 9 },
-  { id: 37, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '17:30', arrivalTime: '05:30', duration: '12h', price: 392000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 8 },
-  { id: 38, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '21:30', arrivalTime: '09:30', duration: '12h', price: 328000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 27 },
-  { id: 39, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '06:15', arrivalTime: '18:15', duration: '12h', price: 408000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 6 },
-  { id: 40, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '11:15', arrivalTime: '23:15', duration: '12h', price: 347000, busType: 'Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 15 },
-  { id: 41, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '16:30', arrivalTime: '04:30', duration: '12h', price: 377000, busType: 'VIP Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 7 },
-  { id: 42, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '09:15', arrivalTime: '21:15', duration: '12h', price: 343000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac', 'water'], seatsAvailable: 22 },
-  { id: 43, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '23:15', arrivalTime: '11:15', duration: '12h', price: 313000, busType: 'Seat', company: 'Mai Linh', amenities: ['ac'], seatsAvailable: 25 },
-  { id: 44, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '07:15', arrivalTime: '19:15', duration: '12h', price: 333000, busType: 'Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac'], seatsAvailable: 17 },
-  { id: 45, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '12:15', arrivalTime: '00:15', duration: '12h', price: 327000, busType: 'Seat', company: 'Kumho Samco', amenities: ['ac'], seatsAvailable: 20 },
-  { id: 46, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '18:15', arrivalTime: '06:15', duration: '12h', price: 387000, busType: 'VIP Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 8 },
-  { id: 47, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '14:15', arrivalTime: '02:15', duration: '12h', price: 367000, busType: 'Sleeper', company: 'Mai Linh', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 13 },
-  { id: 48, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '19:15', arrivalTime: '07:15', duration: '12h', price: 383000, busType: 'VIP Sleeper', company: 'Phuong Trang', amenities: ['wifi', 'ac', 'water', 'blanket'], seatsAvailable: 6 },
-  { id: 49, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '05:15', arrivalTime: '17:15', duration: '12h', price: 418000, busType: 'Limousine', company: 'Thanh Buoi', amenities: ['wifi', 'ac', 'water', 'blanket', 'snack'], seatsAvailable: 5 },
-  { id: 50, from: 'Ho Chi Minh City', to: 'Hanoi', departureTime: '10:15', arrivalTime: '22:15', duration: '12h', price: 349000, busType: 'Sleeper', company: 'Hoang Long', amenities: ['wifi', 'ac', 'water'], seatsAvailable: 12 },
-];
-
-const departureTimeSlots = [
-  { label: 'Morning (06:00 - 12:00)', value: 'morning' },
-  { label: 'Afternoon (12:00 - 18:00)', value: 'afternoon' },
-  { label: 'Evening (18:00 - 00:00)', value: 'evening' },
-  { label: 'Night (00:00 - 06:00)', value: 'night' },
-];
-
-const busTypes = ['Seat', 'Sleeper', 'VIP Sleeper', 'Limousine'];
-
-const amenitiesList = [
-  { id: 'wifi', label: 'WiFi', icon: Wifi },
-  { id: 'ac', label: 'Air Conditioning', icon: Snowflake },
-  { id: 'water', label: 'Water', icon: Coffee },
-  { id: 'blanket', label: 'Blanket', icon: Armchair },
-];
+import { searchTrips } from '@/services/searchService';
+import { notify } from '@/lib/notify';
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -86,6 +19,24 @@ export default function SearchResults() {
   const date = searchParams.get('date') || '';
   const passengers = searchParams.get('passengers') || '1';
 
+  // Fetch trips from API
+  const { data: trips = [], isLoading, error } = useQuery({
+    queryKey: ['search-trips', from, to, date, passengers],
+    queryFn: () => searchTrips({
+      from,
+      to,
+      date,
+      passengers: parseInt(passengers),
+    }),
+    enabled: !!(from && to && date),
+  });
+
+  useEffect(() => {
+    if (error) {
+      notify.error('Failed to load trips. Please try again.');
+    }
+  }, [error]);
+
   const [sortBy, setSortBy] = useState<string>('price-asc');
   const [priceRange, setPriceRange] = useState<number[]>([0, 500000]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
@@ -93,6 +44,22 @@ export default function SearchResults() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const departureTimeSlots = [
+    { label: 'Morning (06:00 - 12:00)', value: 'morning' },
+    { label: 'Afternoon (12:00 - 18:00)', value: 'afternoon' },
+    { label: 'Evening (18:00 - 00:00)', value: 'evening' },
+    { label: 'Night (00:00 - 06:00)', value: 'night' },
+  ];
+
+  const busTypes = ['Seat', 'Sleeper', 'VIP Sleeper', 'Limousine'];
+
+  const amenitiesList = [
+    { id: 'wifi', label: 'WiFi', icon: Wifi },
+    { id: 'air_conditioning', label: 'Air Conditioning', icon: Snowflake },
+    { id: 'water', label: 'Water', icon: Coffee },
+    { id: 'blanket', label: 'Blanket', icon: Armchair },
+  ];
 
   const handleTimeSlotToggle = (value: string) => {
     setSelectedTimeSlots((prev) =>
@@ -112,16 +79,22 @@ export default function SearchResults() {
     );
   };
 
-  const getTimeSlot = (time: string) => {
-    const hour = parseInt(time.split(':')[0]);
+  const getTimeSlot = (timeString: string) => {
+    const date = new Date(timeString);
+    const hour = date.getHours();
     if (hour >= 6 && hour < 12) return 'morning';
     if (hour >= 12 && hour < 18) return 'afternoon';
     if (hour >= 18 && hour < 24) return 'evening';
     return 'night';
   };
 
+  const formatTime = (timeString: string) => {
+    const date = new Date(timeString);
+    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
   // Filter trips
-  const filteredTrips = mockTrips.filter((trip) => {
+  const filteredTrips = trips.filter((trip) => {
     const priceMatch = trip.price >= priceRange[0] && trip.price <= priceRange[1];
     const timeMatch = selectedTimeSlots.length === 0 || selectedTimeSlots.includes(getTimeSlot(trip.departureTime));
     const busTypeMatch = selectedBusTypes.length === 0 || selectedBusTypes.includes(trip.busType);
@@ -159,6 +132,22 @@ export default function SearchResults() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Bus className="h-16 w-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+              <h3 className="text-lg font-semibold mb-2">Loading trips...</h3>
+              <p className="text-muted-foreground">Please wait while we search for available trips</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -340,7 +329,7 @@ export default function SearchResults() {
                       {/* Time & Route */}
                       <div className="md:col-span-5 flex items-center gap-3">
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{trip.departureTime}</p>
+                          <p className="text-2xl font-bold">{formatTime(trip.departureTime)}</p>
                           <p className="text-xs text-muted-foreground">{trip.from}</p>
                         </div>
                         <div className="flex-1 flex flex-col items-center">
@@ -352,7 +341,7 @@ export default function SearchResults() {
                           <p className="text-xs text-muted-foreground mt-1">{trip.duration}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{trip.arrivalTime}</p>
+                          <p className="text-2xl font-bold">{formatTime(trip.arrivalTime)}</p>
                           <p className="text-xs text-muted-foreground">{trip.to}</p>
                         </div>
                       </div>

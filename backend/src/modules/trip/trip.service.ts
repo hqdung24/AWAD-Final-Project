@@ -155,4 +155,55 @@ export class TripService {
     });
     return updatedTrip!; // ensure exists
   }
+
+  async searchTrips(filters: {
+    from?: string;
+    to?: string;
+    date?: string;
+    passengers?: number;
+  }): Promise<any[]> {
+    console.log('🚀 TripService.searchTrips called with:', filters);
+    const trips = await this.tripRepository.searchTrips(filters);
+    console.log(`📦 TripService returning ${trips.length} trips`);
+
+    // Transform trips to include bus and route details
+    return trips.map((trip) => {
+      const availableSeats = trip.seatStatuses?.filter(
+        (ss) => ss.state === 'available',
+      ).length || 0;
+
+      return {
+        id: trip.id,
+        from: trip.route?.origin || '',
+        to: trip.route?.destination || '',
+        departureTime: trip.departureTime,
+        arrivalTime: trip.arrivalTime,
+        duration: this.calculateDuration(trip.departureTime, trip.arrivalTime),
+        price: Number(trip.basePrice),
+        busType: trip.bus?.busType || 'Standard',
+        company: trip.bus?.operator?.name || 'Unknown',
+        amenities: this.parseAmenities(trip.bus?.amenitiesJson),
+        seatsAvailable: availableSeats,
+        busModel: trip.bus?.model,
+        plateNumber: trip.bus?.plateNumber,
+      };
+    });
+  }
+
+  private calculateDuration(departure: Date, arrival: Date): string {
+    const diff = new Date(arrival).getTime() - new Date(departure).getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+
+  private parseAmenities(amenitiesJson?: string): string[] {
+    if (!amenitiesJson) return [];
+    try {
+      const parsed = JSON.parse(amenitiesJson);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
 }

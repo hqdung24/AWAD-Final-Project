@@ -22,16 +22,80 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripIdDto } from './dto/trip-id.dto';
 import { TripQueryDto } from './dto/trip-query.dto';
+import { SearchTripsDto } from './dto/search-trips.dto';
 import { Roles } from '@/modules/auth/decorator/roles.decorator';
 import { RoleType } from '@/modules/auth/enums/roles-type.enum';
+import { Auth } from '@/modules/auth/decorator/auth.decorator';
+import { AuthType } from '@/modules/auth/enums/auth-type.enum';
 
-@ApiTags('Admin - Trips')
-@ApiBearerAuth()
-@Controller('admin/trips')
+@ApiTags('Trips')
+@Controller('trips')
 export class TripController {
   constructor(private readonly tripService: TripService) {}
 
-  @Post()
+  @Get('search')
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Search available trips (Public)',
+    description:
+      'Public endpoint to search for available trips based on origin, destination, date, and number of passengers. Returns trips with available seats.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trips found successfully',
+    schema: {
+      example: [
+        {
+          id: 'uuid',
+          from: 'TP.HCM',
+          to: 'Đà Lạt',
+          departureTime: '2025-12-05T08:00:00Z',
+          arrivalTime: '2025-12-05T14:30:00Z',
+          duration: '6h 30m',
+          price: 250000,
+          busType: 'Sleeper',
+          company: 'Phương Trang',
+          amenities: ['wifi', 'air_conditioning', 'water'],
+          seatsAvailable: 15,
+          busModel: 'Thaco Universe',
+          plateNumber: '51A-111.11',
+        },
+      ],
+    },
+  })
+  async searchTrips(@Query() query: SearchTripsDto) {
+    return await this.tripService.searchTrips(query);
+  }
+
+  @Get('admin')
+  @ApiBearerAuth()
+  @Roles(RoleType.ADMIN, RoleType.MODERATOR)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get list of trips (Admin)',
+    description:
+      'Admin endpoint: Retrieves a paginated list of trips with optional filters for route, bus, and status.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trips retrieved successfully',
+    schema: {
+      example: {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+      },
+    },
+  })
+  async getTripsAdmin(@Query() query: TripQueryDto) {
+    return await this.tripService.getTrips(query);
+  }
+
+  @Post('admin')
+  @ApiBearerAuth()
   @Roles(RoleType.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -60,32 +124,8 @@ export class TripController {
     return await this.tripService.createTrip(createTripDto);
   }
 
-  @Get()
-  @Roles(RoleType.ADMIN, RoleType.MODERATOR)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Get list of trips',
-    description:
-      'Retrieves a paginated list of trips with optional filters for route, bus, and status.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Trips retrieved successfully',
-    schema: {
-      example: {
-        data: [],
-        total: 0,
-        page: 1,
-        limit: 10,
-        totalPages: 0,
-      },
-    },
-  })
-  async getTrips(@Query() query: TripQueryDto) {
-    return await this.tripService.getTrips(query);
-  }
-
-  @Get(':id')
+  @Get('admin/:id')
+  @ApiBearerAuth()
   @Roles(RoleType.ADMIN, RoleType.MODERATOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -110,7 +150,8 @@ export class TripController {
     return await this.tripService.getTripById(params.id);
   }
 
-  @Patch(':id')
+  @Patch('admin/:id')
+  @ApiBearerAuth()
   @Roles(RoleType.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -143,7 +184,8 @@ export class TripController {
     return await this.tripService.updateTrip(params.id, updateTripDto);
   }
 
-  @Patch(':id/cancel')
+  @Patch('admin/:id/cancel')
+  @ApiBearerAuth()
   @Roles(RoleType.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

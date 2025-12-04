@@ -26,6 +26,9 @@ export class Bus {
   @Column()
   model: string;
 
+  @Column({ nullable: true })
+  busType: string; // Seat, Sleeper, VIP Sleeper, Limousine
+
   @Column()
   seatCapacity: number;
 

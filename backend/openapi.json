@@ -610,48 +610,95 @@
         ]
       }
     },
-    "/admin/trips": {
-      "post": {
-        "description": "Creates a new trip with route, bus, time schedule, and base price. Automatically generates seat statuses for all seats in the bus.",
-        "operationId": "TripController_createTrip",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTripDto"
+    "/trips/search": {
+      "get": {
+        "description": "Public endpoint to search for available trips based on origin, destination, date, and number of passengers. Returns trips with available seats.",
+        "operationId": "TripController_searchTrips",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Origin city/location",
+            "schema": {
+              "example": "TP.HCM",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Destination city/location",
+            "schema": {
+              "example": "Đà Lạt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Departure date (YYYY-MM-DD)",
+            "schema": {
+              "example": "2025-12-05",
+              "type": "string"
+            }
+          },
+          {
+            "name": "passengers",
+            "required": false,
+            "in": "query",
+            "description": "Number of passengers (minimum available seats)",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trips found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "uuid",
+                      "from": "TP.HCM",
+                      "to": "Đà Lạt",
+                      "departureTime": "2025-12-05T08:00:00Z",
+                      "arrivalTime": "2025-12-05T14:30:00Z",
+                      "duration": "6h 30m",
+                      "price": 250000,
+                      "busType": "Sleeper",
+                      "company": "Phương Trang",
+                      "amenities": [
+                        "wifi",
+                        "air_conditioning",
+                        "water"
+                      ],
+                      "seatsAvailable": 15,
+                      "busModel": "Thaco Universe",
+                      "plateNumber": "51A-111.11"
+                    }
+                  ]
+                }
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "Trip created successfully"
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Route or Bus not found"
-          },
-          "409": {
-            "description": "Bus scheduling conflict or inactive route/bus"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create a new trip",
+        "summary": "Search available trips (Public)",
         "tags": [
-          "Admin - Trips"
+          "Trips"
         ]
-      },
+      }
+    },
+    "/trips/admin": {
       "get": {
-        "description": "Retrieves a paginated list of trips with optional filters for route, bus, and status.",
-        "operationId": "TripController_getTrips",
+        "description": "Admin endpoint: Retrieves a paginated list of trips with optional filters for route, bus, and status.",
+        "operationId": "TripController_getTripsAdmin",
         "parameters": [
           {
             "name": "routeId",
@@ -738,13 +785,51 @@
             "bearer": []
           }
         ],
-        "summary": "Get list of trips",
+        "summary": "Get list of trips (Admin)",
         "tags": [
-          "Admin - Trips"
+          "Trips"
+        ]
+      },
+      "post": {
+        "description": "Creates a new trip with route, bus, time schedule, and base price. Automatically generates seat statuses for all seats in the bus.",
+        "operationId": "TripController_createTrip",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Trip created successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Route or Bus not found"
+          },
+          "409": {
+            "description": "Bus scheduling conflict or inactive route/bus"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new trip",
+        "tags": [
+          "Trips"
         ]
       }
     },
-    "/admin/trips/{id}": {
+    "/trips/admin/{id}": {
       "get": {
         "description": "Retrieves detailed information about a specific trip including route, bus, and seat statuses.",
         "operationId": "TripController_getTripById",
@@ -775,7 +860,7 @@
         ],
         "summary": "Get trip details",
         "tags": [
-          "Admin - Trips"
+          "Trips"
         ]
       },
       "patch": {
@@ -821,11 +906,11 @@
         ],
         "summary": "Update trip information",
         "tags": [
-          "Admin - Trips"
+          "Trips"
         ]
       }
     },
-    "/admin/trips/{id}/cancel": {
+    "/trips/admin/{id}/cancel": {
       "patch": {
         "description": "Cancels a scheduled trip. Cannot cancel trips that are already completed or cancelled.",
         "operationId": "TripController_cancelTrip",
@@ -856,7 +941,7 @@
         ],
         "summary": "Cancel a trip",
         "tags": [
-          "Admin - Trips"
+          "Trips"
         ]
       }
     }

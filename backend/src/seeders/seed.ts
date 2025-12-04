@@ -69,7 +69,7 @@ interface RouteRow {
 interface BusRow {
   plate_number: string;
   model: string;
-  type: string;
+  bus_type: string;
   capacity: string;
   operator_name: string;
   amenities: string;
@@ -182,13 +182,16 @@ async function seed() {
       bus.operatorId = operator.id;
       bus.plateNumber = row.plate_number;
       bus.model = row.model;
+      bus.busType = row.bus_type;
       bus.seatCapacity = parseInt(row.capacity);
       bus.amenitiesJson = row.amenities;
       bus.isActive = true;
 
       const savedBus = await AppDataSource.getRepository(Bus).save(bus);
       busMap.set(row.plate_number, savedBus);
-      console.log(`  ✓ Created bus: ${row.plate_number} (${row.model})`);
+      console.log(
+        `  ✓ Created bus: ${row.plate_number} (${row.bus_type} - ${row.model})`,
+      );
     }
 
     // 4. Seed Seats
@@ -217,6 +220,7 @@ async function seed() {
     // 5. Seed Trips
     console.log('📦 Seeding trips...');
     const tripRows = readCSV<TripRow>('trips.csv');
+    const createdTrips: Trip[] = [];
 
     for (const row of tripRows) {
       const route = routeMap.get(
@@ -244,11 +248,35 @@ async function seed() {
       trip.basePrice = parseFloat(row.base_price);
       trip.status = row.status;
 
-      await AppDataSource.getRepository(Trip).save(trip);
+      const savedTrip = await AppDataSource.getRepository(Trip).save(trip);
+      createdTrips.push(savedTrip);
       console.log(
         `  ✓ Created trip: ${row.route_origin} → ${row.route_destination} at ${row.departure_time}`,
       );
     }
+
+    // 6. Generate Seat Statuses for all Trips
+    console.log('🪑 Generating seat statuses for trips...');
+    let seatStatusCount = 0;
+
+    for (const trip of createdTrips) {
+      // Get all seats for this trip's bus
+      const seats = await AppDataSource.getRepository(Seat).find({
+        where: { busId: trip.busId },
+      });
+
+      for (const seat of seats) {
+        const seatStatus = new SeatStatus();
+        seatStatus.tripId = trip.id;
+        seatStatus.seatId = seat.id;
+        seatStatus.state = 'available';
+        seatStatus.lockedUntil = new Date(0); // epoch time
+
+        await AppDataSource.getRepository(SeatStatus).save(seatStatus);
+        seatStatusCount++;
+      }
+    }
+    console.log(`  ✓ Created ${seatStatusCount} seat statuses`);
 
     console.log('');
     console.log('🎉 Database seeding completed successfully!');
@@ -258,6 +286,7 @@ async function seed() {
     console.log(`   - Buses: ${busMap.size}`);
     console.log(`   - Seats: ${seatCount}`);
     console.log(`   - Trips: ${tripRows.length}`);
+    console.log(`   - Seat Statuses: ${seatStatusCount}`);
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     process.exit(1);
