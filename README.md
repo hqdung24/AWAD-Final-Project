@@ -1,38 +1,38 @@
-# Bus Ticket Booking System – Assignment 1 (Auth, Authorization, Layout & Dashboard)
+# Bus Ticket Booking System – Auth + Trip Management WIP
 
-This repository contains the first assignment for the AWAD course: implementing authentication, social login, basic authorization scaffolding, shared layout/theme, and role-aware dashboards for the Bus Ticket Booking System.
+This monorepo hosts the AWAD project with authentication, dashboards, and in-progress trip management/search. It is not production-ready: several admin and search endpoints are still stubs, but seeding provides demo data to explore the API and UI.
 
 ## Monorepo layout
-- `frontend/`: React + Vite + TypeScript + Tailwind (shadcn) SPA.
-- `backend/`: NestJS + TypeORM + PostgreSQL API.
-- `design/`: Admin/User dashboard mockups (`admin-dashboard.excalidraw`, `user-dashboard.excalidraw`).
-- `project.md`, `G03 - Authentication, Authorization, Layout & Dashboard.md`: project and assignment briefs.
+- `frontend/`: React + Vite + TypeScript + Tailwind (shadcn) SPA (protected landing/search, admin CRUD shells).
+- `backend/`: NestJS + TypeORM + PostgreSQL API (auth, trips, seats, buses, routes, bookings).
+- `design/`: Dashboard mockups.
+- `project.md`, `week2_trip_management.md`: milestone briefs.
 
-## Implemented for Assignment 1
-- **Authentication**: Email/password signup & signin with bcrypt hashing; Google OAuth client flow (`@react-oauth/google`) and server verification (`google-auth-library`).
-- **Token model**: Access token stored in Zustand (persisted). Refresh token set as HttpOnly cookie and rotated on `/auth/refresh`; Axios interceptor retries on 401 with RT.
-- **Authorization**: Role field on users and Nest role guard/provider implemented; dashboards and sidebar adapt to `me.role` (admin vs user). Server routes are currently public unless decorated with `@Roles` (to be tightened).
-- **Layout & theme**: Global shell (`MainLayout` with header + sidebar), theme tokens with light/dark palettes, reusable UI primitives (button, card, form fields), theme toggle with localStorage persistence.
-- **Dashboard UI**: Admin dashboard (summary cards, trend chart, top routes, recent bookings) and User dashboard (upcoming trips, navigation) using mock data, matching provided mockups.
-- **Tooling**: ESLint configured for both apps; TypeScript strict on backend.
+## Highlights (current state)
+- **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry.
+- **Dashboards**: Role-aware shell with admin/user dashboard pages; data mostly mock/fallback.
+- **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Frontend admin pages for trips/routes/buses are wired to placeholder endpoints and need backend alignment.
+- **Search**: Public controller exposes `/api/trips/search` and `/api/trips/:id`, but service logic is incomplete—expect gaps until finished.
 
 ## Prerequisites
 - Node.js 20+ and npm
 - Docker (optional) for local Postgres via `docker-compose.yml`
-- Google OAuth client credentials (web type) for frontend + backend verification
-- PostgreSQL database for NestJS API
+- PostgreSQL database reachable from the backend
+- Google OAuth web client ID/secret
 
 ## Environment variables
 
 Create `backend/.env` (or `.env.development`) with:
 ```
 NODE_ENV=development
-PORT=3600
+PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASS=supersecret
-DB_NAME=nestauth_db
+DB_NAME=blauchat_db
+DB_SYNCHRONIZE=true
+DB_AUTO_LOAD_ENTITIES=true
 JWT_SECRET=change_me
 JWT_AUDIENCE=auth:users
 JWT_ISSUER=auth:issuer
@@ -42,24 +42,26 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 REFRESH_COOKIE_NAME=refreshToken
 REFRESH_COOKIE_MAX_AGE=2592000
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 Create `frontend/.env`:
 ```
-VITE_API_URL=http://localhost:3600/api
+VITE_API_URL=http://localhost:3000/api
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
 For tests, create `backend/.env.test` with safe dummy values and a throwaway DB:
 ```
 NODE_ENV=test
-PORT=3600
+PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASS=supersecret
-DB_NAME=nestauth_db
-S3_BUCKET=dummy-bucket
+DB_NAME=blauchat_db_test
+DB_SYNCHRONIZE=true
+DB_AUTO_LOAD_ENTITIES=true
 GOOGLE_CLIENT_ID=dummy-google-client-id
 GOOGLE_CLIENT_SECRET=dummy-google-client-secret
 JWT_SECRET=secret
@@ -79,6 +81,10 @@ REFRESH_COOKIE_MAX_AGE=2592000
 - `cd backend`
 - `npm install`
 - `npm run dev` (starts NestJS with global prefix `/api` and Swagger at `/docs`).
+- **Seed sample data** (operators, routes, buses, seats, trips, seat statuses):
+  - ensure the database exists and `.env` is set
+  - `npm run seed`
+  - CSV seed files live in `backend/src/seeders/data`.
 
 3) **Frontend**
 - `cd frontend`
@@ -88,22 +94,26 @@ REFRESH_COOKIE_MAX_AGE=2592000
 Sign up with email/password, then sign in; or use “Continue with Google”. Protected routes redirect unauthenticated users to `/signin`.
 
 ## Auth & authorization design
-- **Storage**: Access token in Zustand (persisted) for `Authorization: Bearer ...`; refresh token is HttpOnly cookie set by the backend.
-- **Refresh flow**: Axios interceptor calls `/auth/refresh` on 401 (skipping auth endpoints), rotates RT cookie, and retries the original request.
-- **Roles**: `RoleType` enum with hierarchy provider. Role guard is implemented but not yet applied to specific controllers—needs `@Roles(...)` on admin-only endpoints. Frontend switches dashboard layout based on `me.role`.
+- Access token in Zustand (persisted) for `Authorization: Bearer ...`; refresh token is HttpOnly cookie set by the backend.
+- Axios interceptor calls `/auth/refresh` on 401 (skipping auth endpoints), rotates RT cookie, and retries.
+- `RoleType` enum + role guard/provider; admin-only controllers use `@Roles(RoleType.ADMIN)` (trip admin, seats). Frontend switches layouts based on `me.role`.
 
-## API surface (key routes)
+## API surface (selected)
 - `POST /api/auth/signup` – email/password registration
 - `POST /api/auth/signin` – email/username + password
 - `POST /api/auth/google-authentication` – Google ID token to access/refresh tokens
 - `POST /api/auth/refresh` – rotate RT cookie, return new AT
 - `POST /api/auth/signout` – clear RT cookie
 - `GET /api/users/me` – current user profile (requires AT)
+- `POST /api/admin/trips` – create trip with bus conflict checks; auto-generates seat statuses
+- `GET /api/trips/search` – public trip search (WIP; filters incomplete)
+- Swagger available at `/api/docs`
 
-## Design system & dashboard
-- Theme tokens defined in `frontend/src/index.css` and `frontend/tailwind.config.ts` with light/dark palettes, spacing, radii, gradients.
-- Layout shell: `MainLayout`, `SiteHeader`, `AppSidebar` with nav adapted by role.
-- Dashboard views: `frontend/src/pages/home/AdminDashboard.tsx` and `UserDashboard.tsx` align with `/design/*.excalidraw` mockups (currently using mock data).
+## Frontend routes (selected)
+- `/` Landing search form (protected; redirects to `/search` with params)
+- `/search` Trip search results UI (calls `/trips/search`; filtering/pagination TODO)
+- `/dashboard` Admin or user dashboard based on role
+- `/trips`, `/routes`, `/buses` Admin CRUD shells (endpoints still need wiring to backend)
 
 ## Quality & tooling
 - ESLint configured in both apps. Prettier, lint-staged, and Husky are not yet wired—needs adding to match rubric.
@@ -112,4 +122,4 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
   - **Frontend (Vitest)**: `cd frontend && npm run test` (or `npm run test:watch`). JSDOM + Testing Library setup in `vite.config.ts` and `vitest.setup.ts`.
 
 ## Deployment
-- Not yet deployed. Recommended: Vercel/Netlify for the frontend and Railway/Render for the backend, then set `VITE_API_URL` and cookie domains accordingly.
+- Not yet deployed. Recommended: Vercel/Netlify for the frontend and Railway/Render for the backend, then set `VITE_API_URL`, cookie domain, and allowed origins accordingly.

@@ -19,6 +19,7 @@ import {
   updateTrip,
   deleteTrip,
   listBuses,
+  type TripListResponse,
   type Trip,
   type Bus,
 } from '@/services/tripService';
@@ -42,7 +43,7 @@ export default function TripsPage() {
     queryKey: ['admin-routes'],
     queryFn: listAdminRoutes,
   });
-  const { data: trips = [] } = useQuery<Trip[]>({
+  const { data: tripsResponse } = useQuery<TripListResponse>({
     queryKey: ['trips'],
     queryFn: listTrips,
   });
@@ -50,6 +51,7 @@ export default function TripsPage() {
     queryKey: ['buses'],
     queryFn: listBuses,
   });
+  const trips = tripsResponse?.data ?? [];
 
   const tripCreateMutation = useMutation({
     mutationFn: createTrip,
@@ -109,7 +111,7 @@ export default function TripsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Trip Scheduling (mock now, DB-ready later)</span>
+            <span>Trip Scheduling</span>
             <span className="text-muted-foreground text-xs">
               Assign buses, set times, and manage trips
             </span>

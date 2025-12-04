@@ -23,7 +23,7 @@ import {
   getSeatMap,
   updateSeatMap,
 } from '@/services/busService';
-import { listAdminRoutes, type AdminRoute } from '@/services/adminRoutesService';
+import { listRoutesWithStops, type RouteStop } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const initialBus: Omit<Bus, 'id'> = {
@@ -52,10 +52,12 @@ export default function BusesPage() {
     queryKey: ['buses'],
     queryFn: listBuses,
   });
-  const { data: routes = [] } = useQuery<AdminRoute[]>({
+
+  const { data: routes = [] } = useQuery<RouteStop[]>({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: listRoutesWithStops,
   });
+
   const { data: assignments = [] } = useQuery<BusAssignment[]>({
     queryKey: ['bus-assignments'],
     queryFn: () => listAssignments(),
@@ -65,7 +67,7 @@ export default function BusesPage() {
     queryKey: ['seat-map', seatBusId],
     queryFn: () => getSeatMap(seatBusId),
     enabled: Boolean(seatBusId),
-    onSuccess: (data) => setSeats(data),
+    onSuccess: (data) => setSeats(data ?? []),
   });
 
   useEffect(() => {
