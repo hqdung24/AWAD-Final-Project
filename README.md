@@ -11,8 +11,8 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 ## Highlights (current state)
 - **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry.
 - **Dashboards**: Role-aware shell with admin/user dashboard pages; data mostly mock/fallback.
-- **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Frontend admin pages for trips/routes/buses are wired to placeholder endpoints and need backend alignment.
-- **Search**: Public controller exposes `/api/trips/search` and `/api/trips/:id`, but service logic is incomplete—expect gaps until finished.
+- **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType` and amenities JSON; seed data populates operators, routes, buses, seats, trips, and seat statuses.
+- **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
 
 ## Prerequisites
 - Node.js 20+ and npm
@@ -106,12 +106,14 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `POST /api/auth/signout` – clear RT cookie
 - `GET /api/users/me` – current user profile (requires AT)
 - `POST /api/admin/trips` – create trip with bus conflict checks; auto-generates seat statuses
-- `GET /api/trips/search` – public trip search (WIP; filters incomplete)
+- `GET /api/trips/search` – public trip search (from/to/date/passengers; WIP on advanced filters)
+- `GET /api/trips/:id` – public trip detail including route points (pickup/dropoff) and amenities
 - Swagger available at `/api/docs`
 
 ## Frontend routes (selected)
 - `/` Landing search form (protected; redirects to `/search` with params)
-- `/search` Trip search results UI (calls `/trips/search`; filtering/pagination TODO)
+- `/search` Trip search results UI (uses `/trips/search`; local filtering/pagination)
+- `/search/:id` Trip detail page (uses `/trips/:id`)
 - `/dashboard` Admin or user dashboard based on role
 - `/trips`, `/routes`, `/buses` Admin CRUD shells (endpoints still need wiring to backend)
 
