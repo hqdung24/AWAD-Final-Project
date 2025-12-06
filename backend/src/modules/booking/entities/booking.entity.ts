@@ -20,9 +20,10 @@ export class Booking {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  //nullable userId to allow guest bookings
+  @Column({ nullable: true })
   @Index()
-  userId: string;
+  userId: string | null;
 
   @Column()
   @Index()

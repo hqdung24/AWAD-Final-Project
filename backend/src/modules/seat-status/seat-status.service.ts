@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { SeatStatusRepository } from './seat-status.repository';
 import { SeatStatus } from './entities/seat-status.entity';
+import { SeatLockProvider } from './providers/seat-lock.provider';
 
 @Injectable()
 export class SeatStatusService {
-  constructor(private readonly seatStatusRepository: SeatStatusRepository) {}
+  constructor(
+    private readonly seatStatusRepository: SeatStatusRepository,
+    private readonly seatLockProvider: SeatLockProvider,
+  ) {}
 
   async save(seatStatus: SeatStatus): Promise<SeatStatus> {
     return await this.seatStatusRepository.save(seatStatus);
@@ -45,5 +49,33 @@ export class SeatStatusService {
 
   async delete(id: string): Promise<void> {
     return await this.seatStatusRepository.delete(id);
+  }
+
+  /**
+   * Lock seats for a trip
+   */
+  async lockSeats(
+    tripId: string,
+    seatIds: string[],
+  ): Promise<{
+    seatIds: string[];
+    lockedUntil: string;
+    lockToken: string;
+  }> {
+    return await this.seatLockProvider.lockSeatsForTrip(tripId, seatIds);
+  }
+
+  /**
+   * Verify and decode lock token
+   */
+  verifyLockToken(token: string) {
+    return this.seatLockProvider.verifyLockToken(token);
+  }
+
+  /**
+   * Unlock seats
+   */
+  async unlockSeats(tripId: string, seatIds: string[]): Promise<void> {
+    return await this.seatLockProvider.unlockSeats(tripId, seatIds);
   }
 }

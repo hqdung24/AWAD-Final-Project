@@ -154,9 +154,9 @@ export class TripRepository {
     // Filter by available seats if passengers specified
     if (passengers) {
       const filtered = trips.filter((trip) => {
-        const availableSeats = trip.seatStatuses?.filter(
-          (ss) => ss.state === 'available',
-        ).length || 0;
+        const availableSeats =
+          trip.seatStatuses?.filter((ss) => ss.state === 'available').length ||
+          0;
         return availableSeats >= passengers;
       });
       console.log(`✅ After seat filtering: ${filtered.length} trips`);

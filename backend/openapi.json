@@ -1180,6 +1180,133 @@
           "Trips"
         ]
       }
+    },
+    "/seat-status/lock": {
+      "post": {
+        "description": "Lock seats for a specific trip to prevent double booking. Seats are locked for a configured duration (default 10 minutes). Returns a lock token that must be used for subsequent booking operations. If any seat cannot be locked, the entire operation fails with no partial locks.",
+        "operationId": "SeatStatusController_lockSeats",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Trip ID and array of seat IDs to lock",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockSeatsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seats locked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockSeatsSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid seat IDs or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockSeatsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trip not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockSeatsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trip unavailable, seat locked by others, or seat already booked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockSeatsErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lock seats for booking",
+        "tags": [
+          "Seat Status"
+        ]
+      }
+    },
+    "/booking": {
+      "post": {
+        "description": "Create a booking using a valid lock token. The lock token must be obtained from the seat lock endpoint first. Validates seat availability, passenger data, and creates booking atomically. All seats will be marked as booked and lock will be released.",
+        "operationId": "BookingController_createBooking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBookingSuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token, validation error, or seat code mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBookingErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Trip not found or seats not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBookingErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Seat locked by another user, already booked, or lock expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBookingErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new booking",
+        "tags": [
+          "Booking"
+        ]
+      }
     }
   },
   "info": {
@@ -1587,6 +1714,355 @@
             "example": "scheduled"
           }
         }
+      },
+      "LockSeatsDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "description": "Trip ID to lock seats for",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "seatIds": {
+            "description": "Array of seat IDs to lock",
+            "example": [
+              "seat-id-1",
+              "seat-id-2",
+              "seat-id-3"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "seatIds"
+        ]
+      },
+      "LockSeatsSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success flag",
+            "example": true
+          },
+          "tripId": {
+            "type": "string",
+            "description": "Trip ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "seatIds": {
+            "description": "Array of locked seat IDs",
+            "example": [
+              "seat-id-1",
+              "seat-id-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lockedUntil": {
+            "type": "string",
+            "description": "ISO timestamp until which seats are locked",
+            "example": "2025-02-20T09:30:00Z"
+          },
+          "lockToken": {
+            "type": "string",
+            "description": "JWT token to use for subsequent booking operations",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        },
+        "required": [
+          "success",
+          "tripId",
+          "seatIds",
+          "lockedUntil",
+          "lockToken"
+        ]
+      },
+      "LockSeatsErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success flag",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Error code",
+            "enum": [
+              "TRIP_NOT_FOUND",
+              "TRIP_UNAVAILABLE",
+              "INVALID_SEAT",
+              "SEAT_LOCKED",
+              "SEAT_BOOKED",
+              "SEAT_NOT_FOUND"
+            ],
+            "example": "SEAT_LOCKED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Seat is already locked by another user"
+          },
+          "seat": {
+            "type": "string",
+            "description": "ID of the problematic seat (if applicable)",
+            "example": "seat-id-x"
+          },
+          "lockedUntil": {
+            "type": "string",
+            "description": "Locked until timestamp (if seat is locked)",
+            "example": "2025-02-20T09:25:00Z"
+          }
+        },
+        "required": [
+          "success",
+          "error",
+          "message"
+        ]
+      },
+      "PassengerDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "description": "Full name of the passenger",
+            "example": "Nguyen Van A"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "Government-issued document ID (CMND/CCCD)",
+            "example": "0123456789"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number of the passenger (optional)",
+            "example": "0909123456"
+          },
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code assigned to this passenger",
+            "example": "A1"
+          }
+        },
+        "required": [
+          "fullName",
+          "documentId",
+          "seatCode"
+        ]
+      },
+      "ContactInfoDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Contact person name",
+            "example": "Nguyen Van A"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email address",
+            "example": "nguyenvana@gmail.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone number",
+            "example": "0909123456"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "lockToken": {
+            "type": "string",
+            "description": "JWT lock token obtained from the seat lock endpoint, contains tripId and seatIds",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "passengers": {
+            "description": "Array of passenger information. Must match the number of locked seats.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassengerDto"
+            }
+          },
+          "contactInfo": {
+            "description": "Contact information for booking confirmation",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactInfoDto"
+              }
+            ]
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "description": "UUID of the payment method to use for this booking (optional for now)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        },
+        "required": [
+          "lockToken",
+          "passengers",
+          "contactInfo"
+        ]
+      },
+      "SeatInfoDto": {
+        "type": "object",
+        "properties": {
+          "seatId": {
+            "type": "string",
+            "description": "UUID of the seat",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code (e.g., A1, B2)",
+            "example": "A1"
+          }
+        },
+        "required": [
+          "seatId",
+          "seatCode"
+        ]
+      },
+      "PassengerInfoDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "description": "Full name of the passenger",
+            "example": "Nguyen Van A"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "Document ID (CMND/CCCD)",
+            "example": "0123456789"
+          },
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code assigned to passenger",
+            "example": "A1"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number (if provided)",
+            "example": "0909123456"
+          }
+        },
+        "required": [
+          "fullName",
+          "documentId",
+          "seatCode"
+        ]
+      },
+      "CreateBookingSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": "string",
+            "description": "UUID of the created booking",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "tripId": {
+            "type": "string",
+            "description": "UUID of the trip",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "status": {
+            "type": "string",
+            "description": "Booking status",
+            "example": "pending",
+            "enum": [
+              "pending",
+              "paid",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "seats": {
+            "description": "Array of booked seats",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatInfoDto"
+            }
+          },
+          "passengers": {
+            "description": "Array of passenger details",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassengerInfoDto"
+            }
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Total amount to be paid",
+            "example": 300000
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "description": "Payment method ID (if provided)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when booking was created",
+            "example": "2025-12-06T12:30:00.000Z"
+          }
+        },
+        "required": [
+          "bookingId",
+          "tripId",
+          "status",
+          "seats",
+          "passengers",
+          "totalAmount",
+          "createdAt"
+        ]
+      },
+      "CreateBookingErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "examples": [
+              "Invalid or expired lock token",
+              "Seat is locked or booked",
+              "Number of passengers must match number of seats",
+              "Passenger seatCode does not match requested seat"
+            ]
+          },
+          "seat": {
+            "type": "string",
+            "description": "Additional error details (e.g., seat code that failed)",
+            "example": "A1"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code for programmatic handling",
+            "examples": [
+              "INVALID_TOKEN",
+              "TOKEN_EXPIRED",
+              "SEAT_UNAVAILABLE",
+              "PASSENGER_MISMATCH",
+              "SEAT_CODE_MISMATCH"
+            ]
+          }
+        },
+        "required": [
+          "message"
+        ]
       }
     }
   }

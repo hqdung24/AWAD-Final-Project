@@ -168,9 +168,8 @@ export class TripService {
 
     // Transform trips to include bus and route details
     return trips.map((trip) => {
-      const availableSeats = trip.seatStatuses?.filter(
-        (ss) => ss.state === 'available',
-      ).length || 0;
+      const availableSeats =
+        trip.seatStatuses?.filter((ss) => ss.state === 'available').length || 0;
 
       return {
         id: trip.id,
@@ -197,18 +196,29 @@ export class TripService {
       throw new NotFoundException(`Trip with ID ${id} not found`);
     }
 
-    const availableSeats = trip.seatStatuses?.filter(
-      (ss) => ss.state === 'available',
-    ).length || 0;
+    const availableSeats =
+      trip.seatStatuses?.filter((ss) => ss.state === 'available').length || 0;
 
     // Group route points by type
     const routePoints = {
-      pickup: trip.route?.routePoints?.filter(rp => rp.type === 'pickup')
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map(rp => ({ name: rp.name, address: rp.address, note: rp.address })) || [],
-      dropoff: trip.route?.routePoints?.filter(rp => rp.type === 'dropoff')
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map(rp => ({ name: rp.name, address: rp.address, note: rp.address })) || [],
+      pickup:
+        trip.route?.routePoints
+          ?.filter((rp) => rp.type === 'pickup')
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map((rp) => ({
+            name: rp.name,
+            address: rp.address,
+            note: rp.address,
+          })) || [],
+      dropoff:
+        trip.route?.routePoints
+          ?.filter((rp) => rp.type === 'dropoff')
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map((rp) => ({
+            name: rp.name,
+            address: rp.address,
+            note: rp.address,
+          })) || [],
     };
 
     return {
@@ -240,7 +250,9 @@ export class TripService {
   private parseAmenities(amenitiesJson?: string): string[] {
     if (!amenitiesJson) return [];
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const parsed = JSON.parse(amenitiesJson);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];

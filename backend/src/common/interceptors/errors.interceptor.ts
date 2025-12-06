@@ -62,8 +62,6 @@ export class ErrorsInterceptor implements NestInterceptor {
         ) {
           // Common cross-DB hints
           const pgCode = err?.code; // e.g. Postgres: '23505', '23503', '23502'
-          const myErrno = err?.errno; // e.g. MySQL: 1062 duplicate entry
-          const sqliteCode = err?.code; // e.g. 'SQLITE_CONSTRAINT'
           const detail = err?.detail || err?.message;
 
           // Postgres
@@ -93,31 +91,6 @@ export class ErrorsInterceptor implements NestInterceptor {
                 new BadRequestException({
                   code: 'NOT_NULL_VIOLATION',
                   message: 'A required field is missing.',
-                  detail,
-                }),
-            );
-          }
-
-          // MySQL / MariaDB
-          if (myErrno === 1062) {
-            return throwError(
-              () =>
-                new ConflictException({
-                  code: 'UNIQUE_VIOLATION',
-                  message: 'Duplicate value violates unique constraint.',
-                  detail,
-                }),
-            );
-          }
-          // You can add more MySQL errno mappings here if you need.
-
-          // SQLite
-          if (sqliteCode === 'SQLITE_CONSTRAINT') {
-            return throwError(
-              () =>
-                new BadRequestException({
-                  code: 'CONSTRAINT_VIOLATION',
-                  message: 'Constraint violation.',
                   detail,
                 }),
             );

@@ -5,10 +5,14 @@ import { SeatStatus } from './entities/seat-status.entity';
 
 @Injectable()
 export class SeatStatusRepository {
+  readonly repository: Repository<SeatStatus>;
+
   constructor(
     @InjectRepository(SeatStatus)
-    private readonly repository: Repository<SeatStatus>,
-  ) {}
+    repository: Repository<SeatStatus>,
+  ) {
+    this.repository = repository;
+  }
 
   async save(seatStatus: SeatStatus): Promise<SeatStatus> {
     return await this.repository.save(seatStatus);
