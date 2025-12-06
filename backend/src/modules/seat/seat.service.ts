@@ -71,13 +71,14 @@ export class SeatService {
   async updateSeat(id: string, dto: UpdateSeatDto): Promise<Seat> {
     // Validate seat exists
     const seat = await this.findById(id);
-    if (!seat || !seat.isActive) {
-      throw new NotFoundException(`Seat with ID ${id} not found or inactive`);
+    if (!seat) {
+      throw new NotFoundException(`Seat with ID ${id} not found`);
     }
 
     const updateData: Partial<Seat> = {};
     if (dto.seatCode) updateData.seatCode = dto.seatCode;
     if (dto.seatType) updateData.seatType = dto.seatType;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
     const updatedSeat = await this.update(id, updateData);
     if (!updatedSeat) {

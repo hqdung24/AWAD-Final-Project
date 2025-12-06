@@ -148,7 +148,8 @@ export default function TripsPage() {
                 <option value="">Select bus</option>
                 {buses.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.capacity})
+                    {b.operator?.name ? `${b.operator.name} — ` : ''}
+                    {b.plateNumber} · {b.model} ({b.seatCapacity})
                   </option>
                 ))}
               </select>

@@ -663,6 +663,100 @@
         ]
       }
     },
+    "/admin/buses": {
+      "get": {
+        "operationId": "BusController_listBuses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Buses retrieved successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List buses",
+        "tags": [
+          "Admin - Buses"
+        ]
+      },
+      "post": {
+        "operationId": "BusController_createBus",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create bus",
+        "tags": [
+          "Admin - Buses"
+        ]
+      }
+    },
+    "/admin/buses/{id}": {
+      "patch": {
+        "operationId": "BusController_updateBus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update bus",
+        "tags": [
+          "Admin - Buses"
+        ]
+      },
+      "delete": {
+        "operationId": "BusController_deleteBus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft delete bus",
+        "tags": [
+          "Admin - Buses"
+        ]
+      }
+    },
     "/admin/buses/{id}/seats": {
       "get": {
         "description": "Retrieve all seats for a specific bus. Accessible by admins and moderators.",
@@ -781,6 +875,39 @@
           }
         ],
         "summary": "Update seat information",
+        "tags": [
+          "Admin - Seats"
+        ]
+      },
+      "delete": {
+        "description": "Mark a seat as inactive for a specific bus.",
+        "operationId": "SeatController_deleteSeat",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Seat ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Seat deleted (soft) successfully"
+          },
+          "404": {
+            "description": "Seat not found or already inactive"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete seat (soft delete)",
         "tags": [
           "Admin - Seats"
         ]

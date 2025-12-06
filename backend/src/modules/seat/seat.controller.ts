@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
+import { Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -80,5 +81,24 @@ export class SeatController {
     @Body() updateSeatDto: UpdateSeatDto,
   ) {
     return await this.seatService.updateSeat(params.id, updateSeatDto);
+  }
+
+  @Delete('seats/:id')
+  @Roles(RoleType.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete seat (soft delete)',
+    description: 'Mark a seat as inactive for a specific bus.',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Seat deleted (soft) successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Seat not found or already inactive',
+  })
+  async deleteSeat(@Param() params: SeatIdParamDto) {
+    await this.seatService.softDelete(params.id);
   }
 }

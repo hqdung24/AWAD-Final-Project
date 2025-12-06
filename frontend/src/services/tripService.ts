@@ -20,9 +20,16 @@ export type Trip = {
 
 export type Bus = {
   id: string;
-  name: string;
-  capacity: number;
-  seatLayout?: string;
+  operatorId: string;
+  operator?: {
+    id: string;
+    name: string;
+  };
+  plateNumber: string;
+  model: string;
+  busType?: string;
+  seatCapacity: number;
+  amenitiesJson?: string;
 };
 
 export type TripListResponse = {
@@ -34,28 +41,27 @@ export type TripListResponse = {
 };
 
 export async function listTrips(): Promise<TripListResponse> {
-  const res = await http.get('/admin/trips');
+  const res = await http.get('/trips/admin');
   return (res as { data: TripListResponse }).data;
 }
 
 export async function listBuses(): Promise<Bus[]> {
-  // Buses are exposed under the bus controller
-  const res = await http.get('/bus');
+  const res = await http.get('/admin/buses');
   return (res as { data: Bus[] }).data;
 }
 
 export async function createTrip(payload: Omit<Trip, 'id'>): Promise<Trip> {
-  const res = await http.post('/admin/trips', payload);
+  const res = await http.post('/trips/admin', payload);
   return (res as { data: Trip }).data;
 }
 
 export async function updateTrip(id: string, payload: Partial<Omit<Trip, 'id'>>): Promise<Trip> {
-  const res = await http.patch(`/admin/trips/${id}`, payload);
+  const res = await http.patch(`/trips/admin/${id}`, payload);
   return (res as { data: Trip }).data;
 }
 
 export async function deleteTrip(id: string): Promise<void> {
-  await http.delete(`/admin/trips/${id}`);
+  await http.delete(`/trips/admin/${id}`);
 }
 
 export interface TripDetails {

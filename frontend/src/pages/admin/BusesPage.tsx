@@ -14,16 +14,14 @@ import {
   createBus,
   updateBus,
   deleteBus,
-  listAssignments,
-  assignBus,
-  deleteAssignment,
+  listSeats,
+  createSeat,
+  updateSeat,
+  deleteSeat,
   type Bus,
-  type BusAssignment,
   type Seat,
-  getSeatMap,
-  updateSeatMap,
 } from '@/services/busService';
-import { listRoutesWithStops, type RouteStop } from '@/services/routeStops';
+import { listOperators, type Operator } from '@/services/adminRoutesService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const initialBus: Omit<Bus, 'id'> = {
@@ -31,48 +29,54 @@ const initialBus: Omit<Bus, 'id'> = {
   name: '',
   plateNumber: '',
   model: '',
+  busType: '',
   seatCapacity: 40,
-  seatMetaJson: '',
+  amenitiesJson: '',
 };
+
+const seatTypes = ['STANDARD', 'PREMIUM', 'VIP'];
 
 export default function BusesPage() {
   const qc = useQueryClient();
   const [busForm, setBusForm] = useState<Omit<Bus, 'id'>>(initialBus);
   const [editingBusId, setEditingBusId] = useState<string | null>(null);
-  const [assignmentForm, setAssignmentForm] = useState<{
-    busId: string;
-    routeId: string;
-    startTime: string;
-    endTime: string;
-  }>({ busId: '', routeId: '', startTime: '', endTime: '' });
   const [seatBusId, setSeatBusId] = useState<string>('');
-  const [seats, setSeats] = useState<Seat[]>([]);
+  const [seatForm, setSeatForm] = useState<{ seatCode: string; seatType: string }>({
+    seatCode: '',
+    seatType: 'STANDARD',
+  });
+  const [seatDrafts, setSeatDrafts] = useState<Seat[]>([]);
 
   const { data: buses = [] } = useQuery<Bus[]>({
     queryKey: ['buses'],
     queryFn: listBuses,
   });
+  useEffect(() => {
+    if (!seatBusId && buses.length > 0) {
+      setSeatBusId(buses[0].id);
+    }
+  }, [buses, seatBusId]);
 
-  const { data: routes = [] } = useQuery<RouteStop[]>({
-    queryKey: ['admin-routes'],
-    queryFn: listRoutesWithStops,
+  const { data: operators = [] } = useQuery<Operator[]>({
+    queryKey: ['operators'],
+    queryFn: listOperators,
   });
 
-  const { data: assignments = [] } = useQuery<BusAssignment[]>({
-    queryKey: ['bus-assignments'],
-    queryFn: () => listAssignments(),
-  });
-
-  const { data: seatData, refetch: refetchSeatMap } = useQuery<Seat[]>({
-    queryKey: ['seat-map', seatBusId],
-    queryFn: () => getSeatMap(seatBusId),
+  const {
+    data: seats = [],
+    refetch: refetchSeats,
+    isFetching: seatsLoading,
+  } = useQuery<Seat[]>({
+    queryKey: ['seats', seatBusId],
+    queryFn: () => listSeats(seatBusId),
     enabled: Boolean(seatBusId),
-    onSuccess: (data) => setSeats(data ?? []),
   });
 
   useEffect(() => {
-    if (!seatBusId) setSeats([]);
-  }, [seatBusId]);
+    if (seats) {
+      setSeatDrafts(seats);
+    }
+  }, [seats]);
 
   const createBusMutation = useMutation({
     mutationFn: createBus,
@@ -96,41 +100,70 @@ export default function BusesPage() {
     mutationFn: deleteBus,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['buses'] });
-      void qc.invalidateQueries({ queryKey: ['bus-assignments'] });
     },
   });
 
-  const assignMutation = useMutation({
-    mutationFn: (payload: { busId: string; data: Omit<BusAssignment, 'id' | 'busId'> }) =>
-      assignBus(payload.busId, payload.data),
+  const createSeatMutation = useMutation({
+    mutationFn: (payload: { busId: string; seatCode: string; seatType: string }) =>
+      createSeat(payload.busId, {
+        seatCode: payload.seatCode,
+        seatType: payload.seatType,
+      }),
     onSuccess: () => {
-      setAssignmentForm({ busId: '', routeId: '', startTime: '', endTime: '' });
-      void qc.invalidateQueries({ queryKey: ['bus-assignments'] });
+      setSeatForm({ seatCode: '', seatType: 'STANDARD' });
+      void refetchSeats();
     },
   });
 
-  const deleteAssignmentMutation = useMutation({
-    mutationFn: deleteAssignment,
+  const updateSeatMutation = useMutation({
+    mutationFn: (payload: { id: string; data: Partial<Seat> }) =>
+      updateSeat(payload.id, payload.data),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['bus-assignments'] });
+      void refetchSeats();
     },
   });
 
-  const seatMapMutation = useMutation({
-    mutationFn: (payload: { busId: string; seats: Seat[] }) =>
-      updateSeatMap(payload.busId, payload.seats),
+  const deleteSeatMutation = useMutation({
+    mutationFn: deleteSeat,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['seat-map', seatBusId] });
+      void refetchSeats();
     },
   });
 
   const handleSubmitBus = () => {
-    if (!busForm.operatorId || !busForm.name || !busForm.plateNumber) return;
+    if (!busForm.operatorId || !busForm.plateNumber || !busForm.model) return;
+    const { name: _ignoredName, ...payload } = busForm;
     if (editingBusId) {
-      updateBusMutation.mutate({ id: editingBusId, data: busForm });
+      updateBusMutation.mutate({ id: editingBusId, data: payload });
     } else {
-      createBusMutation.mutate(busForm);
+      createBusMutation.mutate(payload);
     }
+  };
+
+  const handleCreateSeat = () => {
+    if (!seatBusId || !seatForm.seatCode) return;
+    createSeatMutation.mutate({
+      busId: seatBusId,
+      seatCode: seatForm.seatCode,
+      seatType: seatForm.seatType,
+    });
+  };
+
+  const handleSeatDraftChange = (id: string, partial: Partial<Seat>) => {
+    setSeatDrafts((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...partial } : s)),
+    );
+  };
+
+  const handleSaveSeat = (seat: Seat) => {
+    updateSeatMutation.mutate({
+      id: seat.id,
+      data: {
+        seatCode: seat.seatCode,
+        seatType: seat.seatType,
+        isActive: seat.isActive,
+      },
+    });
   };
 
   return (
@@ -142,15 +175,21 @@ export default function BusesPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Operator ID
-              <input
+              Operator
+              <select
                 className="border-input bg-background text-sm px-3 py-2 rounded-md border"
                 value={busForm.operatorId}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, operatorId: e.target.value }))
                 }
-                placeholder="0000-...-0001"
-              />
+              >
+                <option value="">Select operator</option>
+                {operators.map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Name
@@ -186,6 +225,17 @@ export default function BusesPage() {
               />
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Bus Type
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={busForm.busType ?? ''}
+                onChange={(e) =>
+                  setBusForm((prev) => ({ ...prev, busType: e.target.value }))
+                }
+                placeholder="Sleeper / Seat / VIP Sleeper"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Seat Capacity
               <input
                 className="border-input bg-background text-sm px-3 py-2 rounded-md border"
@@ -203,14 +253,14 @@ export default function BusesPage() {
               />
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Seat Meta JSON
+              Amenities JSON
               <input
                 className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={busForm.seatMetaJson ?? ''}
+                value={busForm.amenitiesJson ?? ''}
                 onChange={(e) =>
-                  setBusForm((prev) => ({ ...prev, seatMetaJson: e.target.value }))
+                  setBusForm((prev) => ({ ...prev, amenitiesJson: e.target.value }))
                 }
-                placeholder='{"layout":"2x1"}'
+                placeholder='{"wifi":true,"water":true}'
               />
             </label>
           </div>
@@ -220,7 +270,7 @@ export default function BusesPage() {
               onClick={handleSubmitBus}
               disabled={
                 createBusMutation.isPending || updateBusMutation.isPending ||
-                !busForm.operatorId || !busForm.name || !busForm.plateNumber
+                !busForm.operatorId || !busForm.plateNumber || !busForm.model
               }
             >
               {editingBusId
@@ -247,22 +297,24 @@ export default function BusesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
                   <TableHead>Plate</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Bus Type</TableHead>
                   <TableHead>Operator</TableHead>
                   <TableHead>Capacity</TableHead>
-                  <TableHead>Model</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {buses.map((bus) => (
                   <TableRow key={bus.id}>
-                    <TableCell>{bus.name}</TableCell>
                     <TableCell>{bus.plateNumber}</TableCell>
-                    <TableCell>{bus.operatorId}</TableCell>
-                    <TableCell>{bus.seatCapacity}</TableCell>
+                    <TableCell>{bus.name ?? '—'}</TableCell>
                     <TableCell>{bus.model ?? '—'}</TableCell>
+                    <TableCell>{bus.busType ?? '—'}</TableCell>
+                    <TableCell>{bus.operator?.name ?? bus.operatorId}</TableCell>
+                    <TableCell>{bus.seatCapacity}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
                         size="sm"
@@ -271,11 +323,12 @@ export default function BusesPage() {
                           setEditingBusId(bus.id);
                           setBusForm({
                             operatorId: bus.operatorId,
-                            name: bus.name,
+                            name: bus.name ?? '',
                             plateNumber: bus.plateNumber,
                             model: bus.model,
+                            busType: bus.busType,
                             seatCapacity: bus.seatCapacity,
-                            seatMetaJson: bus.seatMetaJson,
+                            amenitiesJson: bus.amenitiesJson,
                           });
                         }}
                       >
@@ -300,245 +353,163 @@ export default function BusesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Bus Assignments (conflict-checked)</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Seat Map Configuration</span>
+            {seatsLoading && (
+              <span className="text-xs text-muted-foreground">Loading…</span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="flex flex-wrap gap-3 items-end">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Bus
               <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={assignmentForm.busId}
-                onChange={(e) =>
-                  setAssignmentForm((prev) => ({ ...prev, busId: e.target.value }))
-                }
-              >
-                <option value="">Select bus</option>
-                {buses.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} ({b.plateNumber})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Route
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={assignmentForm.routeId}
-                onChange={(e) =>
-                  setAssignmentForm((prev) => ({ ...prev, routeId: e.target.value }))
-                }
-              >
-                <option value="">Select route</option>
-                {routes.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.origin} → {r.destination}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Start
-              <input
-                type="datetime-local"
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={assignmentForm.startTime}
-                onChange={(e) =>
-                  setAssignmentForm((prev) => ({ ...prev, startTime: e.target.value }))
-                }
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              End
-              <input
-                type="datetime-local"
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={assignmentForm.endTime}
-                onChange={(e) =>
-                  setAssignmentForm((prev) => ({ ...prev, endTime: e.target.value }))
-                }
-              />
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() =>
-                assignmentForm.busId &&
-                assignmentForm.routeId &&
-                assignmentForm.startTime &&
-                assignmentForm.endTime &&
-                assignMutation.mutate({
-                  busId: assignmentForm.busId,
-                  data: {
-                    routeId: assignmentForm.routeId,
-                    startTime: assignmentForm.startTime,
-                    endTime: assignmentForm.endTime,
-                  },
-                })
-              }
-              disabled={
-                assignMutation.isPending ||
-                !assignmentForm.busId ||
-                !assignmentForm.routeId ||
-                !assignmentForm.startTime ||
-                !assignmentForm.endTime
-              }
-            >
-              {assignMutation.isPending ? 'Assigning…' : 'Assign Bus'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                setAssignmentForm({ busId: '', routeId: '', startTime: '', endTime: '' })
-              }
-            >
-              Reset
-            </Button>
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bus</TableHead>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Start</TableHead>
-                  <TableHead>End</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map((a) => {
-                  const bus = buses.find((b) => b.id === a.busId);
-                  const route = routes.find((r) => r.id === a.routeId);
-                  return (
-                    <TableRow key={a.id}>
-                      <TableCell>{bus ? `${bus.name} (${bus.plateNumber})` : a.busId}</TableCell>
-                      <TableCell>
-                        {route ? `${route.origin} → ${route.destination}` : a.routeId}
-                      </TableCell>
-                      <TableCell>{new Date(a.startTime).toLocaleString()}</TableCell>
-                      <TableCell>{new Date(a.endTime).toLocaleString()}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteAssignmentMutation.mutate(a.id)}
-                          disabled={deleteAssignmentMutation.isPending}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Seat Map Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-3">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Bus
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border min-w-[220px]"
                 value={seatBusId}
                 onChange={(e) => setSeatBusId(e.target.value)}
               >
                 <option value="">Select bus</option>
                 {buses.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.plateNumber})
+                    {b.name ? `${b.name} — ` : ''}
+                    {b.plateNumber}
                   </option>
                 ))}
               </select>
             </label>
             <Button
               size="sm"
-              onClick={() => seatBusId && refetchSeatMap()}
-              disabled={!seatBusId}
+              variant="outline"
+              onClick={() => seatBusId && refetchSeats()}
+              disabled={!seatBusId || seatsLoading}
             >
-              Load Seats
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => seatBusId && seatMapMutation.mutate({ busId: seatBusId, seats })}
-              disabled={!seatBusId || seatMapMutation.isPending}
-            >
-              {seatMapMutation.isPending ? 'Saving…' : 'Save Seat Map'}
+              Refresh seats
             </Button>
           </div>
 
           {seatBusId ? (
-            <div className="rounded-md border p-3 space-y-2">
-              <div className="grid gap-2 md:grid-cols-4">
-                {seats.length ? (
-                  seats.map((seat, idx) => (
-                    <div
-                      key={seat.id ?? `${seat.seatCode}-${idx}`}
-                      className="border rounded-md p-2 flex flex-col gap-1"
-                    >
-                      <div className="flex items-center justify-between text-sm font-medium">
-                        <span>{seat.seatCode}</span>
-                        <label className="text-xs flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={seat.isActive}
-                            onChange={(e) =>
-                              setSeats((prev) =>
-                                prev.map((s, i) =>
-                                  i === idx ? { ...s, isActive: e.target.checked } : s,
-                                ),
-                              )
-                            }
-                          />
-                          Active
-                        </label>
-                      </div>
+            <>
+              <div className="grid gap-3 md:grid-cols-4">
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Seat code
+                  <input
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={seatForm.seatCode}
+                    onChange={(e) =>
+                      setSeatForm((prev) => ({ ...prev, seatCode: e.target.value }))
+                    }
+                    placeholder="A1"
+                  />
+                </label>
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Seat type
+                  <select
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={seatForm.seatType}
+                    onChange={(e) =>
+                      setSeatForm((prev) => ({ ...prev, seatType: e.target.value }))
+                    }
+                  >
+                    {seatTypes.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex items-end gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleCreateSeat}
+                    disabled={
+                      createSeatMutation.isPending ||
+                      !seatForm.seatCode ||
+                      !seatForm.seatType
+                    }
+                  >
+                    {createSeatMutation.isPending ? 'Saving…' : 'Add Seat'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSeatForm({ seatCode: '', seatType: 'STANDARD' })
+                    }
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {seatDrafts.map((seat) => (
+                  <div
+                    key={seat.id}
+                    className="border rounded-md p-3 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center justify-between">
                       <input
-                        className="border-input bg-background text-xs px-2 py-1 rounded-md border"
-                        value={seat.seatType}
+                        className="border-input bg-background text-sm px-2 py-1 rounded-md border w-1/2"
+                        value={seat.seatCode}
                         onChange={(e) =>
-                          setSeats((prev) =>
-                            prev.map((s, i) => (i === idx ? { ...s, seatType: e.target.value } : s)),
-                          )
+                          handleSeatDraftChange(seat.id, { seatCode: e.target.value })
                         }
-                        placeholder="seat type"
                       />
-                      <input
-                        className="border-input bg-background text-xs px-2 py-1 rounded-md border"
-                        type="number"
-                        min={0}
-                        value={seat.price ?? 0}
-                        onChange={(e) =>
-                          setSeats((prev) =>
-                            prev.map((s, i) =>
-                              i === idx
-                                ? { ...s, price: Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : 0 }
-                                : s,
-                            ),
-                          )
-                        }
-                        placeholder="price"
-                      />
+                      <label className="text-xs flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={seat.isActive}
+                          onChange={(e) =>
+                            handleSeatDraftChange(seat.id, { isActive: e.target.checked })
+                          }
+                        />
+                        Active
+                      </label>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-muted-foreground">No seats found for this bus.</div>
+                    <select
+                      className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                      value={seat.seatType}
+                      onChange={(e) =>
+                        handleSeatDraftChange(seat.id, { seatType: e.target.value })
+                      }
+                    >
+                      {seatTypes.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSaveSeat(seat)}
+                        disabled={updateSeatMutation.isPending}
+                      >
+                        {updateSeatMutation.isPending ? 'Saving…' : 'Save'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteSeatMutation.mutate(seat.id!)}
+                        disabled={deleteSeatMutation.isPending}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {!seatDrafts.length && (
+                  <p className="text-sm text-muted-foreground">
+                    No seats configured for this bus yet.
+                  </p>
                 )}
               </div>
-            </div>
+            </>
           ) : (
-            <p className="text-sm text-muted-foreground">Select a bus to edit its seat map.</p>
+            <p className="text-sm text-muted-foreground">
+              Select a bus to configure its seats.
+            </p>
           )}
         </CardContent>
       </Card>
