@@ -12,7 +12,7 @@ import { databaseConfig } from './config/database.config';
 import { environmentValidationSchema } from './config/envinronment.validation';
 import { UploadModule } from './modules/upload/upload.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { AdminRoutesModule } from './modules/admin-routes/admin-routes.module';
+//import { AdminRoutesModule } from './modules/admin-routes/admin-routes.module';
 import { PaymentMethodModule } from '@/modules/payment-method/payment-method.module';
 import { OperatorModule } from '@/modules/operator/operator.module';
 import { RouteModule } from '@/modules/route/route.module';
@@ -59,7 +59,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     AuthModule,
     UploadModule,
     DashboardModule,
-    AdminRoutesModule,
+    //AdminRoutesModule,
     PaymentMethodModule,
     OperatorModule,
     RouteModule,

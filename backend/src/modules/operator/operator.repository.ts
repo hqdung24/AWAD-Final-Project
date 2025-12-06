@@ -9,4 +9,10 @@ export class OperatorRepository {
     @InjectRepository(Operator)
     private readonly repository: Repository<Operator>,
   ) {}
+
+  async findAll(): Promise<Operator[]> {
+    return await this.repository.find({
+      order: { name: 'ASC' },
+    });
+  }
 }

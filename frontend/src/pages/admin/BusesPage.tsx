@@ -137,7 +137,7 @@ export default function BusesPage() {
     <div className="flex flex-col gap-6 p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Buses (mock now, DB-ready later)</CardTitle>
+          <CardTitle>Buses</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">

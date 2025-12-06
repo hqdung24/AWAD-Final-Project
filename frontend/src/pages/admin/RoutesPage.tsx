@@ -15,6 +15,8 @@ import {
   updateAdminRoute,
   deleteAdminRoute,
   type AdminRoute,
+  listOperators,
+  type Operator,
 } from '@/services/adminRoutesService';
 import { listRoutesWithStops, type RouteStop, type RouteWithStops } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,6 +59,11 @@ export default function RoutesPage() {
     (adminRoutesResult as (AdminRoute & { stops?: RouteStop[] })[]) ??
     [];
 
+  const { data: operators = [] } = useQuery<Operator[]>({
+    queryKey: ['operators'],
+    queryFn: listOperators,
+  });
+
   const createMutation = useMutation({
     mutationFn: createAdminRoute,
     onSuccess: () => {
@@ -86,7 +93,7 @@ export default function RoutesPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Manage Routes (mock now, DB-ready later)</span>
+            <span>Manage Routes</span>
             {routesLoading && (
               <span className="text-muted-foreground text-xs">Loading…</span>
             )}
@@ -96,10 +103,9 @@ export default function RoutesPage() {
           <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
             <div className="grid gap-3 md:grid-cols-3">
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Operator ID (uuid)
-                <input
+                Operator
+                <select
                   className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  placeholder="0000-...-0001"
                   value={createForm.operatorId}
                   onChange={(e) =>
                     setCreateForm((prev) => ({
@@ -107,7 +113,14 @@ export default function RoutesPage() {
                       operatorId: e.target.value,
                     }))
                   }
-                />
+                >
+                  <option value="">Select operator</option>
+                  {operators.map((op) => (
+                    <option key={op.id} value={op.id}>
+                      {op.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                 Origin
@@ -255,11 +268,12 @@ export default function RoutesPage() {
                   <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {adminRoutes.map((route) => {
-                const isEditing = editForm?.id === route.id;
-                return (
-                  <TableRow key={route.id}>
+          <TableBody>
+            {adminRoutes.map((route) => {
+              const isEditing = editForm?.id === route.id;
+              const operatorLabel = route.operator?.name ?? route.operatorId;
+              return (
+                <TableRow key={route.id}>
                     <TableCell>
                       {isEditing ? (
                         <input
@@ -310,19 +324,24 @@ export default function RoutesPage() {
                     </TableCell>
                     <TableCell>
                       {isEditing ? (
-                        <input
+                        <select
                           className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
                           value={editForm?.operatorId ?? ''}
                           onChange={(e) =>
                             setEditForm((prev) =>
-                              prev
-                                ? { ...prev, operatorId: e.target.value }
-                                : prev,
+                              prev ? { ...prev, operatorId: e.target.value } : prev,
                             )
                           }
-                        />
+                        >
+                          <option value="">Select operator</option>
+                          {operators.map((op) => (
+                            <option key={op.id} value={op.id}>
+                              {op.name}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        route.operatorId
+                        operatorLabel
                       )}
                     </TableCell>
                     <TableCell>

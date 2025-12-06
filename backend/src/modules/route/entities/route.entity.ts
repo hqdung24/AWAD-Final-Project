@@ -32,6 +32,9 @@ export class Route {
   @Column()
   estimatedMinutes: number;
 
+  @Column({ nullable: true })
+  notes?: string;
+
   @Column({ default: true })
   isActive: boolean;
 

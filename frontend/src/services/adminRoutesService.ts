@@ -3,6 +3,13 @@ import { http } from '@/lib/http';
 export type AdminRoute = {
   id: string;
   operatorId: string;
+  operator?: {
+    id: string;
+    name: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    status?: string;
+  };
   origin: string;
   destination: string;
   distanceKm: number;
@@ -10,9 +17,22 @@ export type AdminRoute = {
   notes?: string;
 };
 
+export type Operator = {
+  id: string;
+  name: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  status?: string;
+};
+
 export async function listAdminRoutes(): Promise<AdminRoute[]> {
   const res = await http.get('/admin/routes');
   return (res as { data: AdminRoute[] }).data;
+}
+
+export async function listOperators(): Promise<Operator[]> {
+  const res = await http.get('/admin/operators');
+  return (res as { data: Operator[] }).data;
 }
 
 export async function createAdminRoute(

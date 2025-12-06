@@ -358,6 +358,182 @@
         ]
       }
     },
+    "/admin/operators": {
+      "get": {
+        "operationId": "OperatorController_listOperators",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List operators",
+        "tags": [
+          "Admin - Operators"
+        ]
+      }
+    },
+    "/admin/routes": {
+      "get": {
+        "operationId": "RouteController_listRoutes",
+        "parameters": [
+          {
+            "name": "operatorId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by operator ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "minimum": 1,
+              "default": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Routes retrieved successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List routes",
+        "tags": [
+          "Admin - Routes"
+        ]
+      },
+      "post": {
+        "operationId": "RouteController_createRoute",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRouteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Route created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create route",
+        "tags": [
+          "Admin - Routes"
+        ]
+      }
+    },
+    "/admin/routes/{id}": {
+      "patch": {
+        "operationId": "RouteController_updateRoute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRouteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Route updated successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update route",
+        "tags": [
+          "Admin - Routes"
+        ]
+      },
+      "delete": {
+        "operationId": "RouteController_deleteRoute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Route soft-deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft delete route",
+        "tags": [
+          "Admin - Routes"
+        ]
+      }
+    },
     "/admin/routes/{routeId}/points": {
       "post": {
         "description": "Adds a pickup or dropoff point to a specific route. Points can be ordered using the orderIndex field.",
@@ -1134,6 +1310,71 @@
           "email",
           "token"
         ]
+      },
+      "CreateRouteDto": {
+        "type": "object",
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "description": "Operator ID"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Origin city"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination city"
+          },
+          "distanceKm": {
+            "type": "number",
+            "description": "Distance in kilometers"
+          },
+          "estimatedMinutes": {
+            "type": "number",
+            "description": "Estimated duration in minutes"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes"
+          }
+        },
+        "required": [
+          "operatorId",
+          "origin",
+          "destination",
+          "distanceKm",
+          "estimatedMinutes"
+        ]
+      },
+      "UpdateRouteDto": {
+        "type": "object",
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "description": "Operator ID"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Origin city"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Destination city"
+          },
+          "distanceKm": {
+            "type": "number",
+            "description": "Distance in kilometers"
+          },
+          "estimatedMinutes": {
+            "type": "number",
+            "description": "Estimated duration in minutes"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes"
+          }
+        }
       },
       "CreateRoutePointDto": {
         "type": "object",
