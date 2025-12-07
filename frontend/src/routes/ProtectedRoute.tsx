@@ -6,12 +6,22 @@ import type { RoleType } from '@/enum/role';
 type Props = {
   children: React.ReactNode;
   roles?: RoleType[];
+  allowGuest?: boolean;
 };
 
-export default function ProtectedRoute({ children, roles }: Props) {
+export default function ProtectedRoute({
+  children,
+  roles,
+  allowGuest = false,
+}: Props) {
   const accessToken = useAuthStore((s) => s.accessToken);
   const role = useAuthStore((s) => s.role);
-  
+
+  // Allow guest access when explicitly enabled
+  if (!accessToken && allowGuest) {
+    return <>{children}</>;
+  }
+
   // Not authenticated
   if (!accessToken) {
     return <Navigate to="/signin" replace />;

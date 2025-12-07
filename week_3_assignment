@@ -1,0 +1,85 @@
+# WEEK 3 — Booking System and Seat Selection
+
+## Goal
+Build the complete booking flow including seat selection, passenger information, and ticket generation.
+
+---
+
+## Tasks
+
+### **User Portal / Seat Selection**
+
+#### **Create interactive seat map component** (~6 hours)  
+- Build visual seat map with clickable seats, different seat types, and status indicators  
+- **Team member:** Frontend developer  
+
+#### **Implement seat locking mechanism with Redis** (~4 hours)  
+- Create temporary seat reservation system to prevent double bookings during checkout  
+- **Team member:** Backend developer  
+
+#### **Develop real-time seat availability updates** (~3 hours)  
+- Implement WebSocket or polling to show real-time seat status changes  
+- **Team member:** Full-stack developer  
+
+#### **Create seat selection validation logic** (~2 hours)  
+- Add validation to prevent selecting unavailable seats and enforce seat limits  
+- **Team member:** Backend developer  
+
+---
+
+### **User Portal / Booking Flow**
+
+#### **Build passenger information collection forms** (~3 hours)  
+- Create forms to collect passenger details (name, ID, phone) for each selected seat  
+- **Team member:** Frontend developer  
+
+#### **Implement booking creation and management** (~6 hours)  
+- Build backend API to create bookings, manage booking states, and handle expiration  
+- **Team member:** Backend developer  
+
+#### **Create booking summary and review interface** (~3 hours)  
+- Design booking review page showing trip details, passengers, and total cost  
+- **Team member:** Frontend developer  
+
+#### **Develop booking history and management dashboard** (~4 hours)  
+- Build user dashboard to view, modify, and cancel existing bookings  
+- **Team member:** Full-stack developer  
+
+---
+
+### **User Portal / Guest Services**
+
+#### **Implement guest checkout flow without registration** (~3 hours)  
+- Allow users to book tickets without creating an account, collecting minimal required info  
+- **Team member:** Full-stack developer  
+
+#### **Create guest booking lookup system** (~2 hours)  
+- Build system for guests to retrieve bookings using reference number and email  
+- **Team member:** Backend developer  
+
+#### **Setup booking reference generation** (~1 hour)  
+- Create unique, user-friendly booking reference number generation system  
+- **Team member:** Backend developer  
+
+---
+
+### **User Portal / Ticketing**
+
+#### **Implement PDF e-ticket generation with QR codes** (~4 hours)  
+- Create PDF generation system with booking details and scannable QR codes  
+- **Team member:** Backend developer  
+
+#### **Create e-ticket download and email delivery** (~2 hours)  
+- Implement download functionality and automatic email delivery of e-tickets  
+- **Team member:** Backend developer  
+
+#### **Design e-ticket template with branding** (~1 hour)  
+- Design professional e-ticket layout with company branding and essential information  
+- **Team member:** Frontend developer  
+
+---
+
+## **Total Estimation Time Spent**
+**~44 hours**
+
+---

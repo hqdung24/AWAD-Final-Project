@@ -42,6 +42,14 @@ export function NavUser({
   const navigate = useNavigate();
   const { me } = useUserStore();
   const { mutateAsync } = useSignout();
+
+  // Derive display info with sensible fallbacks for guests/unauthenticated users
+  const displayName =
+    me && (me.firstName || me.lastName)
+      ? `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim()
+      : user.name || 'Guest';
+  const displayEmail = me?.email ?? user.email ?? 'guest@example.com';
+
   const handleSignout = () => {
     // Clear authentication state (e.g., remove tokens, user info)
     mutateAsync();
@@ -60,15 +68,13 @@ export function NavUser({
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   src={user.avatar}
-                  alt={me?.firstName + ' ' + me?.lastName}
+                  alt={displayName}
                 />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
-                  {me?.firstName + ' ' + me?.lastName}
-                </span>
-                <span className="truncate text-xs">{me?.email}</span>
+                <span className="truncate font-medium">{displayName}</span>
+                <span className="truncate text-xs">{displayEmail}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>

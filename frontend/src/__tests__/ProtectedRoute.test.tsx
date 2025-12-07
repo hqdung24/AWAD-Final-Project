@@ -27,6 +27,28 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('signin')).toBeInTheDocument();
   });
 
+  it('renders children when allowGuest is true even without auth', () => {
+    useAuthStore.setState({ accessToken: undefined, role: undefined });
+
+    render(
+      <MemoryRouter initialEntries={['/public']}>
+        <Routes>
+          <Route
+            path="/public"
+            element={
+              <ProtectedRoute allowGuest>
+                <div>guest-ok</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/signin" element={<div>signin</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('guest-ok')).toBeInTheDocument();
+  });
+
   it('renders children when authenticated', () => {
     useAuthStore.setState({ accessToken: 'token' });
 

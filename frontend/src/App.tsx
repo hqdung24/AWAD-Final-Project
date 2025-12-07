@@ -43,7 +43,7 @@ function App() {
                 <Route
                   path="/"
                   element={
-                    <ProtectedRoute roles={['USER', 'ADMIN']}>
+                    <ProtectedRoute allowGuest>
                       <LandingPage />
                     </ProtectedRoute>
                   }
@@ -51,7 +51,7 @@ function App() {
                 <Route
                   path="/search"
                   element={
-                    <ProtectedRoute roles={['USER']}>
+                    <ProtectedRoute allowGuest>
                       <SearchResults />
                     </ProtectedRoute>
                   }
@@ -59,7 +59,7 @@ function App() {
                 <Route
                   path="/search/:id"
                   element={
-                    <ProtectedRoute roles={['USER']}>
+                    <ProtectedRoute allowGuest>
                       <TripDetails />
                     </ProtectedRoute>
                   }
@@ -67,7 +67,7 @@ function App() {
                 <Route
                   path="/search/:id/seats"
                   element={
-                    <ProtectedRoute roles={['USER']}>
+                    <ProtectedRoute allowGuest>
                       <SeatSelection />
                     </ProtectedRoute>
                   }
@@ -75,7 +75,7 @@ function App() {
                 <Route
                   path="/search/:id/checkout"
                   element={
-                    <ProtectedRoute roles={['USER']}>
+                    <ProtectedRoute allowGuest>
                       <Checkout />
                     </ProtectedRoute>
                   }
