@@ -36,7 +36,9 @@ export interface LockSeatsErrorResponse {
   locked_until?: string;
 }
 
-export type LockSeatsResponse = LockSeatsSuccessResponse | LockSeatsErrorResponse;
+export type LockSeatsResponse =
+  | LockSeatsSuccessResponse
+  | LockSeatsErrorResponse;
 
 export async function getSeatsByTrip(tripId: string): Promise<SeatStatus[]> {
   const res = await http.get(`/seat-status/trip/${tripId}`);
@@ -48,36 +50,36 @@ export async function lockSeats(
   seatIds: string[]
 ): Promise<LockSeatsResponse> {
   try {
-    const response = await http.post('/seat-status/lock', {
+    const response = (await http.post('/seat-status/lock', {
       tripId,
       seatIds,
-    }) as any;
-    
+    })) as any;
+
     console.log('Lock seats response:', response);
-    
+
     // Backend wraps response in {data: {...}}, so we need to unwrap it
     const actualData = response.data || response;
-    
+
     // Check if response has success property
     if ('success' in actualData && actualData.success === true) {
       return actualData as LockSeatsSuccessResponse;
     }
-    
+
     // If response doesn't have success or it's false, return as error
     console.log('Response does not have success=true, treating as error');
     return actualData as LockSeatsErrorResponse;
   } catch (error: any) {
     console.error('Lock seats error:', error);
-    
+
     // Check if error response has specific error details
     if (error?.response?.data) {
       const errorData = error.response.data;
-      
+
       // If backend returned structured error
       if (errorData.success === false) {
         return errorData as LockSeatsErrorResponse;
       }
-      
+
       // If backend returned validation error or other error format
       return {
         success: false,
@@ -85,7 +87,7 @@ export async function lockSeats(
         message: errorData.message || JSON.stringify(errorData),
       };
     }
-    
+
     // Network or other errors
     return {
       success: false,
@@ -94,5 +96,3 @@ export async function lockSeats(
     };
   }
 }
-
-

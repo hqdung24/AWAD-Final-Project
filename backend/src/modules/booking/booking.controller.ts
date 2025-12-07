@@ -1,14 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
-import { BookingService } from './booking.service';
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import { AuthType } from '@/modules/auth/enums/auth-type.enum';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { BookingService } from './booking.service';
 import {
   CreateBookingDto,
-  CreateBookingSuccessResponseDto,
   CreateBookingErrorResponseDto,
+  CreateBookingSuccessResponseDto,
 } from './dto';
-import { ActiveUser } from '../auth/decorator/active-user.decorator';
 
 @ApiTags('Booking')
 @Controller('booking')
