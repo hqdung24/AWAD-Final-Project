@@ -16,6 +16,7 @@ import { Notification } from '@/modules/notification/entities/notification.entit
 import { SeatStatus } from '@/modules/seat-status/entities/seat-status.entity';
 
 @Entity('bookings')
+@Index(['bookingReference'], { unique: true })
 export class Booking {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -53,6 +54,9 @@ export class Booking {
   })
   @JoinColumn()
   user: User;
+
+  @Column({ type: 'varchar', nullable: true })
+  bookingReference: string | null; //user-friendly booking reference code
 
   @ManyToOne(() => Trip, (trip) => trip.bookings, {
     onDelete: 'RESTRICT',

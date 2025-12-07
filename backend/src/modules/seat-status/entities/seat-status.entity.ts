@@ -30,7 +30,7 @@ export class SeatStatus {
   bookingId: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  lockedUntil: Date;
+  lockedUntil: Date | null;
 
   @ManyToOne(() => Trip, (trip) => trip.seatStatuses, {
     onDelete: 'RESTRICT',

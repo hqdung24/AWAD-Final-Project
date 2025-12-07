@@ -213,6 +213,7 @@ export class BookingProvider {
       );
 
       // 9. Create booking
+      const bookingReference = this.generateBookingReference();
       const booking = queryRunner.manager.create(Booking, {
         userId: userId || null,
         tripId,
@@ -221,6 +222,7 @@ export class BookingProvider {
         name: contactInfo.name || null,
         email: contactInfo.email || null,
         phone: contactInfo.phone || null,
+        bookingReference,
       });
 
       const savedBooking = await queryRunner.manager.save(Booking, booking);
@@ -277,5 +279,11 @@ export class BookingProvider {
       // Release query runner
       await queryRunner.release();
     }
+  }
+
+  generateBookingReference(): string {
+    const timestamp = Date.now().toString(36).toUpperCase(); // ví dụ: LZ7F5G
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `BK-${timestamp}-${random}`;
   }
 }
