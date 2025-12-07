@@ -24,6 +24,7 @@ import UserDashboard from './pages/home/UserDashboard';
 import TripsPage from './pages/admin/TripsPage';
 import RoutesPage from './pages/admin/RoutesPage';
 import BusesPage from './pages/admin/BusesPage';
+import GuestBookingLookup from './pages/guest/GuestBookingLookup';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -123,6 +124,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AccountInfoPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/guest-booking"
+                  element={
+                    <ProtectedRoute allowGuest>
+                      <GuestBookingLookup />
                     </ProtectedRoute>
                   }
                 />

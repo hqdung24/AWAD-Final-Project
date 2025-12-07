@@ -99,6 +99,10 @@ export default function LandingPage() {
     setShowToSuggestions(false);
   };
 
+  const handleGuestLookup = () => {
+    navigate('/guest-booking');
+  };
+
   const handleSearch = () => {
     if (!searchForm.date) {
       alert('Please select a departure date');
@@ -280,13 +284,23 @@ export default function LandingPage() {
               </div>
 
               {/* Search Button */}
-              <Button
-                onClick={handleSearch}
-                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
-                size="lg"
-              >
-                FIND TRIPS
-              </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  onClick={handleSearch}
+                  className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
+                  size="lg"
+                >
+                  FIND TRIPS
+                </Button>
+                <Button
+                  onClick={handleGuestLookup}
+                  variant="outline"
+                  className="w-full h-12 text-base font-semibold"
+                  size="lg"
+                >
+                  Find my booking
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -1,15 +1,8 @@
-import { SidebarIcon } from 'lucide-react';
+import { Home, SidebarIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { SearchForm } from '@/components/search-form';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -63,5 +56,3 @@ export function SiteHeader({ showSidebarToggle = true }: Props) {
     </header>
   );
 }
-import { Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
