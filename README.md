@@ -13,6 +13,7 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - **Dashboards**: Role-aware shell with admin/user dashboard pages; data mostly mock/fallback.
 - **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType` and amenities JSON; seed data populates operators, routes, buses, seats, trips, and seat statuses.
 - **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
+- **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` (JWT-based lock token, DB pessimistic locking) and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings; mock guest lookup/dashboard history still pending real data wiring. Real-time seat availability currently uses 30s polling until a lock is acquired (WebSocket not yet implemented).
 
 ## Prerequisites
 - Node.js 20+ and npm
