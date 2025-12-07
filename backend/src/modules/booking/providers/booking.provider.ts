@@ -218,6 +218,9 @@ export class BookingProvider {
         tripId,
         status: 'pending',
         totalAmount,
+        name: contactInfo.name || null,
+        email: contactInfo.email || null,
+        phone: contactInfo.phone || null,
       });
 
       const savedBooking = await queryRunner.manager.save(Booking, booking);
@@ -226,6 +229,7 @@ export class BookingProvider {
       const passengerDetails: PassengerDetail[] = [];
       for (const passengerDto of passengers) {
         const passengerDetail = queryRunner.manager.create(PassengerDetail, {
+          userId: userId || null, // optional userId
           bookingId: savedBooking.id,
           fullName: passengerDto.fullName,
           documentId: passengerDto.documentId,

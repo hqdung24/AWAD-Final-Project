@@ -52,6 +52,7 @@ export class BookingController {
       createBookingDto.passengers,
       createBookingDto.contactInfo,
       createBookingDto.paymentMethodId,
+      createBookingDto.userId,
     );
 
     return {

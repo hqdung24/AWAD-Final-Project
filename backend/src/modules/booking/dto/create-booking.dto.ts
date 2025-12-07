@@ -49,4 +49,7 @@ export class CreateBookingDto {
   })
   @IsUUID()
   paymentMethodId?: string;
+
+  @IsUUID()
+  userId?: string; // Optional user ID for authenticated users
 }

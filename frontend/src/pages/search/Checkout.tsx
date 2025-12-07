@@ -158,6 +158,7 @@ export default function Checkout() {
     const bookingData: CreateBookingRequest = {
       ...data,
       paymentMethodId: crypto.randomUUID(),
+      userId: user?.id,
     };
 
     mutate(bookingData);

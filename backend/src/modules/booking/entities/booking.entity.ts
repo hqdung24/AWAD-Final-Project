@@ -38,6 +38,16 @@ export class Booking {
   @CreateDateColumn()
   bookedAt: Date;
 
+  //Contact info
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  email: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone: string | null;
+
   @ManyToOne(() => User, (user) => user.bookings, {
     onDelete: 'RESTRICT',
   })

@@ -38,6 +38,7 @@ export const createBookingRequestSchema = z.object({
     .min(1, 'At least one passenger is required'),
   contactInfo: contactInfoSchema,
   paymentMethodId: z.string().uuid('Invalid payment method ID').optional(),
+  userId: z.string().optional(), // Optional user ID for authenticated users
 });
 
 // Type inference
