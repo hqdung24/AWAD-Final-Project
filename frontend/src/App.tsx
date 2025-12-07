@@ -14,17 +14,19 @@ import LandingPage from './pages/home/LandingPage';
 import SearchResults from './pages/search/SearchResults';
 import TripDetails from './pages/search/TripDetails';
 import SeatSelection from './pages/search/SeatSelection';
-import Checkout from './pages/search/Checkout';
+import Checkout from './pages/search/ConfirmBooking';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import MainLayout from './layouts/main-layout/MainLayout';
 import { useAuthStore } from './stores/auth';
 import AdminDashboard from './pages/home/AdminDashboard';
 import UserDashboard from './pages/home/UserDashboard';
+import UpcomingTripDetail from './pages/home/UpcomingTripDetail';
 import TripsPage from './pages/admin/TripsPage';
 import RoutesPage from './pages/admin/RoutesPage';
 import BusesPage from './pages/admin/BusesPage';
 import GuestBookingLookup from './pages/guest/GuestBookingLookup';
+import PaymentConfirmation from './pages/payment/PaymentConfirmation';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -39,124 +41,140 @@ function App() {
             <QueryClientProvider client={queryClient}>
               <ReactQueryDevtools initialIsOpen={false} />
               <SessionSync />
-            <Routes>
-              <Route element={<MainLayout />}>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <LandingPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/search"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <SearchResults />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/search/:id"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <TripDetails />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/search/:id/seats"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <SeatSelection />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/search/:id/checkout"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <Checkout />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    role === 'ADMIN' ? (
-                      <ProtectedRoute roles={['ADMIN']}>
-                        <AdminDashboard />
+              <Routes>
+                <Route element={<MainLayout />}>
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <LandingPage />
                       </ProtectedRoute>
-                    ) : (
+                    }
+                  />
+                  <Route
+                    path="/search"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <SearchResults />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/search/:id"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <TripDetails />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/search/:id/seats"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <SeatSelection />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/search/:id/checkout"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <Checkout />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/upcoming-trip"
+                    element={
+                      role === 'ADMIN' ? (
+                        <ProtectedRoute roles={['ADMIN']}>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      ) : (
+                        <ProtectedRoute>
+                          <UserDashboard />
+                        </ProtectedRoute>
+                      )
+                    }
+                  />
+                  <Route
+                    path="/upcoming-trip/:id"
+                    element={
                       <ProtectedRoute>
-                        <UserDashboard />
+                        <UpcomingTripDetail />
                       </ProtectedRoute>
-                    )
+                    }
+                  />
+                  <Route
+                    path="/payment/:bookingId"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <PaymentConfirmation />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/trips"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <TripsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/routes"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <RoutesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/buses"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <BusesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <ProtectedRoute>
+                        <AccountInfoPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/guest-booking"
+                    element={
+                      <ProtectedRoute allowGuest>
+                        <GuestBookingLookup />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
+                <Route
+                  path="/signin"
+                  element={
+                    <PublicRoute>
+                      <SignInPage />
+                    </PublicRoute>
                   }
                 />
                 <Route
-                  path="/trips"
+                  path="/signup"
                   element={
-                    <ProtectedRoute roles={['ADMIN']}>
-                      <TripsPage />
-                    </ProtectedRoute>
+                    <PublicRoute>
+                      <SignUpPage />
+                    </PublicRoute>
                   }
                 />
-                <Route
-                  path="/routes"
-                  element={
-                    <ProtectedRoute roles={['ADMIN']}>
-                      <RoutesPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/buses"
-                  element={
-                    <ProtectedRoute roles={['ADMIN']}>
-                      <BusesPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/account"
-                  element={
-                    <ProtectedRoute>
-                      <AccountInfoPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/guest-booking"
-                  element={
-                    <ProtectedRoute allowGuest>
-                      <GuestBookingLookup />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
-              <Route
-                path="/signin"
-                element={
-                  <PublicRoute>
-                    <SignInPage />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/signup"
-                element={
-                  <PublicRoute>
-                    <SignUpPage />
-                  </PublicRoute>
-                }
-              />
-            </Routes>
-          </QueryClientProvider>
-        </BrowserRouter>
-      </GoogleOAuthProvider>
-    </ThemeProvider>
+              </Routes>
+            </QueryClientProvider>
+          </BrowserRouter>
+        </GoogleOAuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

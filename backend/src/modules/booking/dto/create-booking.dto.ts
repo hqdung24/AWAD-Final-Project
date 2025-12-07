@@ -6,6 +6,7 @@ import {
   ArrayMinSize,
   ValidateNested,
   IsUUID,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PassengerDto } from './passenger.dto';
@@ -49,4 +50,13 @@ export class CreateBookingDto {
   })
   @IsUUID()
   paymentMethodId?: string;
+
+  @IsUUID()
+  @ApiProperty({
+    description: 'Optional user ID for authenticated users',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsOptional()
+  userId?: string; // Optional user ID for authenticated users
 }

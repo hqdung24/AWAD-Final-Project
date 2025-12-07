@@ -78,4 +78,15 @@ export class SeatStatusService {
   async unlockSeats(tripId: string, seatIds: string[]): Promise<void> {
     return await this.seatLockProvider.unlockSeats(tripId, seatIds);
   }
+
+  async releaseLockedSeats(timeCheck: Date): Promise<void> {
+    return await this.seatStatusRepository.releaseSeatLocks(timeCheck);
+  }
+
+  /**
+   * Get lock duration in seconds
+   */
+  getLockDuration(): number {
+    return this.seatLockProvider.getLockDuration();
+  }
 }

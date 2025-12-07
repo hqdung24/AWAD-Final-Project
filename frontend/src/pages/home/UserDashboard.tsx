@@ -1,49 +1,40 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  fetchUserDashboard,
-  type UserDashboard as UserDashboardData,
-} from '@/services/dashboardService';
-import { useQuery } from '@tanstack/react-query';
+import { useBooking } from '@/hooks/useBooking';
+import { useUserStore } from '@/stores/user';
 import { ArrowRight, Bell, Clock, MapPin, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 function UserDashboard() {
   const navigate = useNavigate();
-  const { data, isLoading, error } = useQuery<UserDashboardData>({
-    queryKey: ['user-dashboard'],
-    queryFn: fetchUserDashboard,
-    retry: false,
-  });
+  const user = useUserStore((s) => s.me);
+  const { bookingList } = useBooking(user ? { userId: user.id } : undefined);
 
-  if (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const isForbidden = (error as any)?.status === 403;
-    if (isForbidden) {
-      navigate('/403');
-    }
-  }
+  const upcomingTrips = (bookingList.data?.data ?? []).map((b) => ({
+    route: `${b.trip.origin} → ${b.trip.destination}`,
+    datetime: new Date(b.trip.departureTime).toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+    }),
+    seats: b.seats.map((s) => s.seatCode).join(', '),
+    bookingId: b.id,
+    bookingRef: b.bookingReference || b.id,
+  }));
 
-  const upcomingTrips = data?.upcomingTrips ?? [
+  const notifications = [
     {
-      route: 'HCM → Hanoi',
-      datetime: '15 Nov 2025, 08:00',
-      seats: 'A1, A2',
-      bookingId: 'BK20251115001',
-      actions: ['View E-ticket', 'Cancel'],
+      type: 'upcoming' as const,
+      message:
+        bookingList.data?.total && bookingList.data?.total > 0
+          ? `You have ${bookingList.data.total} upcoming booking(s)`
+          : 'No upcoming trips yet',
     },
     {
-      route: 'Hanoi → Hue',
-      datetime: '20 Nov 2025, 14:00',
-      seats: 'B3',
-      bookingId: 'BK20251115010',
-      actions: ['View E-ticket', 'Modify'],
+      type: 'alert' as const,
+      message: 'Get alerts for departure changes',
     },
-  ];
-
-  const notifications = data?.notifications ?? [
-    { type: 'upcoming', message: 'You have 2 unread notifications' },
-    { type: 'alert', message: 'Get alerts for departure changes' },
   ];
 
   return (
@@ -54,13 +45,37 @@ function UserDashboard() {
         <p className="text-muted-foreground text-sm">
           Manage tickets, see what’s next, and jump back into booking quickly.
         </p>
-        {isLoading && (
+        {bookingList.isLoading && (
           <p className="text-xs text-muted-foreground">Loading your trips…</p>
         )}
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
         <div className="space-y-4">
+          {bookingList.isError && (
+            <Card className="shadow-sm border-destructive/50">
+              <CardContent className="p-6 text-sm text-destructive">
+                Unable to load your bookings. Please try again.
+              </CardContent>
+            </Card>
+          )}
+
+          {!bookingList.isLoading && upcomingTrips.length === 0 && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col gap-2 p-6 text-center">
+                <p className="text-muted-foreground text-sm">
+                  No upcoming trips yet
+                </p>
+                <Button
+                  className="inline-flex items-center gap-2 self-center"
+                  onClick={() => navigate('/search')}
+                >
+                  Search New Trip <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {upcomingTrips.map((trip) => (
             <Card key={trip.bookingId} className="shadow-sm">
               <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -78,35 +93,22 @@ function UserDashboard() {
                   </p>
                   <p className="text-muted-foreground text-sm flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    Booking ID: {trip.bookingId}
+                    Booking ID: {trip.bookingRef}
                   </p>
                 </div>
                 <Badge variant="secondary">Upcoming</Badge>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-3">
-                {trip.actions.map((action) => (
-                  <Button
-                    key={action}
-                    variant={action === 'View E-ticket' ? 'default' : 'outline'}
-                    size="sm"
-                  >
-                    {action}
-                  </Button>
-                ))}
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate(`/upcoming-trip/${trip.bookingId}`)}
+                >
+                  View E-ticket
+                </Button>
               </CardContent>
             </Card>
           ))}
-
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col gap-2 p-6 text-center">
-              <p className="text-muted-foreground text-sm">
-                No more upcoming trips
-              </p>
-              <Button className="inline-flex items-center gap-2 self-center">
-                Search New Trip <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
         </div>
 
         <Card className="h-fit shadow-sm">

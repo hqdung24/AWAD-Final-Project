@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const role = useAuthStore((s) => s.role);
 
   const adminNav = [
-    { title: 'Overview', url: '/dashboard', icon: PieChart },
+    { title: 'Overview', url: '/upcoming-trip', icon: PieChart },
     { title: 'Routes', url: '/routes', icon: RouteIcon },
     { title: 'Trips', url: '/trips', icon: BusFront },
     { title: 'Buses', url: '/buses', icon: BusFront },
@@ -46,7 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ];
 
   const userNav = [
-    { title: 'Upcoming', url: '/dashboard', icon: BusFront },
+    { title: 'Upcoming', url: '/upcoming-trip', icon: BusFront },
     { title: 'History', url: '#history', icon: Map },
     { title: 'Profile', url: '/account', icon: Users },
     { title: 'Payments', url: '#payments', icon: ChartNoAxesCombined },
@@ -58,7 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     isActive:
       location.pathname === '/'
         ? item.url === '/'
-        : item.url === location.pathname,
+        : location.pathname.startsWith(item.url),
   }));
 
   const displayName = `${me?.firstName ?? 'User'} ${me?.lastName ?? ''}`.trim();

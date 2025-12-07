@@ -6,6 +6,7 @@ import { Trip } from '@/modules/trip/entities/trip.entity';
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,7 +15,9 @@ import type { ContactInfoDto } from '../dto/contact-info.dto';
 import type { PassengerDto } from '../dto/passenger.dto';
 import { Booking } from '../entities/booking.entity';
 import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
-
+import { type ConfigType } from '@nestjs/config';
+import { appConfig } from '@/config/app.config';
+import { BookingEmailProvider } from './booking-email.provider';
 export interface CreateBookingResult {
   booking: Booking;
   seats: Array<{ seatId: string; seatCode: string }>;
@@ -26,6 +29,10 @@ export class BookingProvider {
   constructor(
     private readonly dataSource: DataSource,
     private readonly seatStatusService: SeatStatusService,
+    private readonly bookingEmailProvider: BookingEmailProvider,
+    //app config
+    @Inject(appConfig.KEY)
+    private readonly appConfiguration: ConfigType<typeof appConfig>,
   ) {}
 
   /**
@@ -213,11 +220,16 @@ export class BookingProvider {
       );
 
       // 9. Create booking
+      const bookingReference = this.generateBookingReference();
       const booking = queryRunner.manager.create(Booking, {
         userId: userId || null,
         tripId,
         status: 'pending',
         totalAmount,
+        name: contactInfo.name || null,
+        email: contactInfo.email || null,
+        phone: contactInfo.phone || null,
+        bookingReference,
       });
 
       const savedBooking = await queryRunner.manager.save(Booking, booking);
@@ -226,6 +238,7 @@ export class BookingProvider {
       const passengerDetails: PassengerDetail[] = [];
       for (const passengerDto of passengers) {
         const passengerDetail = queryRunner.manager.create(PassengerDetail, {
+          userId: userId || null, // optional userId
           bookingId: savedBooking.id,
           fullName: passengerDto.fullName,
           documentId: passengerDto.documentId,
@@ -256,7 +269,21 @@ export class BookingProvider {
       // 12. Commit transaction
       await queryRunner.commitTransaction();
 
-      // 13. Return result
+      // 13. Send booking confirmation email (non-blocking)
+      if (contactInfo.email) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.bookingEmailProvider.sendBookingConfirmationEmail(
+          contactInfo.email,
+          savedBooking.id,
+          savedBooking.bookingReference,
+          trip.route?.origin || 'Unknown',
+          trip.route?.destination || 'Unknown',
+          trip.departureTime.toISOString(),
+          Number(savedBooking.totalAmount),
+        );
+      }
+
+      // 14. Return result
       return {
         booking: savedBooking,
         seats: seats.map((seat) => ({
@@ -273,5 +300,11 @@ export class BookingProvider {
       // Release query runner
       await queryRunner.release();
     }
+  }
+
+  generateBookingReference(): string {
+    const timestamp = Date.now().toString(36).toUpperCase(); // ví dụ: LZ7F5G
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `BK-${timestamp}-${random}`;
   }
 }

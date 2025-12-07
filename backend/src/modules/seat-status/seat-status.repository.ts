@@ -90,4 +90,18 @@ export class SeatStatusRepository {
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
   }
+
+  async releaseSeatLocks(timeCheck: Date): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .update(SeatStatus)
+      .set({
+        state: 'available',
+        lockedUntil: null,
+      })
+      .where('state = :state', { state: 'locked' })
+      .andWhere('state != :booked', { booked: 'booked' }) //not release lock of booked seats
+      .andWhere('lockedUntil <= :now', { now: timeCheck })
+      .execute();
+  }
 }
