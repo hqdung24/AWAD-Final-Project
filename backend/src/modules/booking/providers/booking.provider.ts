@@ -138,8 +138,12 @@ export class BookingProvider {
   /**
    * Calculate total amount based on trip price and number of seats
    */
-  private calculateTotalAmount(trip: Trip, seatCount: number): number {
-    return Number(trip.basePrice) * seatCount;
+  private calculateTotalAmount(
+    trip: Trip,
+    seatCount: number,
+    fee?: number,
+  ): number {
+    return Number(trip.basePrice) * seatCount + (fee || 0);
   }
 
   /**
@@ -202,7 +206,11 @@ export class BookingProvider {
       this.validateSeatStatuses(seatStatuses);
 
       // 8. Calculate total amount
-      const totalAmount = this.calculateTotalAmount(trip, seatIds.length);
+      const totalAmount = this.calculateTotalAmount(
+        trip,
+        seatIds.length,
+        20000, // e.g., booking fee
+      );
 
       // 9. Create booking
       const booking = queryRunner.manager.create(Booking, {

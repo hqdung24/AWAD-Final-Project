@@ -30,13 +30,6 @@ export type BusAssignment = {
   endTime: string;
 };
 
-export type Seat = {
-  id?: string;
-  seatCode: string;
-  seatType: string;
-  isActive: boolean;
-};
-
 export async function listBuses(): Promise<Bus[]> {
   const res = await http.get('/admin/buses');
   return (res as { data: Bus[] }).data;
@@ -49,7 +42,7 @@ export async function createBus(payload: Omit<Bus, 'id'>): Promise<Bus> {
 
 export async function updateBus(
   id: string,
-  payload: Partial<Omit<Bus, 'id'>>,
+  payload: Partial<Omit<Bus, 'id'>>
 ): Promise<Bus> {
   const res = await http.patch(`/admin/buses/${id}`, payload);
   return (res as { data: Bus }).data;
@@ -66,7 +59,7 @@ export async function listSeats(busId: string): Promise<Seat[]> {
 
 export async function createSeat(
   busId: string,
-  payload: Omit<Seat, 'id' | 'isActive'> & { isActive?: boolean },
+  payload: Omit<Seat, 'id' | 'isActive'> & { isActive?: boolean }
 ): Promise<Seat> {
   const res = await http.post(`/admin/buses/${busId}/seats`, payload);
   return (res as { data: Seat }).data;
@@ -74,7 +67,7 @@ export async function createSeat(
 
 export async function updateSeat(
   id: string,
-  payload: Partial<Omit<Seat, 'id'>>,
+  payload: Partial<Omit<Seat, 'id'>>
 ): Promise<Seat> {
   const res = await http.patch(`/admin/seats/${id}`, payload);
   return (res as { data: Seat }).data;

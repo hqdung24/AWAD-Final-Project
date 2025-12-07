@@ -1,6 +1,14 @@
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import { AuthType } from '@/modules/auth/enums/auth-type.enum';
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   LockSeatsErrorResponseDto,

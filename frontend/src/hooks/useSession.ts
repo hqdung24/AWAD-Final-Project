@@ -19,7 +19,7 @@ export function useSession() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const setRole = useAuthStore((s) => s.setRole);
   const logout = useAuthStore((s) => s.logout);
-  
+
   return useQuery({
     queryKey: ['me'],
     enabled: !!accessToken, // chỉ chạy khi có access token
