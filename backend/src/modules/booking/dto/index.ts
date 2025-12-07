@@ -3,3 +3,5 @@ export * from './update-booking.dto';
 export * from './passenger.dto';
 export * from './contact-info.dto';
 export * from './booking-response.dto';
+export * from './booking-query.dto';
+export * from './booking-list-response.dto';

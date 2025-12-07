@@ -6,6 +6,7 @@ import { Trip } from '@/modules/trip/entities/trip.entity';
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,7 +15,9 @@ import type { ContactInfoDto } from '../dto/contact-info.dto';
 import type { PassengerDto } from '../dto/passenger.dto';
 import { Booking } from '../entities/booking.entity';
 import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
-
+import { type ConfigType } from '@nestjs/config';
+import { appConfig } from '@/config/app.config';
+import { BookingEmailProvider } from './booking-email.provider';
 export interface CreateBookingResult {
   booking: Booking;
   seats: Array<{ seatId: string; seatCode: string }>;
@@ -26,6 +29,10 @@ export class BookingProvider {
   constructor(
     private readonly dataSource: DataSource,
     private readonly seatStatusService: SeatStatusService,
+    private readonly bookingEmailProvider: BookingEmailProvider,
+    //app config
+    @Inject(appConfig.KEY)
+    private readonly appConfiguration: ConfigType<typeof appConfig>,
   ) {}
 
   /**
@@ -262,7 +269,21 @@ export class BookingProvider {
       // 12. Commit transaction
       await queryRunner.commitTransaction();
 
-      // 13. Return result
+      // 13. Send booking confirmation email (non-blocking)
+      if (contactInfo.email) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.bookingEmailProvider.sendBookingConfirmationEmail(
+          contactInfo.email,
+          savedBooking.id,
+          savedBooking.bookingReference,
+          trip.route?.origin || 'Unknown',
+          trip.route?.destination || 'Unknown',
+          trip.departureTime.toISOString(),
+          Number(savedBooking.totalAmount),
+        );
+      }
+
+      // 14. Return result
       return {
         booking: savedBooking,
         seats: seats.map((seat) => ({

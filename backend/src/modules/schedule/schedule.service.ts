@@ -7,7 +7,7 @@ export class ScheduleService {
   constructor(private readonly seatStatusService: SeatStatusService) {}
   // Add scheduling related methods here
 
-  @Cron('*/60 * * * * *') // chạy mỗi 60s
+  @Cron('*/300 * * * * *') // chạy mỗi 5 phút
   async releaseExpiredSeats() {
     const now = new Date();
 

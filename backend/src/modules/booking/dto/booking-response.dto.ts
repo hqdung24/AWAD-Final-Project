@@ -32,13 +32,6 @@ export class PassengerInfoDto {
     example: 'A1',
   })
   seatCode: string;
-
-  @ApiProperty({
-    description: 'Phone number (if provided)',
-    example: '0909123456',
-    required: false,
-  })
-  phone?: string;
 }
 
 export class CreateBookingSuccessResponseDto {
@@ -53,6 +46,20 @@ export class CreateBookingSuccessResponseDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   tripId: string;
+
+  @ApiProperty({
+    description: 'UUID of the user who made the booking (if authenticated)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    nullable: true,
+  })
+  userId: string | null;
+
+  @ApiProperty({
+    description: 'Booking reference code (if applicable)',
+    example: 'BR123456789',
+    nullable: true,
+  })
+  bookingReference: string | null;
 
   @ApiProperty({
     description: 'Booking status',

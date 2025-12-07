@@ -23,7 +23,7 @@ import { getSeatsByTrip } from '@/services/seatService';
 import { notify } from '@/lib/notify';
 import { useEffect, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { useCreateBooking } from '@/hooks/useBooking';
+import { useBooking } from '@/hooks/useBooking';
 import { useUserStore } from '@/stores/user';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,7 +32,7 @@ import {
   type CreateBookingRequest,
 } from '@/schemas/booking';
 
-export default function Checkout() {
+export default function ConfirmBooking() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -53,7 +53,8 @@ export default function Checkout() {
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const { mutate, isPending, isSuccess } = useCreateBooking();
+  const { createBooking } = useBooking();
+  const { mutateAsync, isPending } = createBooking;
 
   // Initialize react-hook-form
   const {
@@ -67,7 +68,7 @@ export default function Checkout() {
       lockToken: lockToken,
       passengers: [],
       contactInfo: {
-        name: user?.firstName + ' ' + user?.lastName || '',
+        name: user ? user.firstName + ' ' + user.lastName : '',
         email: user?.email || '',
         phone: '',
       },
@@ -148,7 +149,7 @@ export default function Checkout() {
     }).format(price);
   };
 
-  const onSubmit = (data: CreateBookingRequest) => {
+  const onSubmit = async (data: CreateBookingRequest) => {
     if (!agreeToTerms) {
       notify.error('Please agree to the Terms and Conditions');
       return;
@@ -161,18 +162,16 @@ export default function Checkout() {
       userId: user?.id,
     };
 
-    mutate(bookingData);
-    if (isSuccess) {
+    const result = await mutateAsync(bookingData);
+    if (result) {
       //Navigate to payment page after successful booking creation
-      navigate(
-        `/payment/${id}?lock_token=${lockToken}&seat_ids=${seatIds.join(',')}`
-      );
+      navigate(`/payment/${result.bookingId}`);
     }
   };
 
   if (!trip || !seatStatuses || passengerFields.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-12 text-center">
@@ -194,7 +193,7 @@ export default function Checkout() {
   const selectedSeatCodes = passengerFields.map((p) => p.seatCode).join(', ');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6 flex items-center gap-2">

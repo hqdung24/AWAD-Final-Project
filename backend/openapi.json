@@ -1461,6 +1461,111 @@
         "tags": [
           "Booking"
         ]
+      },
+      "get": {
+        "operationId": "BookingController_listBookings",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-based)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user id",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user email",
+            "schema": {
+              "example": "user@example.com",
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "description": "Filter by user phone",
+            "schema": {
+              "example": "0909123456",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get list of bookings (filterable)",
+        "tags": [
+          "Booking"
+        ]
+      }
+    },
+    "/booking/{id}": {
+      "get": {
+        "operationId": "BookingController_getBookingDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get booking details by ID",
+        "tags": [
+          "Booking"
+        ]
       }
     }
   },
@@ -2064,6 +2169,11 @@
             "type": "string",
             "description": "UUID of the payment method to use for this booking (optional for now)",
             "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Optional user ID for authenticated users",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
         "required": [
@@ -2108,11 +2218,6 @@
             "type": "string",
             "description": "Seat code assigned to passenger",
             "example": "A1"
-          },
-          "phone": {
-            "type": "string",
-            "description": "Phone number (if provided)",
-            "example": "0909123456"
           }
         },
         "required": [
@@ -2133,6 +2238,18 @@
             "type": "string",
             "description": "UUID of the trip",
             "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "userId": {
+            "type": "object",
+            "description": "UUID of the user who made the booking (if authenticated)",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "nullable": true
+          },
+          "bookingReference": {
+            "type": "object",
+            "description": "Booking reference code (if applicable)",
+            "example": "BR123456789",
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -2178,6 +2295,8 @@
         "required": [
           "bookingId",
           "tripId",
+          "userId",
+          "bookingReference",
           "status",
           "seats",
           "passengers",
@@ -2217,6 +2336,182 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "TripBriefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Trip ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "routeId": {
+            "type": "string",
+            "description": "Route ID",
+            "example": "route-id-123"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Route origin",
+            "example": "Hanoi"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Route destination",
+            "example": "Saigon"
+          },
+          "busId": {
+            "type": "string",
+            "description": "Bus ID",
+            "example": "bus-id-123"
+          },
+          "departureTime": {
+            "type": "string",
+            "description": "Departure time",
+            "example": "2025-12-06T10:00:00.000Z"
+          },
+          "arrivalTime": {
+            "type": "string",
+            "description": "Arrival time",
+            "example": "2025-12-06T14:00:00.000Z"
+          },
+          "basePrice": {
+            "type": "number",
+            "description": "Trip base price",
+            "example": 200000
+          },
+          "status": {
+            "type": "string",
+            "description": "Trip status",
+            "example": "scheduled"
+          }
+        },
+        "required": [
+          "id",
+          "routeId",
+          "origin",
+          "destination",
+          "busId",
+          "departureTime",
+          "arrivalTime",
+          "basePrice",
+          "status"
+        ]
+      },
+      "BookingListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Booking ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "tripId": {
+            "type": "string",
+            "description": "Trip ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "userId": {
+            "type": "object",
+            "description": "User ID (nullable)",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "nullable": true
+          },
+          "bookingReference": {
+            "type": "object",
+            "description": "Booking reference (if any)",
+            "example": "BR123456789",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Status",
+            "example": "pending",
+            "enum": [
+              "pending",
+              "paid",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Total amount",
+            "example": 300000
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Created timestamp",
+            "example": "2025-12-06T12:30:00.000Z"
+          },
+          "trip": {
+            "description": "Trip information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TripBriefDto"
+              }
+            ]
+          },
+          "seats": {
+            "description": "Seats in the booking",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatInfoDto"
+            }
+          },
+          "passengers": {
+            "description": "Passengers in the booking",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassengerInfoDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripId",
+          "userId",
+          "bookingReference",
+          "status",
+          "totalAmount",
+          "createdAt",
+          "trip",
+          "seats",
+          "passengers"
+        ]
+      },
+      "BookingListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "List of bookings",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingListItemDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total items",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page (1-based)",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 10
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
         ]
       }
     }
