@@ -1308,6 +1308,34 @@
         ]
       }
     },
+    "/seat-status/trip/{tripId}": {
+      "get": {
+        "description": "Retrieve seat availability and status for a specific trip",
+        "operationId": "SeatStatusController_getSeatsByTrip",
+        "parameters": [
+          {
+            "name": "tripId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seat statuses retrieved successfully"
+          },
+          "404": {
+            "description": "Trip not found"
+          }
+        },
+        "summary": "Get all seat statuses for a trip",
+        "tags": [
+          "Seat Status"
+        ]
+      }
+    },
     "/seat-status/lock": {
       "post": {
         "description": "Lock seats for a specific trip to prevent double booking. Seats are locked for a configured duration (default 10 minutes). Returns a lock token that must be used for subsequent booking operations. If any seat cannot be locked, the entire operation fails with no partial locks.",

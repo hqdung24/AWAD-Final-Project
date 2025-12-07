@@ -18,17 +18,27 @@ export function useSession() {
   const setMe = useUserStore((s) => s.setMe);
   const accessToken = useAuthStore((s) => s.accessToken);
   const setRole = useAuthStore((s) => s.setRole);
+  const logout = useAuthStore((s) => s.logout);
+  
   return useQuery({
     queryKey: ['me'],
     enabled: !!accessToken, // chỉ chạy khi có access token
     queryFn: async () => {
-      const me = await getMe();
-      setRole(me.role as RoleType);
-      if (!me) throw new Error('Failed to fetch user data');
-      setMe(me);
-      return me;
+      try {
+        const me = await getMe();
+        if (!me) throw new Error('Failed to fetch user data');
+        setRole(me.role as RoleType);
+        setMe(me);
+        return me;
+      } catch (error) {
+        // If 401, clear auth state
+        logout();
+        throw error;
+      }
     },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 

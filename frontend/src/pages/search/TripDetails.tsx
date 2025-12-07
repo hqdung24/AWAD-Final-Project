@@ -76,8 +76,8 @@ export default function TripDetails() {
   };
 
   const handleBookNow = () => {
-    // TODO: Navigate to booking page
-    notify.success('Booking feature coming soon!');
+    // Navigate to seat selection page
+    navigate(`/search/${id}/seats?from=${from}&to=${to}&date=${date}&passengers=${passengers}`);
   };
 
   if (isLoading) {

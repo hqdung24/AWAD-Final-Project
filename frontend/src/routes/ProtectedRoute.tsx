@@ -9,21 +9,23 @@ type Props = {
 };
 
 export default function ProtectedRoute({ children, roles }: Props) {
-  const isAuthenticated = useAuthStore((s) => s.accessToken !== undefined);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const role = useAuthStore((s) => s.role);
-  console.log(role);
-  if (!isAuthenticated) {
+  
+  // Not authenticated
+  if (!accessToken) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Check role
+  // If roles are required but role is not yet loaded, wait for hydration
   if (roles && role === undefined) {
-    // wait for role to hydrate (avoid false 403)
-    return null;
+    return null; // Or show a loading spinner
   }
 
-  const hasRole = roles ? roles.includes(role as RoleType) : true;
-  if (!hasRole) return <Navigate to="/403" />;
+  // Check if user has required role
+  if (roles && !roles.includes(role as RoleType)) {
+    return <Navigate to="/403" replace />;
+  }
 
   return <>{children}</>;
 }

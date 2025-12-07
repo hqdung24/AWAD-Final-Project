@@ -6,12 +6,15 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/providers/ThemeProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AccountInfoPage from './pages/Account/AccountInfoPage';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import LandingPage from './pages/home/LandingPage';
 import SearchResults from './pages/search/SearchResults';
 import TripDetails from './pages/search/TripDetails';
+import SeatSelection from './pages/search/SeatSelection';
+import Checkout from './pages/search/Checkout';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import MainLayout from './layouts/main-layout/MainLayout';
@@ -27,13 +30,14 @@ function App() {
   const role = useAuthStore((s) => s.role);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="blauchat-theme">
-      <Toaster richColors={true} />
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <BrowserRouter>
-          <QueryClientProvider client={queryClient}>
-            <ReactQueryDevtools initialIsOpen={false} />
-            <SessionSync />
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="light" storageKey="blauchat-theme">
+        <Toaster richColors={true} />
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <BrowserRouter>
+            <QueryClientProvider client={queryClient}>
+              <ReactQueryDevtools initialIsOpen={false} />
+              <SessionSync />
             <Routes>
               <Route element={<MainLayout />}>
                 <Route
@@ -57,6 +61,22 @@ function App() {
                   element={
                     <ProtectedRoute roles={['USER']}>
                       <TripDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/search/:id/seats"
+                  element={
+                    <ProtectedRoute roles={['USER']}>
+                      <SeatSelection />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/search/:id/checkout"
+                  element={
+                    <ProtectedRoute roles={['USER']}>
+                      <Checkout />
                     </ProtectedRoute>
                   }
                 />
@@ -128,6 +148,7 @@ function App() {
         </BrowserRouter>
       </GoogleOAuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

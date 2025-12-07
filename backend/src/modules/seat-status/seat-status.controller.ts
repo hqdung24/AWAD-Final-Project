@@ -1,6 +1,6 @@
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import { AuthType } from '@/modules/auth/enums/auth-type.enum';
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   LockSeatsErrorResponseDto,
@@ -13,6 +13,25 @@ import { SeatStatusService } from './seat-status.service';
 @Controller('seat-status')
 export class SeatStatusController {
   constructor(private readonly seatStatusService: SeatStatusService) {}
+
+  @Get('trip/:tripId')
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all seat statuses for a trip',
+    description: 'Retrieve seat availability and status for a specific trip',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Seat statuses retrieved successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Trip not found',
+  })
+  async getSeatsByTrip(@Param('tripId') tripId: string) {
+    return await this.seatStatusService.findByTripId(tripId);
+  }
 
   @Post('lock')
   @Auth(AuthType.None) // Allow public access for now (can add passenger auth later)
