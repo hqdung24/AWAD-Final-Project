@@ -27,6 +27,7 @@
 - Frontend seat selection & checkout: `frontend/src/pages/search/SeatSelection.tsx`, `frontend/src/pages/search/Checkout.tsx`.
 - Booking history/detail: user dashboard now renders real booking list/detail.
 - Guest lookup: guest booking lookup displays real booking data.
+- Admin UX improvements (adjacent to Week 3): Trips/Routes/Buses pages now have filters, pagination, and error toasts; trip admin endpoint ordering fixed. Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and deleting a bus now soft-deletes its seats.
 
 ## Gaps & risks
 - Redis/WebSocket real-time missing; locks rely on DB/JWT only.
@@ -36,5 +37,4 @@
 ## Next steps
 1) Swap lock storage to Redis and add WebSocket/Server-Sent Events for live seat status.  
 2) Implement booking lifecycle (expiry/cancel), friendly reference generator, and persist contact info for guests.  
-3) Add friendly booking reference generator and persist contact info for guests.  
-4) Add PDF/QR e-ticket generation with email delivery and download endpoint.  
+3) Add PDF/QR e-ticket generation with email delivery and download endpoint.  

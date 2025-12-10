@@ -14,6 +14,7 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType` and amenities JSON; seed data populates operators, routes, buses, seats, trips, and seat statuses.
 - **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
 - **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` (JWT-based lock token, DB pessimistic locking) and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings; mock guest lookup/dashboard history still pending real data wiring. Real-time seat availability currently uses 30s polling until a lock is acquired (WebSocket not yet implemented).
+- **Admin UX (Trips/Routes/Buses/Seats)**: Admin tables now have filters + pagination, failure toasts, and consistent nav highlighting. Trip admin endpoints are no longer shadowed (`/trips/admin`). Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and lets admins toggle seats active/inactive; deleting a bus soft-deletes its seats.
 
 ## Prerequisites
 - Node.js 20+ and npm
@@ -107,8 +108,14 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `POST /api/auth/signout` – clear RT cookie
 - `GET /api/users/me` – current user profile (requires AT)
 - `POST /api/admin/trips` – create trip with bus conflict checks; auto-generates seat statuses
+- `GET /api/trips/admin` / `GET /api/trips/admin/:id` – admin trip list/detail (auth + role)
+- `PATCH /api/trips/admin/:id` / `PATCH /api/trips/admin/:id/cancel` – update or cancel a trip
 - `GET /api/trips/search` – public trip search (from/to/date/passengers; WIP on advanced filters)
 - `GET /api/trips/:id` – public trip detail including route points (pickup/dropoff) and amenities
+- `GET /api/admin/buses` / `PATCH /api/admin/buses/:id` / `DELETE /api/admin/buses/:id` – manage buses (delete soft-deletes seats)
+- `GET /api/admin/buses/:busId/seats` – list seats for a bus
+- `POST /api/admin/buses/:busId/seats` – create a seat (duplicate seatCode blocked per bus)
+- `PATCH /api/admin/buses/:busId/seats/:id` – update a seat (toggle active/type/code)
 - Swagger available at `/api/docs`
 
 ## Frontend routes (selected)
