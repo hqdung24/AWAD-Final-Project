@@ -835,7 +835,7 @@
         ]
       }
     },
-    "/admin/seats/{id}": {
+    "/admin/buses/{busId}/seats/{id}": {
       "patch": {
         "description": "Update details of a specific seat. Accessible only by admins.",
         "operationId": "SeatController_updateSeat",
@@ -844,9 +844,7 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Seat ID",
             "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -878,7 +876,9 @@
         "tags": [
           "Admin - Seats"
         ]
-      },
+      }
+    },
+    "/admin/seats/{id}": {
       "delete": {
         "description": "Mark a seat as inactive for a specific bus.",
         "operationId": "SeatController_deleteSeat",
@@ -1892,6 +1892,11 @@
               "VIP"
             ],
             "example": "STANDARD"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the seat is active/usable",
+            "example": true
           }
         }
       },

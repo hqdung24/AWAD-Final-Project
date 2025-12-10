@@ -4,10 +4,11 @@ import { Seat } from './entities/seat.entity';
 import { SeatController } from './seat.controller';
 import { SeatService } from './seat.service';
 import { SeatRepository } from './seat.repository';
+import { forwardRef } from '@nestjs/common';
 import { BusModule } from '../bus/bus.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Seat]), BusModule],
+  imports: [TypeOrmModule.forFeature([Seat]), forwardRef(() => BusModule)],
   controllers: [SeatController],
   providers: [SeatService, SeatRepository],
   exports: [SeatService, SeatRepository],

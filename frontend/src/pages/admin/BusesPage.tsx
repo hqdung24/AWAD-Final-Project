@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -46,6 +46,16 @@ export default function BusesPage() {
     seatCode: '',
     seatType: 'STANDARD',
   });
+  const [editingSeatId, setEditingSeatId] = useState<string | null>(null);
+  const [editSeatForm, setEditSeatForm] = useState<{
+    seatCode: string;
+    seatType: string;
+    isActive: boolean;
+  }>({
+    seatCode: '',
+    seatType: 'STANDARD',
+    isActive: true,
+  });
   const [seatDrafts, setSeatDrafts] = useState<Seat[]>([]);
   const [busFilters, setBusFilters] = useState<{
     operatorId?: string;
@@ -53,6 +63,20 @@ export default function BusesPage() {
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const seatRows = useMemo(() => {
+    const rows = new Map<string, Seat[]>();
+    seatDrafts.forEach((s) => {
+      const row = s.seatCode?.charAt(0) || '?';
+      if (!rows.has(row)) rows.set(row, []);
+      rows.get(row)!.push(s);
+    });
+    rows.forEach((list) =>
+      list.sort(
+        (a, b) => parseInt(a.seatCode.slice(1)) - parseInt(b.seatCode.slice(1)),
+      ),
+    );
+    return Array.from(rows.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [seatDrafts]);
 
   const { data: buses = [] } = useQuery<Bus[]>({
     queryKey: ['buses', busFilters],
@@ -82,6 +106,8 @@ export default function BusesPage() {
   useEffect(() => {
     if (seats) {
       setSeatDrafts(seats);
+      setEditingSeatId(null);
+      setEditSeatForm({ seatCode: '', seatType: 'STANDARD', isActive: true });
     }
   }, [seats]);
 
@@ -135,13 +161,23 @@ export default function BusesPage() {
       setSeatForm({ seatCode: '', seatType: 'STANDARD' });
       void refetchSeats();
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to add seat';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   const updateSeatMutation = useMutation({
-    mutationFn: (payload: { id: string; data: Partial<Seat> }) =>
-      updateSeat(payload.id, payload.data),
+    mutationFn: (payload: { busId: string; id: string; data: Partial<Seat> }) =>
+      updateSeat(payload.busId, payload.id, payload.data),
     onSuccess: () => {
       void refetchSeats();
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to update seat';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 
@@ -149,6 +185,13 @@ export default function BusesPage() {
     mutationFn: deleteSeat,
     onSuccess: () => {
       void refetchSeats();
+      setEditingSeatId(null);
+      setEditSeatForm({ seatCode: '', seatType: 'STANDARD', isActive: true });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to delete seat';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 
@@ -171,21 +214,27 @@ export default function BusesPage() {
     });
   };
 
-  const handleSeatDraftChange = (id: string, partial: Partial<Seat>) => {
-    setSeatDrafts((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...partial } : s)),
-    );
-  };
+  const selectedSeat = useMemo(
+    () => seatDrafts.find((s) => s.id === editingSeatId),
+    [seatDrafts, editingSeatId],
+  );
 
-  const handleSaveSeat = (seat: Seat) => {
+  const handleSaveSelectedSeat = () => {
+    if (!seatBusId || !editingSeatId) return;
     updateSeatMutation.mutate({
-      id: seat.id,
+      busId: seatBusId,
+      id: editingSeatId,
       data: {
-        seatCode: seat.seatCode,
-        seatType: seat.seatType,
-        isActive: seat.isActive,
+        seatCode: editSeatForm.seatCode,
+        seatType: editSeatForm.seatType,
+        isActive: editSeatForm.isActive,
       },
     });
+  };
+
+  const handleDeleteSelectedSeat = () => {
+    if (!editingSeatId) return;
+    deleteSeatMutation.mutate(editingSeatId);
   };
 
   return (
@@ -598,68 +647,188 @@ export default function BusesPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
-                {seatDrafts.map((seat) => (
-                  <div
-                    key={seat.id}
-                    className="border rounded-md p-3 flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <input
-                        className="border-input bg-background text-sm px-2 py-1 rounded-md border w-1/2"
-                        value={seat.seatCode}
-                        onChange={(e) =>
-                          handleSeatDraftChange(seat.id, { seatCode: e.target.value })
-                        }
-                      />
-                      <label className="text-xs flex items-center gap-1">
+              {/* Seat map preview + edit */}
+              <div className="rounded-md border p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Seat layout</p>
+                    <p className="text-xs text-muted-foreground">
+                      Click a seat to edit/delete. Colors show active/inactive.
+                    </p>
+                  </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded-sm bg-emerald-100 border border-emerald-300" />
+                    Active
+                  </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-block h-3 w-3 rounded-sm bg-rose-100 border border-rose-300" />
+                      Inactive
+                    </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded-sm bg-amber-100 border border-amber-300" />
+                    Selected
+                  </span>
+                </div>
+              </div>
+                {/* Edit selected seat */}
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <p className="text-sm font-medium">Edit selected seat</p>
+                    <p className="text-xs text-muted-foreground">
+                      Choose a seat in the map above to edit or delete it.
+                    </p>
+                  </div>
+                  {selectedSeat && (
+                    <span className="text-xs text-muted-foreground">
+                      ID: {selectedSeat.id}
+                    </span>
+                  )}
+                </div>
+
+                {selectedSeat ? (
+                  <>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                        Seat code
+                        <input
+                          className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                          value={editSeatForm.seatCode}
+                          onChange={(e) =>
+                            setEditSeatForm((prev) => ({
+                              ...prev,
+                              seatCode: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                        Seat type
+                        <select
+                          className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                          value={editSeatForm.seatType}
+                          onChange={(e) =>
+                            setEditSeatForm((prev) => ({
+                              ...prev,
+                              seatType: e.target.value,
+                            }))
+                          }
+                        >
+                          {seatTypes.map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={seat.isActive}
+                          checked={editSeatForm.isActive}
                           onChange={(e) =>
-                            handleSeatDraftChange(seat.id, { isActive: e.target.checked })
+                            setEditSeatForm((prev) => ({
+                              ...prev,
+                              isActive: e.target.checked,
+                            }))
                           }
                         />
                         Active
                       </label>
                     </div>
-                    <select
-                      className="border-input bg-background text-sm px-2 py-1 rounded-md border"
-                      value={seat.seatType}
-                      onChange={(e) =>
-                        handleSeatDraftChange(seat.id, { seatType: e.target.value })
-                      }
-                    >
-                      {seatTypes.map((st) => (
-                        <option key={st} value={st}>
-                          {st}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleSaveSeat(seat)}
+                        onClick={handleSaveSelectedSeat}
                         disabled={updateSeatMutation.isPending}
                       >
-                        {updateSeatMutation.isPending ? 'Saving…' : 'Save'}
+                        {updateSeatMutation.isPending ? 'Saving…' : 'Save changes'}
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => deleteSeatMutation.mutate(seat.id!)}
+                        onClick={handleDeleteSelectedSeat}
                         disabled={deleteSeatMutation.isPending}
                       >
-                        Delete
+                        Delete seat
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingSeatId(null);
+                          setEditSeatForm({
+                            seatCode: '',
+                            seatType: 'STANDARD',
+                            isActive: true,
+                          });
+                        }}
+                      >
+                        Clear selection
                       </Button>
                     </div>
-                  </div>
-                ))}
-                {!seatDrafts.length && (
+                  </>
+                ) : (
                   <p className="text-sm text-muted-foreground">
-                    No seats configured for this bus yet.
+                    No seat selected. Click a seat in the map to edit.
                   </p>
                 )}
+
+                <div className="space-y-2 max-h-[320px] overflow-auto rounded-md border bg-muted/20 p-2">
+                  {seatRows.map(([rowLetter, seats]) => {
+                    const left = seats.filter(
+                      (s) => parseInt(s.seatCode.slice(1)) <= 2,
+                    );
+                    const right = seats.filter(
+                      (s) => parseInt(s.seatCode.slice(1)) > 2,
+                    );
+                    return (
+                      <div
+                        key={rowLetter}
+                        className="flex items-center gap-4 rounded-md border px-3 py-2 bg-background"
+                      >
+                        <span className="text-sm font-semibold w-6 text-center">
+                          {rowLetter}
+                        </span>
+                        <div className="grid grid-cols-2 gap-6 flex-1">
+                          {[left, right].map((side, idx) => (
+                            <div key={idx} className="flex gap-2">
+                              {side.map((seat) => {
+                                const isSelected = editingSeatId === seat.id;
+                                return (
+                                  <button
+                                    key={seat.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingSeatId(seat.id);
+                                      setEditSeatForm({
+                                        seatCode: seat.seatCode,
+                                        seatType: seat.seatType,
+                                        isActive: seat.isActive,
+                                      });
+                                    }}
+                                    className={`rounded-md px-3 py-2 text-sm font-medium border text-left transition ${
+                                      isSelected
+                                        ? 'bg-amber-100 border-amber-300 text-amber-900'
+                                        : seat.isActive
+                                          ? 'bg-emerald-100 border-emerald-300 text-emerald-900'
+                                          : 'bg-rose-100 border-rose-300 text-rose-900'
+                                    }`}
+                                    title={`${seat.seatCode} • ${seat.seatType}`}
+                                  >
+                                    {seat.seatCode}
+                                    <span className="block text-[11px] text-muted-foreground">
+                                      {seat.seatType}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </>
           ) : (

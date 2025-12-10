@@ -67,10 +67,11 @@ export async function createSeat(
 }
 
 export async function updateSeat(
+  busId: string,
   id: string,
   payload: Partial<Omit<Seat, 'id'>>
 ): Promise<Seat> {
-  const res = await http.patch(`/admin/seats/${id}`, payload);
+  const res = await http.patch(`/admin/buses/${busId}/seats/${id}`, payload);
   return (res as { data: Seat }).data;
 }
 

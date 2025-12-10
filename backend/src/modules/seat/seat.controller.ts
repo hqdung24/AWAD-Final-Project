@@ -61,7 +61,7 @@ export class SeatController {
     return await this.seatService.createSeat(params.id, createSeatDto);
   }
 
-  @Patch('seats/:id')
+  @Patch('buses/:busId/seats/:id')
   @Roles(RoleType.ADMIN)
   @ApiOperation({
     summary: 'Update seat information',
@@ -77,10 +77,10 @@ export class SeatController {
     description: 'Seat not found or inactive',
   })
   async updateSeat(
-    @Param() params: SeatIdParamDto,
+    @Param('id') id: string,
     @Body() updateSeatDto: UpdateSeatDto,
   ) {
-    return await this.seatService.updateSeat(params.id, updateSeatDto);
+    return await this.seatService.updateSeat(id, updateSeatDto);
   }
 
   @Delete('seats/:id')

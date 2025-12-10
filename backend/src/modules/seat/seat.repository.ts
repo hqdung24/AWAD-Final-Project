@@ -11,9 +11,16 @@ export class SeatRepository {
   ) {}
 
   async findByBusId(busId: string): Promise<Seat[]> {
+    // Return all seats (active and inactive) so admins can manage visibility states
     return await this.repository.find({
-      where: { busId, isActive: true },
+      where: { busId },
       order: { seatCode: 'ASC' },
+    });
+  }
+
+  async findByBusIdAndCode(busId: string, seatCode: string): Promise<Seat | null> {
+    return await this.repository.findOne({
+      where: { busId, seatCode },
     });
   }
 
@@ -67,6 +74,16 @@ export class SeatRepository {
       deletedAt: new Date(),
     });
     return await this.findById(id);
+  }
+
+  async softDeleteByBusId(busId: string): Promise<void> {
+    await this.repository.update(
+      { busId },
+      {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    );
   }
 
   async save(seat: Seat): Promise<Seat> {

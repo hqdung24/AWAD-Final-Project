@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { BusRepository } from './bus.repository';
 import { Bus } from './entities/bus.entity';
+import { SeatRepository } from '../seat/seat.repository';
 
 @Injectable()
 export class BusService {
-  constructor(private readonly busRepository: BusRepository) {}
+  constructor(
+    private readonly busRepository: BusRepository,
+    private readonly seatRepository: SeatRepository,
+  ) {}
 
   async findById(id: string): Promise<Bus | null> {
     return await this.busRepository.findById(id);
@@ -28,6 +32,13 @@ export class BusService {
   }
 
   async softDelete(id: string): Promise<Bus | null> {
-    return await this.busRepository.softDelete(id);
+    const deletedBus = await this.busRepository.softDelete(id);
+
+    if (deletedBus) {
+      // Soft-delete seats for this bus as well
+      await this.seatRepository.softDeleteByBusId(id);
+    }
+
+    return deletedBus;
   }
 }

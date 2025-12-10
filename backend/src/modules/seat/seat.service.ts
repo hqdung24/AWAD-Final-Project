@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { SeatRepository } from './seat.repository';
 import { Seat } from './entities/seat.entity';
 import { CreateSeatDto } from './dto/create-seat.dto';
@@ -57,6 +57,17 @@ export class SeatService {
     const bus = await this.busService.findById(busId);
     if (!bus || !bus.isActive) {
       throw new NotFoundException(`Bus with ID ${busId} not found or inactive`);
+    }
+
+    // Prevent duplicate seat codes on the same bus
+    const existing = await this.seatRepository.findByBusIdAndCode(
+      busId,
+      dto.seatCode,
+    );
+    if (existing) {
+      throw new ConflictException(
+        `Seat code ${dto.seatCode} already exists on this bus`,
+      );
     }
 
     const seatData: Partial<Seat> = {
