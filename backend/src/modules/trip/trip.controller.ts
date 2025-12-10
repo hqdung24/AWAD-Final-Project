@@ -68,53 +68,6 @@ export class TripController {
     return await this.tripService.searchTrips(query);
   }
 
-  @Get(':id')
-  @Auth(AuthType.None)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Get trip details by ID (Public)',
-    description:
-      'Public endpoint to retrieve detailed information about a specific trip including route, bus, operator, amenities, and available seats.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Trip UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Trip details retrieved successfully',
-    schema: {
-      example: {
-        id: 'uuid',
-        from: 'TP.HCM',
-        to: 'Đà Lạt',
-        departureTime: '2025-12-05T08:00:00Z',
-        arrivalTime: '2025-12-05T14:30:00Z',
-        duration: '6h 30m',
-        price: 250000,
-        busType: 'Sleeper',
-        company: 'Phương Trang',
-        amenities: ['wifi', 'air_conditioning', 'water'],
-        seatsAvailable: 15,
-        busModel: 'Thaco Universe',
-        plateNumber: '51A-111.11',
-        distanceKm: 308,
-        routePoints: {
-          pickup: [],
-          dropoff: [],
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Trip not found',
-  })
-  async getTripDetails(@Param() params: TripIdDto) {
-    return await this.tripService.getTripDetails(params.id);
-  }
-
   @Get('admin')
   @ApiBearerAuth()
   @Roles(RoleType.ADMIN, RoleType.MODERATOR)
@@ -255,5 +208,52 @@ export class TripController {
   })
   async cancelTrip(@Param() params: TripIdDto) {
     return await this.tripService.cancelTrip(params.id);
+  }
+
+  @Get(':id')
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get trip details by ID (Public)',
+    description:
+      'Public endpoint to retrieve detailed information about a specific trip including route, bus, operator, amenities, and available seats.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Trip UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trip details retrieved successfully',
+    schema: {
+      example: {
+        id: 'uuid',
+        from: 'TP.HCM',
+        to: 'Đà Lạt',
+        departureTime: '2025-12-05T08:00:00Z',
+        arrivalTime: '2025-12-05T14:30:00Z',
+        duration: '6h 30m',
+        price: 250000,
+        busType: 'Sleeper',
+        company: 'Phương Trang',
+        amenities: ['wifi', 'air_conditioning', 'water'],
+        seatsAvailable: 15,
+        busModel: 'Thaco Universe',
+        plateNumber: '51A-111.11',
+        distanceKm: 308,
+        routePoints: {
+          pickup: [],
+          dropoff: [],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Trip not found',
+  })
+  async getTripDetails(@Param() params: TripIdDto) {
+    return await this.tripService.getTripDetails(params.id);
   }
 }

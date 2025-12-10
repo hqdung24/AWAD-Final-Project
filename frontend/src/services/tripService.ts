@@ -40,9 +40,27 @@ export type TripListResponse = {
   totalPages: number;
 };
 
-export async function listTrips(): Promise<TripListResponse> {
-  const res = await http.get('/trips/admin');
-  return (res as { data: TripListResponse }).data;
+type TripListParams = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  routeId?: string;
+  busId?: string;
+};
+
+export async function listTrips(params?: TripListParams): Promise<TripListResponse> {
+  const res = (await http.get('/trips/admin', { params })) as any;
+  const payload = res?.data ?? res ?? {};
+
+  return {
+    data: Array.isArray(payload.data) ? payload.data : [],
+    total: Number.isFinite(Number(payload.total)) ? Number(payload.total) : 0,
+    page: Number.isFinite(Number(payload.page)) ? Number(payload.page) : 1,
+    limit: Number.isFinite(Number(payload.limit)) ? Number(payload.limit) : 10,
+    totalPages: Number.isFinite(Number(payload.totalPages))
+      ? Number(payload.totalPages)
+      : 0,
+  };
 }
 
 export async function listBuses(): Promise<Bus[]> {
@@ -61,7 +79,8 @@ export async function updateTrip(id: string, payload: Partial<Omit<Trip, 'id'>>)
 }
 
 export async function deleteTrip(id: string): Promise<void> {
-  await http.delete(`/trips/admin/${id}`);
+  // Backend supports cancelling a trip via PATCH /trips/admin/:id/cancel
+  await http.patch(`/trips/admin/${id}/cancel`, {});
 }
 
 export interface TripDetails {
