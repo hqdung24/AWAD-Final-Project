@@ -20,6 +20,7 @@ import {
 } from '@/services/adminRoutesService';
 import { listRoutesWithStops, type RouteStop, type RouteWithStops } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notify } from '@/lib/notify';
 
 const initialRouteForm: AdminRoute = {
   id: '',
@@ -39,6 +40,13 @@ export default function RoutesPage() {
   const [editForm, setEditForm] = useState<(AdminRoute & { stops?: RouteStop[] }) | null>(
     null,
   );
+  const [filters, setFilters] = useState<{
+    operatorId?: string;
+    origin?: string;
+    destination?: string;
+  }>({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: adminRoutesResult, isLoading: routesLoading } = useQuery<
     AdminRoute[] | RouteWithStops[]
@@ -70,6 +78,11 @@ export default function RoutesPage() {
       setCreateForm(initialRouteForm);
       void qc.invalidateQueries({ queryKey: ['admin-routes'] });
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to create route';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   const updateMutation = useMutation({
@@ -79,6 +92,11 @@ export default function RoutesPage() {
       setEditForm(null);
       void qc.invalidateQueries({ queryKey: ['admin-routes'] });
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to update route';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -86,24 +104,100 @@ export default function RoutesPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-routes'] });
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to delete route';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Manage Routes</span>
-            {routesLoading && (
-              <span className="text-muted-foreground text-xs">Loading…</span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Operator
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Manage Routes</span>
+              {routesLoading && (
+                <span className="text-muted-foreground text-xs">Loading…</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Filters */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Filters</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setFilters({});
+                    setPage(1);
+                  }}
+                >
+                  Reset filters
+                </Button>
+              </div>
+              <div className="grid gap-2 md:grid-cols-4">
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Operator
+                  <select
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={filters.operatorId ?? ''}
+                    onChange={(e) => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        operatorId: e.target.value || undefined,
+                      }));
+                      setPage(1);
+                    }}
+                  >
+                    <option value="">All operators</option>
+                    {operators.map((op) => (
+                      <option key={op.id} value={op.id}>
+                        {op.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Origin
+                  <input
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    placeholder="Search origin"
+                    value={filters.origin ?? ''}
+                    onChange={(e) => {
+                      setFilters((prev) => ({ ...prev, origin: e.target.value || undefined }));
+                      setPage(1);
+                    }}
+                  />
+                </label>
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Destination
+                  <input
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    placeholder="Search destination"
+                    value={filters.destination ?? ''}
+                    onChange={(e) => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        destination: e.target.value || undefined,
+                      }));
+                      setPage(1);
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
+              <div className="flex items-center justify-between text-xs text-muted-foreground md:col-span-2">
+                <span>Route form</span>
+                {editForm && <span>Editing route: {editForm.id}</span>}
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Operator
                 <select
                   className="border-input bg-background text-sm px-3 py-2 rounded-md border"
                   value={createForm.operatorId}
@@ -269,11 +363,28 @@ export default function RoutesPage() {
               </TableRow>
             </TableHeader>
           <TableBody>
-            {adminRoutes.map((route) => {
+            {adminRoutes
+              .filter((route) => {
+                if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
+                if (filters.origin) {
+                  const q = filters.origin.toLowerCase();
+                  if (!route.origin.toLowerCase().includes(q)) return false;
+                }
+                if (filters.destination) {
+                  const q = filters.destination.toLowerCase();
+                  if (!route.destination.toLowerCase().includes(q)) return false;
+                }
+                return true;
+              })
+              .slice((page - 1) * pageSize, page * pageSize)
+              .map((route, idx) => {
               const isEditing = editForm?.id === route.id;
               const operatorLabel = route.operator?.name ?? route.operatorId;
               return (
-                <TableRow key={route.id}>
+                <TableRow
+                  key={route.id}
+                  className={idx % 2 === 1 ? 'bg-muted/40' : undefined}
+                >
                     <TableCell>
                       {isEditing ? (
                         <input
@@ -457,6 +568,60 @@ export default function RoutesPage() {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select
+                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                value={pageSize}
+                onChange={(e) => {
+                  const next = Number(e.target.value) || 10;
+                  setPageSize(next);
+                  setPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span>
+                Page {page}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={
+                  adminRoutes.filter((route) => {
+                    if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
+                    if (filters.origin) {
+                      const q = filters.origin.toLowerCase();
+                      if (!route.origin.toLowerCase().includes(q)) return false;
+                    }
+                    if (filters.destination) {
+                      const q = filters.destination.toLowerCase();
+                      if (!route.destination.toLowerCase().includes(q)) return false;
+                    }
+                    return true;
+                  }).length <= page * pageSize
+                }
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

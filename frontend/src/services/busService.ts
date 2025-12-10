@@ -30,9 +30,10 @@ export type BusAssignment = {
   endTime: string;
 };
 
-export async function listBuses(): Promise<Bus[]> {
-  const res = await http.get('/admin/buses');
-  return (res as { data: Bus[] }).data;
+export async function listBuses(params?: { page?: number; limit?: number; operatorId?: string }): Promise<Bus[]> {
+  const res = await http.get('/admin/buses', { params });
+  const payload = (res as any)?.data ?? res;
+  return Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
 }
 
 export async function createBus(payload: Omit<Bus, 'id'>): Promise<Bus> {

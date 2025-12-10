@@ -23,6 +23,7 @@ import {
 } from '@/services/busService';
 import { listOperators, type Operator } from '@/services/adminRoutesService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notify } from '@/lib/notify';
 
 const initialBus: Omit<Bus, 'id'> = {
   operatorId: '',
@@ -46,10 +47,16 @@ export default function BusesPage() {
     seatType: 'STANDARD',
   });
   const [seatDrafts, setSeatDrafts] = useState<Seat[]>([]);
+  const [busFilters, setBusFilters] = useState<{
+    operatorId?: string;
+    query?: string;
+  }>({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: buses = [] } = useQuery<Bus[]>({
-    queryKey: ['buses'],
-    queryFn: listBuses,
+    queryKey: ['buses', busFilters],
+    queryFn: () => listBuses({ operatorId: busFilters.operatorId, limit: 200 }),
   });
   useEffect(() => {
     if (!seatBusId && buses.length > 0) {
@@ -85,6 +92,11 @@ export default function BusesPage() {
       setEditingBusId(null);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to create bus';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   const updateBusMutation = useMutation({
@@ -94,12 +106,22 @@ export default function BusesPage() {
       setEditingBusId(null);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to update bus';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   const deleteBusMutation = useMutation({
     mutationFn: deleteBus,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['buses'] });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to delete bus';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 
@@ -173,6 +195,66 @@ export default function BusesPage() {
           <CardTitle>Buses</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Filters</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setBusFilters({});
+                  setPage(1);
+                }}
+              >
+                Reset filters
+              </Button>
+            </div>
+            <div className="grid gap-2 md:grid-cols-4">
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Operator
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={busFilters.operatorId ?? ''}
+                  onChange={(e) => {
+                    setBusFilters((prev) => ({
+                      ...prev,
+                      operatorId: e.target.value || undefined,
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All operators</option>
+                  {operators.map((op) => (
+                    <option key={op.id} value={op.id}>
+                      {op.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Search (plate/name/model)
+                <input
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={busFilters.query ?? ''}
+                  onChange={(e) => {
+                    setBusFilters((prev) => ({
+                      ...prev,
+                      query: e.target.value || undefined,
+                    }));
+                    setPage(1);
+                  }}
+                  placeholder="51F / Hyundai / VIP"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+            <span>Bus form</span>
+            {editingBusId && <span>Editing bus: {editingBusId}</span>}
+          </div>
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Operator
@@ -254,14 +336,17 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Amenities JSON
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <textarea
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border min-h-[80px] font-mono"
                 value={busForm.amenitiesJson ?? ''}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, amenitiesJson: e.target.value }))
                 }
-                placeholder='{"wifi":true,"water":true}'
+                placeholder='{"wifi":true,"water":true,"charger":true}'
               />
+              <span className="text-[11px] text-muted-foreground">
+                Example: {"{ \"wifi\": true, \"water\": true, \"charger\": true }"}
+              </span>
             </label>
           </div>
           <div className="flex gap-2">
@@ -307,8 +392,25 @@ export default function BusesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {buses.map((bus) => (
-                  <TableRow key={bus.id}>
+                {buses
+                  .filter((bus) => {
+                    if (busFilters.operatorId && bus.operatorId !== busFilters.operatorId)
+                      return false;
+                    if (busFilters.query) {
+                      const q = busFilters.query.toLowerCase();
+                      const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
+                        bus.busType ?? ''
+                      }`.toLowerCase();
+                      if (!text.includes(q)) return false;
+                    }
+                    return true;
+                  })
+                  .slice((page - 1) * pageSize, page * pageSize)
+                  .map((bus, idx) => (
+                  <TableRow
+                    key={bus.id}
+                    className={idx % 2 === 1 ? 'bg-muted/40' : undefined}
+                  >
                     <TableCell>{bus.plateNumber}</TableCell>
                     <TableCell>{bus.name ?? '—'}</TableCell>
                     <TableCell>{bus.model ?? '—'}</TableCell>
@@ -347,6 +449,60 @@ export default function BusesPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select
+                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                value={pageSize}
+                onChange={(e) => {
+                  const next = Number(e.target.value) || 10;
+                  setPageSize(next);
+                  setPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span>
+                Page {page}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={
+                  buses.filter((bus) => {
+                    if (busFilters.operatorId && bus.operatorId !== busFilters.operatorId)
+                      return false;
+                    if (busFilters.query) {
+                      const q = busFilters.query.toLowerCase();
+                      const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
+                        bus.busType ?? ''
+                      }`.toLowerCase();
+                      if (!text.includes(q)) return false;
+                    }
+                    return true;
+                  }).length <= page * pageSize
+                }
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
