@@ -28,3 +28,30 @@ export async function getBookingDetail(
   const res = await http.get(`/booking/${bookingId}`);
   return (res as { data: BookingDetailResponse }).data;
 }
+
+export async function cancelBooking(
+  bookingId: string
+): Promise<BookingDetailResponse> {
+  const res = await http.patch(`/booking/${bookingId}/cancel`);
+  return (res as { data: BookingDetailResponse }).data;
+}
+
+export type UpdateBookingRequest = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  passengers?: Array<{
+    seatCode: string;
+    fullName?: string;
+    documentId?: string;
+    phone?: string;
+  }>;
+};
+
+export async function updateBooking(
+  bookingId: string,
+  payload: UpdateBookingRequest
+): Promise<BookingDetailResponse> {
+  const res = await http.patch(`/booking/${bookingId}`, payload);
+  return (res as { data: BookingDetailResponse }).data;
+}

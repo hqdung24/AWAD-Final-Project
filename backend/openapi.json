@@ -1556,13 +1556,85 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BookingListResponseDto"
+                  "$ref": "#/components/schemas/BookingListItemDto"
                 }
               }
             }
           }
         },
         "summary": "Get booking details by ID",
+        "tags": [
+          "Booking"
+        ]
+      },
+      "patch": {
+        "operationId": "BookingController_updateBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListItemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update booking contact or passenger info",
+        "tags": [
+          "Booking"
+        ]
+      }
+    },
+    "/booking/{id}/cancel": {
+      "patch": {
+        "operationId": "BookingController_cancelBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListItemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel a pending booking (soft delete)",
         "tags": [
           "Booking"
         ]
@@ -2450,6 +2522,21 @@
             "description": "Created timestamp",
             "example": "2025-12-06T12:30:00.000Z"
           },
+          "name": {
+            "type": "string",
+            "description": "Name of the person who made the booking",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email of the person who made the booking",
+            "example": "d@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number of the person who made the booking",
+            "example": "+1234567890"
+          },
           "trip": {
             "description": "Trip information",
             "allOf": [
@@ -2481,6 +2568,9 @@
           "status",
           "totalAmount",
           "createdAt",
+          "name",
+          "email",
+          "phone",
           "trip",
           "seats",
           "passengers"
@@ -2518,6 +2608,53 @@
           "page",
           "limit"
         ]
+      },
+      "UpdatePassengerDto": {
+        "type": "object",
+        "properties": {
+          "seatCode": {
+            "type": "string",
+            "description": "Seat code used as identifier for the passenger row",
+            "example": "A1"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "Updated full name",
+            "example": "Le Van B"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "Updated document ID",
+            "example": "0123456789"
+          }
+        }
+      },
+      "UpdateBookingDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Contact name",
+            "example": "Nguyen Van A"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email",
+            "example": "new@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone",
+            "example": "0909123456"
+          },
+          "passengers": {
+            "description": "Passenger updates keyed by seatCode; only personal info allowed",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdatePassengerDto"
+            }
+          }
+        }
       }
     }
   }

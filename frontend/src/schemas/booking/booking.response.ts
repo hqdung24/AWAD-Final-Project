@@ -47,6 +47,9 @@ export const bookingListItemSchema = z.object({
   bookingReference: z.string().nullable(),
   status: z.enum(['pending', 'paid', 'cancelled', 'expired']),
   totalAmount: z.number(),
+  name: z.string(),
+  email: z.email(),
+  phone: z.string(),
   createdAt: z.string().datetime(),
   trip: tripBriefSchema,
   seats: z.array(seatInfoSchema),
@@ -70,6 +73,9 @@ export const bookingDetailResponseSchema = z.object({
   seats: z.array(seatInfoSchema),
   passengers: z.array(passengerInfoSchema),
   totalAmount: z.number(),
+  name: z.string(),
+  email: z.email(),
+  phone: z.string(),
   createdAt: z.string().datetime(),
 });
 

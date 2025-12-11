@@ -20,7 +20,7 @@ import PublicRoute from './routes/PublicRoute';
 import MainLayout from './layouts/main-layout/MainLayout';
 import { useAuthStore } from './stores/auth';
 import AdminDashboard from './pages/home/AdminDashboard';
-import UserDashboard from './pages/home/UserDashboard';
+import UserDashboard from './pages/home/UserTrips';
 import UpcomingTripDetail from './pages/home/UpcomingTripDetail';
 import TripsPage from './pages/admin/TripsPage';
 import RoutesPage from './pages/admin/RoutesPage';

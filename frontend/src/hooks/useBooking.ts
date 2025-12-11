@@ -1,14 +1,24 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   createBooking,
+  cancelBooking,
   getBookingDetail,
   getBookings,
+  updateBooking,
 } from '@/services/bookingService';
 import { notify } from '@/lib/notify';
 import { extractApiError } from '@/lib/api-error';
-import type { BookingListQuery, CreateBookingRequest } from '@/schemas/booking';
+import type {
+  BookingListQuery,
+  CreateBookingRequest,
+  BookingDetailResponse,
+} from '@/schemas/booking';
+import type { UpdateBookingRequest } from '@/services/bookingService';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function useBooking(params?: BookingListQuery, bookingId?: string) {
+  const queryClient = useQueryClient();
+
   const createBookingMutation = useMutation({
     mutationFn: (payload: CreateBookingRequest) => createBooking(payload),
     onSuccess: (data) => {
@@ -34,9 +44,47 @@ export function useBooking(params?: BookingListQuery, bookingId?: string) {
     enabled: !!bookingId,
   });
 
+  const cancelBookingMutation = useMutation({
+    mutationFn: (id: string) => cancelBooking(id),
+    onSuccess: (data: BookingDetailResponse) => {
+      notify.success('Booking cancelled successfully');
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['booking', data.bookingId],
+      });
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to cancel booking');
+    },
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateBookingRequest;
+    }) => updateBooking(id, payload),
+    onSuccess: (data: BookingDetailResponse) => {
+      notify.success('Booking updated successfully');
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['booking', data.bookingId],
+      });
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to update booking');
+    },
+  });
+
   return {
     createBooking: createBookingMutation,
     bookingList: bookingListQuery,
     bookingDetail: bookingDetailQuery,
+    cancelBooking: cancelBookingMutation,
+    updateBooking: updateBookingMutation,
   };
 }

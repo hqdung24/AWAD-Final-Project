@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -25,6 +26,8 @@ import {
   CreateBookingSuccessResponseDto,
   BookingListQueryDto,
   BookingListResponseDto,
+  BookingListItemDto,
+  UpdateBookingDto,
 } from './dto';
 
 @ApiTags('Booking')
@@ -135,6 +138,9 @@ export class BookingController {
       bookingReference: booking.bookingReference || null,
       status: booking.status,
       totalAmount: Number(booking.totalAmount),
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
       createdAt: booking.bookedAt.toISOString(),
       trip: booking.trip
         ? {
@@ -176,7 +182,7 @@ export class BookingController {
   @ApiResponse({
     status: 200,
     description: 'Booking details',
-    type: BookingListResponseDto,
+    type: BookingListItemDto,
   })
   async getBookingDetail(@Param('id') id: string) {
     const booking = await this.bookingService.getBookingDetail(id);
@@ -187,6 +193,9 @@ export class BookingController {
       userId: booking.userId,
       bookingReference: booking.bookingReference || null,
       status: booking.status,
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
       trip: booking.trip
         ? {
             id: booking.trip.id,
@@ -210,7 +219,104 @@ export class BookingController {
         seatCode: p.seatCode,
       })),
       totalAmount: Number(booking.totalAmount),
-      paymentMethodId: undefined,
+      createdAt: booking.bookedAt.toISOString(),
+    };
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update booking contact or passenger info' })
+  @ApiParam({ name: 'id', description: 'Booking ID', type: String })
+  @ApiBody({ type: UpdateBookingDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking updated',
+    type: BookingListItemDto,
+  })
+  @Auth(AuthType.None) // adjust if you want auth
+  async updateBooking(@Param('id') id: string, @Body() dto: UpdateBookingDto) {
+    const booking = await this.bookingService.updateBooking(id, dto);
+
+    return {
+      bookingId: booking.id,
+      tripId: booking.tripId,
+      userId: booking.userId,
+      bookingReference: booking.bookingReference || null,
+      status: booking.status,
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      trip: booking.trip
+        ? {
+            id: booking.trip.id,
+            routeId: booking.trip.routeId,
+            origin: booking.trip.route?.origin,
+            destination: booking.trip.route?.destination,
+            busId: booking.trip.busId,
+            departureTime: booking.trip.departureTime.toISOString(),
+            arrivalTime: booking.trip.arrivalTime.toISOString(),
+            basePrice: Number(booking.trip.basePrice),
+            status: booking.trip.status,
+          }
+        : undefined,
+      seats: (booking.seatStatuses || []).map((ss) => ({
+        seatId: ss.seatId,
+        seatCode: ss.seat?.seatCode,
+      })),
+      passengers: (booking.passengerDetails || []).map((p) => ({
+        fullName: p.fullName,
+        documentId: p.documentId,
+        seatCode: p.seatCode,
+      })),
+      totalAmount: Number(booking.totalAmount),
+      createdAt: booking.bookedAt.toISOString(),
+    };
+  }
+
+  @Patch(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancel a pending booking (soft delete)' })
+  @ApiParam({ name: 'id', description: 'Booking ID', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking cancelled',
+    type: BookingListItemDto,
+  })
+  async cancelBooking(@Param('id') id: string) {
+    const booking = await this.bookingService.cancelBooking(id);
+
+    return {
+      bookingId: booking.id,
+      tripId: booking.tripId,
+      userId: booking.userId,
+      bookingReference: booking.bookingReference || null,
+      status: booking.status,
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      trip: booking.trip
+        ? {
+            id: booking.trip.id,
+            routeId: booking.trip.routeId,
+            origin: booking.trip.route?.origin,
+            destination: booking.trip.route?.destination,
+            busId: booking.trip.busId,
+            departureTime: booking.trip.departureTime.toISOString(),
+            arrivalTime: booking.trip.arrivalTime.toISOString(),
+            basePrice: Number(booking.trip.basePrice),
+            status: booking.trip.status,
+          }
+        : undefined,
+      seats: (booking.seatStatuses || []).map((ss) => ({
+        seatId: ss.seatId,
+        seatCode: ss.seat?.seatCode,
+      })),
+      passengers: (booking.passengerDetails || []).map((p) => ({
+        fullName: p.fullName,
+        documentId: p.documentId,
+        seatCode: p.seatCode,
+      })),
+      totalAmount: Number(booking.totalAmount),
       createdAt: booking.bookedAt.toISOString(),
     };
   }

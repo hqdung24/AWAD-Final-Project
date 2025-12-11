@@ -82,6 +82,22 @@ export class BookingListItemDto {
   })
   createdAt: string;
 
+  @ApiProperty({
+    description: 'Name of the person who made the booking',
+    example: 'John Doe',
+  })
+  name: string;
+  @ApiProperty({
+    description: 'Email of the person who made the booking',
+    example: 'd@example.com',
+  })
+  email: string;
+  @ApiProperty({
+    description: 'Phone number of the person who made the booking',
+    example: '+1234567890',
+  })
+  phone: string;
+
   @ApiProperty({ description: 'Trip information', type: TripBriefDto })
   trip: TripBriefDto;
 
