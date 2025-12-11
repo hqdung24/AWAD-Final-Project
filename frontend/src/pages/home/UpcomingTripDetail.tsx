@@ -44,7 +44,9 @@ export default function UpcomingTripDetail() {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-10">
-          <div className="text-sm text-muted-foreground">Loading ticket...</div>
+          <div className="text-sm text-muted-foreground">
+            Loading booking...
+          </div>
         </div>
       </div>
     );
@@ -87,12 +89,12 @@ export default function UpcomingTripDetail() {
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">E-ticket</p>
+            <p className="text-sm text-muted-foreground">Booking Detail</p>
             <CardTitle className="text-2xl">
               {trip.origin} → {trip.destination}
             </CardTitle>
             <div className="text-sm text-muted-foreground">
-              Booking ID: {data.bookingReference || data.bookingId}
+              Booking Reference: {data.bookingReference || data.bookingId}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -176,10 +178,7 @@ export default function UpcomingTripDetail() {
                   <Wallet className="h-4 w-4" /> Payment
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Payment method: Pending
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Booking reference: {data.bookingReference ?? '—'}
+                  Payment method: {'—'}
                 </div>
               </div>
             </div>

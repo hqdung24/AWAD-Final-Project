@@ -53,4 +53,124 @@ export class BookingRepository {
       ],
     });
   }
+
+  async updateContactAndPassengers(
+    bookingId: string,
+    contact: { name?: string; email?: string; phone?: string },
+    passengers?: Array<{
+      seatCode: string;
+      fullName?: string;
+      documentId?: string;
+    }>,
+  ): Promise<Booking> {
+    return await this.repository.manager.transaction(async (manager) => {
+      const booking = await manager.findOne(Booking, {
+        where: { id: bookingId },
+        relations: [
+          'passengerDetails',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'trip',
+          'trip.route',
+        ],
+      });
+
+      if (!booking) {
+        throw new Error('BOOKING_NOT_FOUND');
+      }
+
+      // Apply contact updates if provided
+      if (contact) {
+        if (contact.name !== undefined) booking.name = contact.name;
+        if (contact.email !== undefined) booking.email = contact.email;
+        if (contact.phone !== undefined) booking.phone = contact.phone;
+      }
+
+      // Apply passenger updates keyed by seatCode
+      if (passengers && passengers.length > 0) {
+        const passengerBySeat = new Map(
+          booking.passengerDetails.map((p) => [p.seatCode, p]),
+        );
+
+        for (const patch of passengers) {
+          const target = passengerBySeat.get(patch.seatCode);
+          if (!target) {
+            throw new Error(`PASSENGER_NOT_FOUND_FOR_SEAT_${patch.seatCode}`);
+          }
+          if (patch.fullName !== undefined) target.fullName = patch.fullName;
+          if (patch.documentId !== undefined)
+            target.documentId = patch.documentId;
+        }
+
+        await manager.save(booking.passengerDetails);
+      }
+
+      await manager.save(booking);
+
+      // Return fresh booking with relations
+      return await manager.findOneOrFail(Booking, {
+        where: { id: bookingId },
+        relations: [
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+    });
+  }
+
+  async update(
+    id: string,
+    updateData: Partial<Booking>,
+  ): Promise<Booking | null> {
+    //only allow update certain fields: passengerDetails, phone and email
+    await this.repository.update(id, updateData);
+    return this.repository.findOne({ where: { id } });
+  }
+
+  async cancelBooking(bookingId: string): Promise<Booking> {
+    return await this.repository.manager.transaction(async (manager) => {
+      const booking = await manager.findOne(Booking, {
+        where: { id: bookingId },
+        relations: ['seatStatuses'],
+      });
+
+      if (!booking) {
+        throw new Error('BOOKING_NOT_FOUND');
+      }
+
+      if (booking.status !== 'pending') {
+        throw new Error('CANNOT_CANCEL_NON_PENDING');
+      }
+
+      booking.status = 'cancelled';
+      await manager.save(booking);
+
+      // Release seats: make them available, drop booking link and lock
+      await manager
+        .createQueryBuilder()
+        .update('seat_statuses')
+        .set({
+          state: 'available',
+          bookingId: null,
+          lockedUntil: null,
+        })
+        .where('bookingId = :bookingId', { bookingId })
+        .execute();
+
+      // return fresh booking with relations
+      return await manager.findOneOrFail(Booking, {
+        where: { id: bookingId },
+        relations: [
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+    });
+  }
 }

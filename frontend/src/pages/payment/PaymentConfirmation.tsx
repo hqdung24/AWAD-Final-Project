@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function PaymentConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [timeRemaining, setTimeRemaining] = useState<string>('11:59:59');
 
   useEffect(() => {
@@ -126,7 +128,17 @@ export default function PaymentConfirmation() {
 
             {/* Button */}
             <Button
-              onClick={() => navigate('/upcoming-trip')}
+              onClick={async () => {
+                await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+                  bookingId
+                    ? queryClient.invalidateQueries({
+                        queryKey: ['booking', bookingId],
+                      })
+                    : Promise.resolve(),
+                ]);
+                navigate('/upcoming-trip');
+              }}
               className="w-full py-6 text-base font-semibold"
             >
               Back to Upcoming Trips
