@@ -15,6 +15,7 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
 - **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` (JWT-based lock token, DB pessimistic locking) and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings; mock guest lookup/dashboard history still pending real data wiring. Real-time seat availability currently uses 30s polling until a lock is acquired (WebSocket not yet implemented).
 - **Admin UX (Trips/Routes/Buses/Seats)**: Admin tables now have filters + pagination, failure toasts, and consistent nav highlighting. Trip admin endpoints are no longer shadowed (`/trips/admin`). Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and lets admins toggle seats active/inactive; deleting a bus soft-deletes its seats.
+- **Booking management**: Pending bookings can be edited or cancelled; cancelling a pending booking releases seats back to available state. Booking confirmation emails are sent via Resend when contact email is provided.
 
 ## Prerequisites
 - Node.js 20+ and npm
@@ -116,6 +117,8 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `GET /api/admin/buses/:busId/seats` – list seats for a bus
 - `POST /api/admin/buses/:busId/seats` – create a seat (duplicate seatCode blocked per bus)
 - `PATCH /api/admin/buses/:busId/seats/:id` – update a seat (toggle active/type/code)
+- `PATCH /api/booking/:id` – edit pending booking contact/passenger details
+- `PATCH /api/booking/:id/cancel` – cancel a pending booking and release seats
 - Swagger available at `/api/docs`
 
 ## Frontend routes (selected)

@@ -20,6 +20,7 @@
 - Booking reference generation: **Not done** — Uses UUID; no friendly reference codes.
 - PDF e-ticket with QR + download/email + branded template: **Not started** — No PDF/QR/email implementation yet (`rg pdf` shows none).
 - Booking detail email: **Done** — Confirmation email with booking details is sent after booking creation.
+- Booking edit/cancel: **Done (pending only)** — Pending bookings can be edited or cancelled; cancelling releases seats back to available state.
 
 ## Evidence highlights
 - Seat lock flow: `backend/src/modules/seat-status/providers/seat-lock.provider.ts`, `seat-status.controller.ts`, `seat-status.service.ts`.
@@ -28,6 +29,7 @@
 - Booking history/detail: user dashboard now renders real booking list/detail.
 - Guest lookup: guest booking lookup displays real booking data.
 - Admin UX improvements (adjacent to Week 3): Trips/Routes/Buses pages now have filters, pagination, and error toasts; trip admin endpoint ordering fixed. Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and deleting a bus now soft-deletes its seats.
+- Booking management: Pending bookings can be edited/cancelled; cancel frees seats.
 
 ## Gaps & risks
 - Redis/WebSocket real-time missing; locks rely on DB/JWT only.
