@@ -3,26 +3,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useBooking } from '@/hooks/useBooking';
+import { createPayment } from '@/services/paymentService';
 export default function PaymentConfirmation() {
   const { bookingId } = useParams<{ bookingId: string }>();
+  const { bookingDetail } = useBooking(undefined, bookingId);
+
+  const { data } = bookingDetail;
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [timeRemaining, setTimeRemaining] = useState<string>('11:59:59');
+  const [timeRemaining, setTimeRemaining] = useState<string>('--:--:--');
+
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!bookingId) throw new Error('Missing booking id');
+      return createPayment(bookingId);
+    },
+    onSuccess: (res) => {
+      if (res.checkoutUrl) {
+        window.location.replace(res.checkoutUrl);
+      }
+    },
+  });
 
   useEffect(() => {
-    // Calculate time remaining (12 hours from now)
-    const endTime = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    if (!data?.createdAt) return;
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = endTime.getTime() - now.getTime();
+    const createdAt = new Date(data.createdAt);
+    const endTime = new Date(createdAt.getTime() + 12 * 60 * 60 * 1000);
+
+    const tick = () => {
+      const diff = endTime.getTime() - Date.now();
 
       if (diff <= 0) {
         setTimeRemaining('00:00:00');
-        clearInterval(interval);
-        return;
+        return false;
       }
 
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -35,13 +52,23 @@ export default function PaymentConfirmation() {
           '0'
         )}:${String(seconds).padStart(2, '0')}`
       );
+      return true;
+    };
+
+    // Run immediately to avoid 1s delay
+    const hasTime = tick();
+    if (!hasTime) return;
+
+    const interval = setInterval(() => {
+      const keepRunning = tick();
+      if (!keepRunning) clearInterval(interval);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [data?.createdAt]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen overflow-hidden bg-linear-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-primary/20">
           <CardHeader className="text-center space-y-4 pb-6">
@@ -55,39 +82,54 @@ export default function PaymentConfirmation() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Booking ID */}
-            <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase font-semibold">
-                Booking ID
-              </p>
-              <p className="text-lg font-mono font-bold text-primary break-all">
-                {bookingId || 'N/A'}
-              </p>
-            </div>
-
-            {/* Payment Notice */}
-            <div className="space-y-3 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-sm text-amber-900 dark:text-amber-200">
-                    Complete Payment
-                  </p>
-                  <p className="text-xs text-amber-800 dark:text-amber-300">
-                    Please complete your payment to finalize the booking and
-                    receive your e-ticket.
-                  </p>
-                </div>
+            {/* Booking details first */}
+            <div className="space-y-3 p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <AlertCircle className="h-4 w-4 text-primary" /> Booking details
               </div>
+              <dl className="grid gap-3 sm:grid-cols-2 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground uppercase font-semibold">
+                    Booking Ref
+                  </dt>
+                  <dd className="font-mono font-bold text-primary break-all">
+                    {data?.bookingReference || 'N/A'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground uppercase font-semibold">
+                    Status
+                  </dt>
+                  <dd className="font-semibold text-foreground">
+                    {data?.status ?? 'Pending'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground uppercase font-semibold">
+                    Route
+                  </dt>
+                  <dd className="text-foreground">
+                    {data?.trip
+                      ? `${data.trip.origin} → ${data.trip.destination}`
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground uppercase font-semibold">
+                    Seats
+                  </dt>
+                  <dd className="text-foreground">
+                    {data?.seats?.map((s) => s.seatCode).join(', ') || '—'}
+                  </dd>
+                </div>
+              </dl>
             </div>
 
-            {/* Time Remaining */}
+            {/* Timer second */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Clock className="h-4 w-4" />
-                  Time Remaining
-                </div>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Clock className="h-4 w-4" />
+                Time Remaining to Pay
               </div>
               <div className="text-3xl font-mono font-bold text-primary text-center py-4 bg-muted rounded-lg">
                 {timeRemaining}
@@ -97,57 +139,42 @@ export default function PaymentConfirmation() {
               </p>
             </div>
 
-            {/* Key Details */}
-            <div className="space-y-3 p-4 bg-muted rounded-lg">
-              <h4 className="text-sm font-semibold">Next Steps:</h4>
-              <ol className="text-xs text-muted-foreground space-y-2">
-                <li className="flex gap-2">
-                  <span className="text-primary font-bold">1.</span>
-                  <span>
-                    Proceed to payment page to complete the transaction
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-primary font-bold">2.</span>
-                  <span>Verify payment details and confirm</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-primary font-bold">3.</span>
-                  <span>
-                    Receive e-ticket via email after successful payment
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-primary font-bold">4.</span>
-                  <span>
-                    Check your bookings in the "Upcoming Trips" section
-                  </span>
-                </li>
-              </ol>
+            {/* Actions last */}
+            <div className="space-y-3">
+              <Button
+                onClick={() => {
+                  paymentMutation.mutate();
+                }}
+                disabled={paymentMutation.isPending}
+                className="w-full py-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-70"
+              >
+                {paymentMutation.isPending
+                  ? 'Redirecting…'
+                  : 'Continue to Payment'}
+              </Button>
+
+              <Button
+                onClick={async () => {
+                  await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+                    bookingId
+                      ? queryClient.invalidateQueries({
+                          queryKey: ['booking', bookingId],
+                        })
+                      : Promise.resolve(),
+                  ]);
+                  navigate('/upcoming-trip');
+                }}
+                className="w-full py-6 text-base font-semibold bg-muted text-foreground hover:bg-muted/80"
+              >
+                Back to Upcoming Trips
+              </Button>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Your booking is reserved. Complete payment to receive your
+                e-ticket.
+              </p>
             </div>
-
-            {/* Button */}
-            <Button
-              onClick={async () => {
-                await Promise.all([
-                  queryClient.invalidateQueries({ queryKey: ['bookings'] }),
-                  bookingId
-                    ? queryClient.invalidateQueries({
-                        queryKey: ['booking', bookingId],
-                      })
-                    : Promise.resolve(),
-                ]);
-                navigate('/upcoming-trip');
-              }}
-              className="w-full py-6 text-base font-semibold"
-            >
-              Back to Upcoming Trips
-            </Button>
-
-            <p className="text-xs text-muted-foreground text-center">
-              Your booking is reserved. Payment is required to complete the
-              process.
-            </p>
           </CardContent>
         </Card>
       </div>

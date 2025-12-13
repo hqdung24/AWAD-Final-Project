@@ -26,10 +26,10 @@ export class Trip {
   @Index()
   busId: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   departureTime: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   arrivalTime: Date;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })

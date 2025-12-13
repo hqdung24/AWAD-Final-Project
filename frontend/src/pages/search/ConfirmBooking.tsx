@@ -1,36 +1,34 @@
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  Lock,
-  CreditCard,
-  Wallet,
-  Building2,
-  AlertCircle,
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-} from 'lucide-react';
-import { getTripDetails } from '@/services/tripService';
-import { getSeatsByTrip } from '@/services/seatService';
-import { notify } from '@/lib/notify';
-import { useEffect, useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 import { useBooking } from '@/hooks/useBooking';
-import { useUserStore } from '@/stores/user';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { notify } from '@/lib/notify';
+import { cn } from '@/lib/utils';
 import {
   createBookingRequestSchema,
   type CreateBookingRequest,
 } from '@/schemas/booking';
+import { getSeatsByTrip } from '@/services/seatService';
+import { getTripDetails } from '@/services/tripService';
+import { useUserStore } from '@/stores/user';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Calendar,
+  Clock,
+  Lock,
+  MapPin,
+  Users,
+  Wallet,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 export default function ConfirmBooking() {
   const { id } = useParams<{ id: string }>();
@@ -47,7 +45,7 @@ export default function ConfirmBooking() {
     [searchParams]
   );
 
-  const [paymentMethod, setPaymentMethod] = useState<string>('card');
+  const [paymentMethod, setPaymentMethod] = useState<string>('vietqr');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const user = useUserStore((s) => s.me);
 
@@ -420,7 +418,7 @@ export default function ConfirmBooking() {
                 </CardContent>
               </Card>
 
-              {/* Payment Method */}
+              {/* Payment Method - only VietQR */}
               <Card>
                 <CardHeader>
                   <CardTitle>PAYMENT METHOD</CardTitle>
@@ -431,96 +429,14 @@ export default function ConfirmBooking() {
                     onValueChange={setPaymentMethod}
                   >
                     <div className="space-y-3">
-                      {/* Credit/Debit Card */}
-                      <div className="flex items-start space-x-3 p-3 rounded-lg border hover:border-primary transition-colors">
-                        <RadioGroupItem
-                          value="card"
-                          id="card"
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <Label
-                            htmlFor="card"
-                            className="flex items-center gap-2 cursor-pointer font-medium"
-                          >
-                            <CreditCard className="h-4 w-4" />
-                            Credit/Debit Card
-                          </Label>
-                          {paymentMethod === 'card' && (
-                            <div className="mt-3 space-y-3 ml-6 p-3 bg-muted/50 rounded-md border border-dashed">
-                              <div>
-                                <Label htmlFor="cardNumber" className="text-xs">
-                                  Card Number
-                                </Label>
-                                <Input
-                                  id="cardNumber"
-                                  placeholder="1234 5678 9012 3456"
-                                  className="mt-1"
-                                />
-                              </div>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label
-                                    htmlFor="expiryDate"
-                                    className="text-xs"
-                                  >
-                                    Expiry Date
-                                  </Label>
-                                  <Input
-                                    id="expiryDate"
-                                    placeholder="MM/YY"
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="cvc" className="text-xs">
-                                    CVC
-                                  </Label>
-                                  <Input
-                                    id="cvc"
-                                    placeholder="123"
-                                    className="mt-1"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* MoMo Wallet */}
                       <div className="flex items-center space-x-3 p-3 rounded-lg border hover:border-primary transition-colors">
-                        <RadioGroupItem value="momo" id="momo" />
+                        <RadioGroupItem value="vietqr" id="vietqr" />
                         <Label
-                          htmlFor="momo"
+                          htmlFor="vietqr"
                           className="flex items-center gap-2 cursor-pointer font-medium flex-1"
                         >
                           <Wallet className="h-4 w-4" />
-                          MoMo Wallet
-                        </Label>
-                      </div>
-
-                      {/* ZaloPay */}
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:border-primary transition-colors">
-                        <RadioGroupItem value="zalopay" id="zalopay" />
-                        <Label
-                          htmlFor="zalopay"
-                          className="flex items-center gap-2 cursor-pointer font-medium flex-1"
-                        >
-                          <Wallet className="h-4 w-4" />
-                          ZaloPay
-                        </Label>
-                      </div>
-
-                      {/* Bank Transfer */}
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:border-primary transition-colors">
-                        <RadioGroupItem value="bank" id="bank" />
-                        <Label
-                          htmlFor="bank"
-                          className="flex items-center gap-2 cursor-pointer font-medium flex-1"
-                        >
-                          <Building2 className="h-4 w-4" />
-                          Bank Transfer
+                          VietQR Banking
                         </Label>
                       </div>
                     </div>

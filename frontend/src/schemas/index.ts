@@ -6,6 +6,7 @@ export * from './auth/signup.response';
 export * from './auth/refresh.response';
 export * from './user/me.response';
 export * from './booking';
+export * from './payment';
 
 // Usage example (import from '@/schemas'):
 // import { SigninRequest, SigninRequestSchema, Me } from '@/schemas'

@@ -75,21 +75,25 @@ export default function UpcomingTripDetail() {
 
   const trip = data.trip;
   const seatCodes = data.seats.map((s) => s.seatCode).join(', ');
+  const isPending = data.status === 'pending';
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 space-y-4">
-        <Button
-          variant="ghost"
-          className="inline-flex items-center gap-2"
-          onClick={() => navigate('/upcoming-trip')}
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to list
-        </Button>
-
         <Card className="shadow-sm">
           <CardHeader className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">Booking Detail</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => navigate('/upcoming-trip')}
+                aria-label="Back to list"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <span>Booking Detail</span>
+            </div>
             <CardTitle className="text-2xl">
               {trip.origin} → {trip.destination}
             </CardTitle>
@@ -106,19 +110,16 @@ export default function UpcomingTripDetail() {
                 <div className="text-lg font-semibold">
                   {trip.origin} → {trip.destination}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Ticket className="h-4 w-4" /> Trip ID: {trip.id}
-                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" /> Departure / Arrival
                 </div>
                 <div className="text-lg font-semibold">
-                  {formatDateTime(trip.departureTime)}
+                  Departure: {formatDateTime(trip.departureTime)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Arrival: {formatDateTime(trip.arrivalTime)}
+                  Arrival (estimated): {formatDateTime(trip.arrivalTime)}
                 </div>
               </div>
             </div>
@@ -178,10 +179,24 @@ export default function UpcomingTripDetail() {
                   <Wallet className="h-4 w-4" /> Payment
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Payment method: {'—'}
+                  Payment method: Banking
                 </div>
               </div>
             </div>
+
+            {isPending && (
+              <>
+                <Separator />
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => navigate(`/payment/${data.bookingId}`)}
+                  >
+                    Pay Now
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

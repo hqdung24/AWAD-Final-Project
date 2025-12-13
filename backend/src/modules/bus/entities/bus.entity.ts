@@ -38,7 +38,7 @@ export class Bus {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
 
   @ManyToOne(() => Operator, (operator) => operator.buses, {

@@ -27,7 +27,7 @@ export class PaymentMethod {
   @Column({ default: false })
   isDefault: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
   @ManyToOne(() => User, (user) => user.paymentMethods, {

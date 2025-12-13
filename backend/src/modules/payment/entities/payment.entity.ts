@@ -1,40 +1,73 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
 import { Booking } from '@/modules/booking/entities/booking.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  FAILED = 'FAILED',
+  EXPIRED = 'EXPIRED',
+}
 
 @Entity('payments')
+@Index(['orderCode'], { unique: true })
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // ===== PayOS fields =====
   @Column()
-  @Index()
-  bookingId: string;
+  orderCode: number; // PayOS orderCode
+
+  @Column({ nullable: true })
+  paymentLinkId: string; // PayOS paymentLinkId
 
   @Column()
-  provider: string;
+  provider: string; // PAYOS
 
-  @Column()
-  transactionRef: string;
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  status: PaymentStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
 
-  @Column()
-  status: string; // success / failed / pending
+  @Column({ default: 'VND' })
+  currency: string;
 
-  @Column({ type: 'timestamp', nullable: true })
-  processedAt: Date;
+  // ===== Webhook result =====
+  @Column({ nullable: true })
+  transactionRef: string; // reference từ ngân hàng
+
+  @Column({ type: 'timestamptz', nullable: true })
+  paidAt: Date;
+
+  // ===== Relation =====
+  @Column()
+  @Index()
+  bookingId: string;
 
   @ManyToOne(() => Booking, (booking) => booking.payments, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn()
   booking: Booking;
+
+  // ===== Meta =====
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 }
