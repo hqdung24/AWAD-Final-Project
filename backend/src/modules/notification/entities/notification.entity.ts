@@ -26,7 +26,7 @@ export class Notification {
   @Column()
   status: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   sentAt: Date;
 
   @ManyToOne(() => Booking, (booking) => booking.notifications, {

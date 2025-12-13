@@ -19,7 +19,7 @@ export class Operator {
   @Column()
   status: string; // pending / active / suspended
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   approvedAt: Date;
 
   @OneToMany(() => Route, (route) => route.operator)

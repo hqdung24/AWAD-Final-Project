@@ -94,4 +94,32 @@ export class BookingService {
       throw error;
     }
   }
+  async updateBookingStatus(
+    id: string,
+    status: string,
+  ): Promise<Booking | null> {
+    return await this.bookingRepository.update(id, { status: status });
+  }
+
+  // For scheduled tasks
+  async expirePendingBooking(): Promise<{ updated: number }> {
+    // Update all bookings that are still 'pending' more than 12 hours old to 'expired'
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+    // Fetch all pending bookings from db
+    const pendingBookings =
+      await this.bookingRepository.findPendingBookingsBefore(twelveHoursAgo);
+
+    let updatedCount = 0;
+    for (const booking of pendingBookings) {
+      // Update booking status to expired
+      await this.bookingRepository.update(booking.id, { status: 'expired' });
+      updatedCount++;
+
+      // Release seats associated with this expired booking
+      await this.bookingRepository.releaseSeatsByBookingId(booking.id);
+    }
+
+    return { updated: updatedCount };
+  }
 }

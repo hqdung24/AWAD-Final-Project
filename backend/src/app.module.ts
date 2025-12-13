@@ -27,6 +27,7 @@ import { FeedbackModule } from '@/modules/feedback/feedback.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MyScheduleModule } from './modules/schedule/schedule.module';
+import { AppController } from './app.controller';
 
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
@@ -49,7 +50,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
         database: config.get('database.name'),
         autoLoadEntities: config.get('database.autoLoadEntities'),
         synchronize: config.get('database.synchronize'),
-        logging: true, // tắt nếu không cần
+        // logging: true, // tắt nếu không cần
         namingStrategy: new SnakeNamingStrategy(),
         ssl:
           process.env.NODE_ENV === 'production'
@@ -77,6 +78,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     ScheduleModule.forRoot(),
     MyScheduleModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_INTERCEPTOR,

@@ -28,7 +28,7 @@ export class Seat {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
 
   @ManyToOne(() => Bus, (bus) => bus.seats, {

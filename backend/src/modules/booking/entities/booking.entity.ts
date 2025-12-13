@@ -1,19 +1,19 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
-import { User } from '@/modules/users/entities/user.entity';
-import { Trip } from '@/modules/trip/entities/trip.entity';
+import { Notification } from '@/modules/notification/entities/notification.entity';
 import { PassengerDetail } from '@/modules/passenger-detail/entities/passenger-detail.entity';
 import { Payment } from '@/modules/payment/entities/payment.entity';
-import { Notification } from '@/modules/notification/entities/notification.entity';
 import { SeatStatus } from '@/modules/seat-status/entities/seat-status.entity';
+import { Trip } from '@/modules/trip/entities/trip.entity';
+import { User } from '@/modules/users/entities/user.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('bookings')
 @Index(['bookingReference'], { unique: true })
@@ -36,7 +36,7 @@ export class Booking {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalAmount: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   bookedAt: Date;
 
   //Contact info

@@ -1,6 +1,20 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_welcome",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
     "/users/me": {
       "get": {
         "operationId": "UsersController_getMe",
@@ -1639,6 +1653,58 @@
           "Booking"
         ]
       }
+    },
+    "/payment": {
+      "post": {
+        "operationId": "PaymentController_createPayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentSession"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Payment"
+        ]
+      }
+    },
+    "/payment/webhook": {
+      "post": {
+        "operationId": "PaymentController_handleWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Payment"
+        ]
+      }
+    },
+    "/payment/webhook/confirm": {
+      "post": {
+        "operationId": "PaymentController_confirmWebhook",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Payment"
+        ]
+      }
     }
   },
   "info": {
@@ -2655,6 +2721,10 @@
             }
           }
         }
+      },
+      "CreatePaymentSession": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

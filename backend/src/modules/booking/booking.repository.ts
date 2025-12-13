@@ -173,4 +173,28 @@ export class BookingRepository {
       });
     });
   }
+
+  async findPendingBookingsBefore(date: Date): Promise<Booking[]> {
+    return await this.repository
+      .find({
+        where: {
+          status: 'pending',
+        },
+        relations: ['seatStatuses'],
+      })
+      .then((bookings) => bookings.filter((b) => b.bookedAt < date));
+  }
+
+  async releaseSeatsByBookingId(bookingId: string): Promise<void> {
+    await this.repository.manager
+      .createQueryBuilder()
+      .update('seat_statuses')
+      .set({
+        state: 'available',
+        bookingId: null,
+        lockedUntil: null,
+      })
+      .where('bookingId = :bookingId', { bookingId })
+      .execute();
+  }
 }

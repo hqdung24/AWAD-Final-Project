@@ -28,7 +28,7 @@ export class Feedback {
   @Column({ type: 'text', nullable: true })
   comment: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   submittedAt: Date;
 
   @ManyToOne(() => Trip, (trip) => trip.feedbacks, {

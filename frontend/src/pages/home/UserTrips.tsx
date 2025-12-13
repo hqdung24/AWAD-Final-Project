@@ -262,6 +262,15 @@ function UserDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">
+                  {trip.status === 'pending' && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => navigate(`/payment/${trip.bookingId}`)}
+                    >
+                      Pay Now
+                    </Button>
+                  )}
                   <Button
                     variant="default"
                     size="sm"
