@@ -47,6 +47,8 @@ export class BookingRepository {
       relations: [
         'trip',
         'trip.route',
+        'trip.bus',
+        'user',
         'seatStatuses',
         'seatStatuses.seat',
         'passengerDetails',

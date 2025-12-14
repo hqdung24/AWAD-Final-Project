@@ -4,6 +4,9 @@ import { type ConfigType } from '@nestjs/config';
 import { Resend } from 'resend';
 import {
   PAYMENT_EMAIL_SUBJECTS,
+  type PaymentFailedParams,
+  type PaymentInitiatedParams,
+  type PaymentSuccessParams,
   getPaymentInitiatedTemplate,
   getPaymentSuccessTemplate,
   getPaymentFailedTemplate,
@@ -20,19 +23,11 @@ export class PaymentEmailProvider {
 
   async sendPaymentInitiatedEmail(
     toAddress: string,
-    bookingId: string,
-    orderCode: number,
-    amount: number,
-    checkoutUrl: string,
+    payload: PaymentInitiatedParams,
   ): Promise<void> {
     try {
       const resend = new Resend(this.appConfiguration.resendApiKey);
-      const html = getPaymentInitiatedTemplate(
-        bookingId,
-        orderCode,
-        amount,
-        checkoutUrl,
-      );
+      const html = getPaymentInitiatedTemplate(payload);
 
       await resend.emails.send({
         from: `Bus Ticket <${this.appConfiguration.adminEmailAddress}>`,
@@ -42,7 +37,7 @@ export class PaymentEmailProvider {
       });
 
       this.logger.log(
-        `Payment initiated email sent to ${toAddress} for booking ${bookingId}`,
+        `Payment initiated email sent to ${toAddress} for booking ${payload.bookingId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -53,18 +48,10 @@ export class PaymentEmailProvider {
 
   async sendPaymentSuccessEmail(
     toAddress: string,
-    bookingReference: string,
-    orderCode: number,
-    amount: number,
-    transactionRef: string,
+    payload: PaymentSuccessParams,
   ): Promise<void> {
     try {
-      const html = getPaymentSuccessTemplate(
-        bookingReference,
-        orderCode,
-        amount,
-        transactionRef,
-      );
+      const html = getPaymentSuccessTemplate(payload);
 
       const resend = new Resend(this.appConfiguration.resendApiKey);
 
@@ -76,7 +63,7 @@ export class PaymentEmailProvider {
       });
 
       this.logger.log(
-        `Payment success email sent to ${toAddress} for booking ${bookingReference}`,
+        `Payment success email sent to ${toAddress} for booking ${payload.bookingReference || payload.bookingId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -87,13 +74,11 @@ export class PaymentEmailProvider {
 
   async sendPaymentFailedEmail(
     toAddress: string,
-    bookingId: string,
-    orderCode: number,
-    amount: number,
+    payload: PaymentFailedParams,
   ): Promise<void> {
     try {
       const resend = new Resend(this.appConfiguration.resendApiKey);
-      const html = getPaymentFailedTemplate(bookingId, orderCode, amount);
+      const html = getPaymentFailedTemplate(payload);
 
       await resend.emails.send({
         from: `Bus Ticket <${this.appConfiguration.adminEmailAddress}>`,
@@ -103,7 +88,7 @@ export class PaymentEmailProvider {
       });
 
       this.logger.log(
-        `Payment failed email sent to ${toAddress} for booking ${bookingId}`,
+        `Payment failed email sent to ${toAddress} for booking ${payload.bookingId}`,
       );
     } catch (error) {
       this.logger.error(

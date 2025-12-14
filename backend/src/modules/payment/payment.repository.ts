@@ -36,7 +36,7 @@ export class PaymentRepository {
 
   async updatePayment(params: {
     orderCode: number;
-    transactionRef: string;
+    transactionRef?: string | null;
     status: PaymentStatus;
   }): Promise<Payment | null> {
     const payment = await this.repository.findOne({
@@ -53,8 +53,10 @@ export class PaymentRepository {
     }
 
     payment.status = params.status;
-    payment.transactionRef = params.transactionRef;
-    payment.paidAt = new Date();
+    payment.transactionRef = params.transactionRef ?? payment.transactionRef;
+    if (params.status === PaymentStatus.PAID) {
+      payment.paidAt = new Date();
+    }
 
     return this.repository.save(payment);
   }
@@ -62,7 +64,15 @@ export class PaymentRepository {
   async findOneByOrderCode(orderCode: number): Promise<Payment | null> {
     return this.repository.findOne({
       where: { orderCode },
-      relations: ['booking', 'booking.user'],
+      relations: [
+        'booking',
+        'booking.user',
+        'booking.trip',
+        'booking.trip.route',
+        'booking.seatStatuses',
+        'booking.seatStatuses.seat',
+        'booking.passengerDetails',
+      ],
     });
   }
 

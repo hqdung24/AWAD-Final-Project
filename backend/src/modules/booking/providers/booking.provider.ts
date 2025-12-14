@@ -274,12 +274,29 @@ export class BookingProvider {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.bookingEmailProvider.sendBookingConfirmationEmail(
           contactInfo.email,
-          savedBooking.id,
-          savedBooking.bookingReference,
-          trip.route?.origin || 'Unknown',
-          trip.route?.destination || 'Unknown',
-          trip.departureTime.toISOString(),
-          Number(savedBooking.totalAmount),
+          {
+            bookingId: savedBooking.id,
+            bookingReference: savedBooking.bookingReference,
+            origin: trip.route?.origin || 'Unknown',
+            destination: trip.route?.destination || 'Unknown',
+            departureTime: trip.departureTime.toISOString(),
+            arrivalTime: trip.arrivalTime?.toISOString?.(),
+            seats: seats.map((seat) => seat.seatCode),
+            passengers: passengerDetails.map((p) => ({
+              fullName: p.fullName,
+              seatCode: p.seatCode,
+              documentId: p.documentId,
+            })),
+            contact: {
+              name: contactInfo.name,
+              email: contactInfo.email,
+              phone: contactInfo.phone,
+            },
+            totalAmount: Number(savedBooking.totalAmount),
+            paymentDeadline: new Date(
+              savedBooking.bookedAt.getTime() + 12 * 60 * 60 * 1000,
+            ).toISOString(),
+          },
         );
       }
 

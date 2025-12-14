@@ -4,6 +4,7 @@ import { type ConfigType } from '@nestjs/config';
 import { Resend } from 'resend';
 import {
   BOOKING_EMAIL_SUBJECTS,
+  type BookingConfirmationParams,
   getBookingConfirmationTemplate,
 } from '../constant/email.constant';
 
@@ -18,24 +19,12 @@ export class BookingEmailProvider {
 
   async sendBookingConfirmationEmail(
     toAddress: string,
-    bookingId: string,
-    bookingReference: string | null,
-    origin: string,
-    destination: string,
-    departureTime: string,
-    totalAmount: number,
+    payload: BookingConfirmationParams,
   ): Promise<void> {
     try {
       const resend = new Resend(this.appConfiguration.resendApiKey);
 
-      const emailContent = getBookingConfirmationTemplate(
-        bookingId,
-        bookingReference,
-        origin,
-        destination,
-        departureTime,
-        totalAmount,
-      );
+      const emailContent = getBookingConfirmationTemplate(payload);
 
       await resend.emails.send({
         from: `Bus Ticket <${this.appConfiguration.adminEmailAddress}>`,
@@ -45,7 +34,7 @@ export class BookingEmailProvider {
       });
 
       this.logger.log(
-        `Booking confirmation email sent to ${toAddress} for booking ${bookingId}`,
+        `Booking confirmation email sent to ${toAddress} for booking ${payload.bookingId}`,
       );
     } catch (error) {
       // Log error but don't throw - email is non-critical

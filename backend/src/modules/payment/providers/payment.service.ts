@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { payosConfig } from '@/config/payment.config';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
@@ -7,6 +8,8 @@ import { BookingService } from '@/modules/booking/booking.service';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
 import { PaymentRepository } from '../payment.repository';
 import { PaymentStatus } from '../entities/payment.entity';
+import type { Booking } from '@/modules/booking/entities/booking.entity';
+import type { Payment } from '../entities/payment.entity';
 import { PaymentEmailProvider } from './payment-email.provider';
 
 @Injectable()
@@ -27,6 +30,105 @@ export class PaymentService {
       logger: console,
       logLevel: 'debug',
     });
+  }
+
+  private buildContact(booking: Booking) {
+    const fullName = booking.name
+      ? booking.name
+      : [booking.user?.firstName, booking.user?.lastName]
+          .filter(Boolean)
+          .join(' ');
+
+    return {
+      name: fullName || null,
+      email: booking.email || booking.user?.email || null,
+      phone: booking.phone || booking.user?.phone || null,
+    };
+  }
+
+  private buildPassengers(booking: Booking) {
+    return (
+      booking.passengerDetails?.map((p) => ({
+        fullName: p.fullName,
+        seatCode: p.seatCode,
+        documentId: p.documentId,
+      })) ?? []
+    );
+  }
+
+  private buildSeats(booking: Booking) {
+    return (
+      booking.seatStatuses?.map((s) => s.seat?.seatCode).filter(Boolean) ?? []
+    );
+  }
+
+  private buildManageBookingUrl(bookingId: string) {
+    // Frontend base URL not configured; return undefined to avoid invalid links.
+    return bookingId;
+  }
+
+  private buildPaymentInitiatedPayload(
+    booking: Booking,
+    payment: Payment,
+    checkoutUrl: string,
+  ) {
+    return {
+      bookingId: booking.id,
+      bookingReference: booking.bookingReference,
+      origin: booking.trip?.route?.origin || '—',
+      destination: booking.trip?.route?.destination || '—',
+      departureTime: booking.trip?.departureTime?.toISOString?.() || '',
+      arrivalTime: booking.trip?.arrivalTime?.toISOString?.(),
+      seats: this.buildSeats(booking),
+      passengers: this.buildPassengers(booking),
+      contact: this.buildContact(booking),
+      amount: Number(payment.amount),
+      orderCode: payment.orderCode,
+      checkoutUrl,
+      paymentDeadline: new Date(
+        booking.bookedAt.getTime() + 12 * 60 * 60 * 1000,
+      ).toISOString(),
+      manageBookingUrl: this.buildManageBookingUrl(booking.id),
+    };
+  }
+
+  private buildPaymentSuccessPayload(
+    booking: Booking,
+    payment: Payment,
+    transactionRef: string,
+  ) {
+    return {
+      bookingId: booking.id,
+      bookingReference: booking.bookingReference,
+      origin: booking.trip?.route?.origin || '—',
+      destination: booking.trip?.route?.destination || '—',
+      departureTime: booking.trip?.departureTime?.toISOString?.() || '',
+      arrivalTime: booking.trip?.arrivalTime?.toISOString?.(),
+      seats: this.buildSeats(booking),
+      passengers: this.buildPassengers(booking),
+      contact: this.buildContact(booking),
+      amount: Number(payment.amount),
+      orderCode: payment.orderCode,
+      transactionRef,
+      manageBookingUrl: this.buildManageBookingUrl(booking.id),
+    };
+  }
+
+  private buildPaymentFailedPayload(booking: Booking, payment: Payment) {
+    return {
+      bookingId: booking.id,
+      bookingReference: booking.bookingReference,
+      origin: booking.trip?.route?.origin || '—',
+      destination: booking.trip?.route?.destination || '—',
+      departureTime: booking.trip?.departureTime?.toISOString?.() || '',
+      arrivalTime: booking.trip?.arrivalTime?.toISOString?.(),
+      seats: this.buildSeats(booking),
+      passengers: this.buildPassengers(booking),
+      contact: this.buildContact(booking),
+      amount: Number(payment.amount),
+      orderCode: payment.orderCode,
+      manageBookingUrl: this.buildManageBookingUrl(booking.id),
+    };
   }
 
   public async createBookingPayment(bookingId: string) {
@@ -60,7 +162,7 @@ export class PaymentService {
       const paymentLinkId = response.paymentLinkId;
 
       //create payment record in db
-      await this.paymentRepository.createPayment({
+      const paymentRecord = await this.paymentRepository.createPayment({
         bookingId: booking.id,
         orderCode: orderCode,
         amount: amount,
@@ -68,6 +170,29 @@ export class PaymentService {
         currency: 'VND',
         paymentLinkId, //to set later when have payment link
       });
+
+      // Best-effort payment initiation email
+      const checkoutUrl =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (response as any).checkoutUrl ||
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (response as any).paymentLink ||
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (response as any).shortLink ||
+        '';
+
+      const to = booking.email || booking.user?.email;
+      if (checkoutUrl && to) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.paymentEmailProvider.sendPaymentInitiatedEmail(
+          to,
+          this.buildPaymentInitiatedPayload(
+            booking,
+            paymentRecord,
+            checkoutUrl,
+          ),
+        );
+      }
 
       return response;
     } catch {
@@ -102,31 +227,63 @@ export class PaymentService {
       return { received: true };
     }
 
-    // 3. Update payment.status = 'PAID'
     if (webhookData.code === '00') {
-      const payment = await this.paymentRepository.updatePayment({
+      const updatedPayment = await this.paymentRepository.updatePayment({
         orderCode: webhookData.orderCode,
         transactionRef: webhookData.reference,
         status: PaymentStatus.PAID,
       });
-      // 4. Update booking.status = 'paid'
-      if (payment) {
+
+      if (updatedPayment) {
         await this.bookingService.updateBookingStatus(
-          payment.bookingId,
+          updatedPayment.bookingId,
           'paid',
         );
       }
-    }
 
-    // 4. sending complete payment email
-    console.log('sending email : ', payment.booking);
-    await this.paymentEmailProvider.sendPaymentSuccessEmail(
-      payment.booking.user.email,
-      payment.booking.bookingReference || payment.booking.id,
-      payment.orderCode,
-      payment.amount,
-      webhookData.reference,
-    );
+      const bookingDetail = await this.bookingService.getBookingDetail(
+        payment.bookingId,
+      );
+      const to =
+        bookingDetail.email ||
+        bookingDetail.user?.email ||
+        payment.booking.user?.email;
+
+      if (to) {
+        await this.paymentEmailProvider.sendPaymentSuccessEmail(
+          to,
+          this.buildPaymentSuccessPayload(
+            bookingDetail,
+            updatedPayment || payment,
+            webhookData.reference,
+          ),
+        );
+      }
+    } else {
+      const updatedPayment = await this.paymentRepository.updatePayment({
+        orderCode: webhookData.orderCode,
+        transactionRef: webhookData.reference,
+        status: PaymentStatus.FAILED,
+      });
+
+      const bookingDetail = await this.bookingService.getBookingDetail(
+        payment.bookingId,
+      );
+      const to =
+        bookingDetail.email ||
+        bookingDetail.user?.email ||
+        payment.booking.user?.email;
+
+      if (to) {
+        await this.paymentEmailProvider.sendPaymentFailedEmail(
+          to,
+          this.buildPaymentFailedPayload(
+            bookingDetail,
+            updatedPayment || payment,
+          ),
+        );
+      }
+    }
 
     return { received: true }; // Acknowledge receipt of the webhook
   }

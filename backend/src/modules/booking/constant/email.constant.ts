@@ -3,337 +3,251 @@ export const BOOKING_EMAIL_TEMPLATES = {
 };
 
 export const BOOKING_EMAIL_SUBJECTS = {
-  BOOKING_CONFIRMATION: 'Booking Confirmation - Complete Your Payment',
+  BOOKING_CONFIRMATION: 'Booking Created – Complete Your Payment',
+};
+
+type PassengerInfo = {
+  fullName?: string | null;
+  seatCode?: string | null;
+  documentId?: string | null;
+};
+
+type ContactInfo = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+export type BookingConfirmationParams = {
+  bookingId: string;
+  bookingReference?: string | null;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  arrivalTime?: string | null;
+  seats: string[];
+  passengers: PassengerInfo[];
+  contact: ContactInfo;
+  totalAmount: number;
+  paymentDeadline?: string; // ISO string
+  paymentUrl?: string;
+  manageBookingUrl?: string;
+};
+
+const colors = {
+  primary: '#0058ba',
+  accent: '#e2308c',
+  surface: '#f7f9fb',
+  text: '#0f172a',
+  muted: '#475569',
+  border: '#e2e8f0',
+};
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount);
+
+const formatDateTime = (iso?: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : '—';
+
+const formatCountdown = (deadline?: string) => {
+  if (!deadline) return '—';
+  const target = new Date(deadline).getTime();
+  const diff = Math.max(target - Date.now(), 0);
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 };
 
 export const getBookingConfirmationTemplate = (
-  bookingId: string,
-  bookingReference: string | null,
-  origin: string,
-  destination: string,
-  departureTime: string,
-  totalAmount: number,
-  timeRemaining: string = '12:00:00',
+  params: BookingConfirmationParams,
 ): string => {
-  const departureDate = new Date(departureTime).toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const timeRemaining = formatCountdown(params.paymentDeadline);
 
-  const departureTimeFormatted = new Date(departureTime).toLocaleTimeString(
-    'vi-VN',
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    },
-  );
+  const passengers = params.passengers
+    .map(
+      (p, idx) => `
+        <tr style="background:${idx % 2 === 0 ? '#f8fafc' : '#fff'}">
+          <td style="padding:10px 12px; font-weight:600; color:${colors.text};">${p.fullName || '—'}</td>
+          <td style="padding:10px 12px; color:${colors.text}; text-align:center;">${p.seatCode || '—'}</td>
+          <td style="padding:10px 12px; color:${colors.muted}; text-align:right;">${p.documentId || '—'}</td>
+        </tr>
+      `,
+    )
+    .join('');
 
-  const totalAmountFormatted = new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(totalAmount);
+  const seatsLine = params.seats.length > 0 ? params.seats.join(', ') : '—';
 
   return `
     <!DOCTYPE html>
     <html lang="vi">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          background-color: #f9fafb;
-          padding: 20px;
-        }
-        .card {
-          background-color: #ffffff;
-          border-radius: 8px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          margin-bottom: 20px;
-        }
-        .header {
-          background: linear-gradient(135deg, #d946ef 0%, #a855f7 100%);
-          color: white;
-          padding: 30px 20px;
-          text-align: center;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 24px;
-          font-weight: 700;
-        }
-        .header p {
-          margin: 8px 0 0 0;
-          font-size: 14px;
-          opacity: 0.9;
-        }
-        .content {
-          padding: 30px 20px;
-        }
-        .section {
-          margin-bottom: 25px;
-        }
-        .section-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: #666;
-          text-transform: uppercase;
-          margin-bottom: 12px;
-          border-bottom: 2px solid #f3f4f6;
-          padding-bottom: 8px;
-        }
-        .trip-info {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          padding: 15px;
-          background-color: #f9fafb;
-          border-radius: 6px;
-          margin-bottom: 10px;
-        }
-        .trip-location {
-          flex: 1;
-        }
-        .trip-origin,
-        .trip-destination {
-          font-size: 14px;
-          font-weight: 600;
-          color: #1f2937;
-        }
-        .trip-arrow {
-          color: #9ca3af;
-          font-size: 18px;
-        }
-        .booking-details {
-          background-color: #f0f9ff;
-          border-left: 4px solid #0ea5e9;
-          padding: 15px;
-          border-radius: 4px;
-          margin-bottom: 15px;
-        }
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-          font-size: 14px;
-          border-bottom: 1px solid #d1d5db;
-        }
-        .detail-row:last-child {
-          border-bottom: none;
-        }
-        .detail-label {
-          color: #666;
-          font-weight: 500;
-        }
-        .detail-value {
-          color: #1f2937;
-          font-weight: 600;
-        }
-        .amount-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 12px 0;
-          font-size: 16px;
-          font-weight: 700;
-          color: #1f2937;
-        }
-        .timer-section {
-          background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-          border-radius: 8px;
-          padding: 20px;
-          text-align: center;
-          margin: 20px 0;
-        }
-        .timer-label {
-          font-size: 12px;
-          color: #92400e;
-          text-transform: uppercase;
-          font-weight: 700;
-          margin-bottom: 8px;
-        }
-        .timer-value {
-          font-size: 36px;
-          font-weight: 700;
-          color: #d97706;
-          font-family: 'Courier New', monospace;
-        }
-        .timer-text {
-          font-size: 12px;
-          color: #b45309;
-          margin-top: 8px;
-        }
-        .action-button {
-          display: block;
-          background-color: #d946ef;
-          color: white;
-          padding: 14px 28px;
-          text-decoration: none;
-          border-radius: 6px;
-          text-align: center;
-          font-weight: 700;
-          margin: 20px 0;
-          font-size: 16px;
-        }
-        .action-button:hover {
-          background-color: #c026d3;
-        }
-        .steps {
-          background-color: #f3f4f6;
-          padding: 15px;
-          border-radius: 6px;
-        }
-        .steps-title {
-          font-weight: 700;
-          margin-bottom: 12px;
-          font-size: 14px;
-        }
-        .step {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 10px;
-          font-size: 13px;
-        }
-        .step-number {
-          background-color: #d946ef;
-          color: white;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          font-weight: 700;
-        }
-        .footer {
-          background-color: #f9fafb;
-          padding: 20px;
-          text-align: center;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #e5e7eb;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: ${colors.surface};
+            color: ${colors.text};
+          }
+          .card {
+            max-width: 680px;
+            margin: 24px auto;
+            background: #ffffff;
+            border: 1px solid ${colors.border};
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px -24px rgba(0, 88, 186, 0.25);
+          }
+          .header {
+            background: linear-gradient(120deg, ${colors.primary}, ${colors.accent});
+            color: #fff;
+            padding: 28px 28px 24px;
+          }
+          .pill {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            font-size: 12px;
+            letter-spacing: 0.02em;
+          }
+          .title {
+            margin: 12px 0 4px;
+            font-size: 24px;
+            font-weight: 700;
+          }
+          .subtitle {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+          }
+          .section {
+            padding: 24px 28px;
+            border-top: 1px solid ${colors.border};
+          }
+          .section h3 {
+            margin: 0 0 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: ${colors.muted};
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px 18px;
+          }
+          .item {
+            padding: 10px 12px;
+            background: ${colors.surface};
+            border: 1px solid ${colors.border};
+            border-radius: 10px;
+          }
+          .label { font-size: 12px; color: ${colors.muted}; text-transform: uppercase; letter-spacing: 0.03em; }
+          .value { margin-top: 4px; font-size: 15px; font-weight: 700; color: ${colors.text}; }
+          .amount { color: ${colors.accent}; font-weight: 800; font-size: 18px; }
+          .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          .table th { text-align: left; padding: 10px 12px; background: ${colors.surface}; color: ${colors.muted}; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; }
+          .cta {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: ${colors.primary};
+            color: #fff;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            box-shadow: 0 12px 30px -14px ${colors.primary};
+          }
+          .cta:hover { opacity: 0.94; }
+          .muted { color: ${colors.muted}; font-size: 13px; }
+        </style>
+      </head>
+      <body>
         <div class="card">
           <div class="header">
-            <h1>✓ Booking Confirmed!</h1>
-            <p>Your booking has been successfully created</p>
+            <span class="pill">Booking created</span>
+            <div class="title">${params.origin} → ${params.destination}</div>
+            <p class="subtitle">Reference: ${params.bookingReference || params.bookingId}</p>
           </div>
 
-          <div class="content">
-            <!-- Trip Information -->
-            <div class="section">
-              <div class="section-title">Trip Information</div>
-              <div class="trip-info">
-                <div class="trip-location">
-                  <div class="trip-origin">${origin}</div>
-                  <div class="trip-arrow" style="font-size: 14px;">→</div>
-                  <div class="trip-destination">${destination}</div>
-                </div>
+          <div class="section">
+            <h3>Trip</h3>
+            <div class="grid">
+              <div class="item">
+                <div class="label">Departure</div>
+                <div class="value">${formatDateTime(params.departureTime)}</div>
               </div>
-
-              <div class="detail-row">
-                <span class="detail-label">Date:</span>
-                <span class="detail-value">${departureDate}</span>
+              <div class="item">
+                <div class="label">Arrival (est)</div>
+                <div class="value">${formatDateTime(params.arrivalTime)}</div>
               </div>
-
-              <div class="detail-row">
-                <span class="detail-label">Departure Time:</span>
-                <span class="detail-value">${departureTimeFormatted}</span>
+              <div class="item">
+                <div class="label">Seats</div>
+                <div class="value">${seatsLine}</div>
               </div>
-            </div>
-
-            <!-- Booking Details -->
-            <div class="section">
-              <div class="section-title">Booking Details</div>
-              <div class="booking-details">
-                <div class="detail-row">
-                  <span class="detail-label">Booking ID:</span>
-                  <span class="detail-value" style="font-family: monospace;">${bookingId}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Reference:</span>
-                  <span class="detail-value">${bookingReference || '—'}</span>
-                </div>
-                <div class="amount-row" style="border-bottom: none;">
-                  <span>Total Amount:</span>
-                  <span style="color: #d946ef;">${totalAmountFormatted}</span>
-                </div>
+              <div class="item">
+                <div class="label">Amount</div>
+                <div class="value amount">${formatCurrency(params.totalAmount)}</div>
               </div>
-            </div>
-
-            <!-- Payment Timer -->
-            <div class="timer-section">
-              <div class="timer-label">⏱️ Complete Payment Within</div>
-              <div class="timer-value">${timeRemaining}</div>
-              <div class="timer-text">Payment must be completed to finalize your booking</div>
-            </div>
-
-            <!-- Call to Action -->
-            <div style="text-align: center; margin: 25px 0;">
-              <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
-                Click the button below to proceed with payment and receive your e-ticket.
-              </p>
-              <a href="https://busticket.com/payment/${bookingId}" class="action-button">
-                Complete Payment Now
-              </a>
-            </div>
-
-            <!-- Next Steps -->
-            <div class="section">
-              <div class="section-title">Next Steps</div>
-              <div class="steps">
-                <div class="steps-title">Please follow these steps to complete your booking:</div>
-                <div class="step">
-                  <div class="step-number">1</div>
-                  <div>Click "Complete Payment Now" button above</div>
-                </div>
-                <div class="step">
-                  <div class="step-number">2</div>
-                  <div>Review and confirm payment details</div>
-                </div>
-                <div class="step">
-                  <div class="step-number">3</div>
-                  <div>Receive your e-ticket via email upon confirmation</div>
-                </div>
-                <div class="step">
-                  <div class="step-number">4</div>
-                  <div>Check your bookings in the "Upcoming Trips" section</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Important Notice -->
-            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 4px; margin-top: 20px; font-size: 13px;">
-              <strong style="color: #dc2626;">⚠️ Important:</strong>
-              <p style="margin: 8px 0 0 0; color: #666;">
-                Your booking will be automatically cancelled if payment is not completed within 12 hours. 
-                Please complete payment as soon as possible to secure your seat.
-              </p>
             </div>
           </div>
-        </div>
 
-        <div class="footer">
-          <p style="margin: 0;">
-            © ${new Date().getFullYear()} Bus Ticket Booking. All rights reserved.<br>
-            This email was sent automatically. Please do not reply to this email.
-          </p>
+          <div class="section">
+            <h3>Passengers</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th style="text-align:center;">Seat</th>
+                  <th style="text-align:right;">Document</th>
+                </tr>
+              </thead>
+              <tbody>${passengers}</tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h3>Contact & Payment</h3>
+            <div class="grid">
+              <div class="item">
+                <div class="label">Contact</div>
+                <div class="value">${params.contact.name || '—'}</div>
+                <div class="muted">${params.contact.email || '—'}</div>
+                <div class="muted">${params.contact.phone || '—'}</div>
+              </div>
+              <div class="item">
+                <div class="label">Pay before</div>
+                <div class="value">${formatDateTime(params.paymentDeadline)}</div>
+                <div class="muted">Time remaining: ${timeRemaining}</div>
+              </div>
+            </div>
+            ${
+              params.paymentUrl
+                ? `<a class="cta" href="${params.paymentUrl}">Complete payment</a>`
+                : ''
+            }
+            ${
+              params.manageBookingUrl
+                ? `<div style="margin-top:10px;"><a style="color:${colors.primary}; text-decoration:none; font-weight:600;" href="${params.manageBookingUrl}">View booking details</a></div>`
+                : ''
+            }
+            <p class="muted" style="margin-top:12px;">Booking ID: ${params.bookingId}</p>
+          </div>
         </div>
-      </div>
-    </body>
+      </body>
     </html>
   `;
 };
