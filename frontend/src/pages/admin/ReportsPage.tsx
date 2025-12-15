@@ -235,7 +235,8 @@ const ReportsPage = () => {
               config={{
                 revenue: { label: 'Revenue', color: 'hsl(var(--primary))' },
               }}
-              className="flex-1"
+              className="flex-1 overflow-hidden"
+              style={{ aspectRatio: 'auto' }}
             >
               <LineChart data={data?.revenueSeries ?? []}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -270,7 +271,8 @@ const ReportsPage = () => {
                     )
                   : { bookings: { label: 'Bookings', color: palette[0] } }
               }
-              className="flex-1"
+              className="flex-1 overflow-hidden"
+              style={{ aspectRatio: 'auto' }}
             >
               <BarChart data={bookingStatusSeries}>
                 <CartesianGrid strokeDasharray="3 3" />

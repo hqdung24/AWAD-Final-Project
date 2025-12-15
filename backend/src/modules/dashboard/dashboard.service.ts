@@ -36,11 +36,18 @@ export class DashboardService {
 
   private async hasTable(table: string): Promise<boolean> {
     try {
-      const result = await this.dataSource.query(
-        `SELECT to_regclass($1) AS exists`,
-        [`public.${table}`],
-      );
-      return Boolean(result?.[0]?.exists);
+      const namesToCheck = [table];
+      if (table.endsWith('s')) {
+        namesToCheck.push(table.slice(0, -1));
+      }
+      for (const name of namesToCheck) {
+        const result = await this.dataSource.query(
+          `SELECT to_regclass($1) AS exists`,
+          [`public.${name}`],
+        );
+        if (Boolean(result?.[0]?.exists)) return true;
+      }
+      return false;
     } catch (e) {
       this.logger.warn(`Table check failed for ${table}: ${String(e)}`);
       return false;
@@ -136,10 +143,10 @@ export class DashboardService {
         delta: 0,
       });
 
-      const hasBookings = await this.hasTable('booking');
-      const hasPayments = await this.hasTable('payment');
-      const hasTrips = await this.hasTable('trip');
-      const hasRoutes = await this.hasTable('route');
+      const hasBookings = await this.hasTable('bookings');
+      const hasPayments = await this.hasTable('payments');
+      const hasTrips = await this.hasTable('trips');
+      const hasRoutes = await this.hasTable('routes');
 
       let totalBookings = 0;
       let revenueToday = 0;
@@ -149,7 +156,7 @@ export class DashboardService {
 
       if (hasBookings) {
         const [bookingAgg] = await this.dataSource.query(
-          `select count(*)::int as total_bookings from booking`,
+          `select count(*)::int as total_bookings from bookings`,
         );
         totalBookings = Number(bookingAgg?.total_bookings ?? 0);
         cards.unshift({
@@ -162,7 +169,7 @@ export class DashboardService {
           `
             select to_char(date_trunc('day', b.booked_at), 'Dy') as day,
                    count(*)::int as bookings
-            from booking b
+            from bookings b
             where b.booked_at >= now() - interval '6 days'
             group by date_trunc('day', b.booked_at)
             order by date_trunc('day', b.booked_at);
@@ -182,10 +189,10 @@ export class DashboardService {
               coalesce(u."firstName", 'User') || ' ' || coalesce(u."lastName", '') as user,
               concat(r.origin, ' → ', r.destination) as route,
               coalesce(b.status, 'Pending') as status
-            from booking b
+            from bookings b
             left join users u on u.id = b.user_id
-            left join trip t on t.id = b.trip_id
-            left join route r on r.id = t.route_id
+            left join trips t on t.id = b.trip_id
+            left join routes r on r.id = t.route_id
             order by b.booked_at desc
             limit 5;
           `,
@@ -204,9 +211,9 @@ export class DashboardService {
         const [revRow] = await this.dataSource.query(
           `
             select coalesce(sum(p.amount), 0)::bigint as revenue_today
-            from payment p
-            where p.status = 'processed'
-              and p.processed_at::date = current_date;
+            from payments p
+            where lower(p.status::text) in ('paid', 'processed')
+              and coalesce(p.paid_at, p.updated_at, p.created_at)::date = current_date;
           `,
         );
         revenueToday = Number(revRow?.revenue_today ?? 0);
@@ -226,11 +233,11 @@ export class DashboardService {
             select
               concat(r.origin, ' → ', r.destination) as route,
               count(b.id)::int as bookings,
-              coalesce(sum(case when p.status = 'processed' then p.amount end), 0)::bigint as revenue
-            from route r
-            join trip t on t.route_id = r.id
-            left join booking b on b.trip_id = t.id
-            left join payment p on p.booking_id = b.id
+              coalesce(sum(case when lower(p.status::text) in ('paid', 'processed') then p.amount end), 0)::bigint as revenue
+            from routes r
+            join trips t on t.route_id = r.id
+            left join bookings b on b.trip_id = t.id
+            left join payments p on p.booking_id = b.id
             group by r.origin, r.destination
             order by bookings desc
             limit 5;
@@ -270,128 +277,102 @@ export class DashboardService {
   }
 
   async getAdminRevenueAnalytics(): Promise<RevenueAnalytics> {
-    const fallback: RevenueAnalytics = {
-      totalRevenue: 45200000,
-      revenueSeries: [
-        { date: 'Mon', revenue: 6200000 },
-        { date: 'Tue', revenue: 7000000 },
-        { date: 'Wed', revenue: 7200000 },
-        { date: 'Thu', revenue: 6400000 },
-        { date: 'Fri', revenue: 9100000 },
-        { date: 'Sat', revenue: 7600000 },
-        { date: 'Sun', revenue: 8500000 },
-      ],
-      paymentStatus: [
-        { status: 'PAID', count: 120, amount: 38000000 },
-        { status: 'PENDING', count: 18, amount: 5200000 },
-        { status: 'FAILED', count: 6, amount: 0 },
-      ],
-      topRoutesByRevenue: [
-        { route: 'HCM → Hanoi', revenue: 8200000, bookings: 234 },
-        { route: 'HCM → Dalat', revenue: 3400000, bookings: 189 },
-        { route: 'HCM → Can Tho', revenue: 2800000, bookings: 142 },
-      ],
-    };
+    const hasPayments = await this.hasTable('payments');
+    const hasBookings = await this.hasTable('bookings');
+    const hasTrips = await this.hasTable('trips');
+    const hasRoutes = await this.hasTable('routes');
 
-    try {
-      const hasPayments = await this.hasTable('payments');
-      const hasBookings = await this.hasTable('bookings');
-      const hasTrips = await this.hasTable('trips');
-      const hasRoutes = await this.hasTable('routes');
-
-      if (!hasPayments || !hasBookings) {
-        return fallback;
-      }
-
-      const [totalRevenueRow] = await this.dataSource.query(
-        `
-          select coalesce(sum(p.amount), 0)::bigint as total_revenue
-          from payments p
-          where p.status = 'PAID';
-        `,
-      );
-
-      const revenueSeriesRaw = await this.dataSource.query(
-        `
-          select
-            to_char(p.paid_at::date, 'YYYY-MM-DD') as date,
-            coalesce(sum(p.amount), 0)::bigint as revenue
-          from payments p
-          where p.status = 'PAID'
-            and p.paid_at is not null
-            and p.paid_at >= now() - interval '29 days'
-          group by p.paid_at::date
-          order by p.paid_at::date;
-        `,
-      );
-
-      const paymentStatusRaw = await this.dataSource.query(
-        `
-          select
-            p.status as status,
-            count(*)::int as count,
-            coalesce(sum(p.amount), 0)::bigint as amount
-          from payments p
-          group by p.status;
-        `,
-      );
-
-      let topRoutesByRevenue = fallback.topRoutesByRevenue;
-      if (hasTrips && hasRoutes) {
-        const topRoutesRaw = await this.dataSource.query(
-          `
-            select
-              concat(r.origin, ' → ', r.destination) as route,
-              coalesce(sum(case when p.status = 'PAID' then p.amount end), 0)::bigint as revenue,
-              count(distinct b.id)::int as bookings
-            from routes r
-            join trips t on t.route_id = r.id
-            join bookings b on b.trip_id = t.id
-            left join payments p on p.booking_id = b.id
-            group by r.origin, r.destination
-            order by revenue desc
-            limit 5;
-          `,
-        );
-
-        if (Array.isArray(topRoutesRaw) && topRoutesRaw.length > 0) {
-          topRoutesByRevenue = topRoutesRaw.map((row: any) => ({
-            route: row.route ?? '—',
-            revenue: Number(row.revenue ?? 0),
-            bookings: Number(row.bookings ?? 0),
-          }));
-        }
-      }
-
-      const revenueSeries =
-        Array.isArray(revenueSeriesRaw) && revenueSeriesRaw.length
-          ? revenueSeriesRaw.map((row: any) => ({
-              date: row.date,
-              revenue: Number(row.revenue ?? 0),
-            }))
-          : fallback.revenueSeries;
-
-      const paymentStatus =
-        Array.isArray(paymentStatusRaw) && paymentStatusRaw.length
-          ? paymentStatusRaw.map((row: any) => ({
-              status: row.status ?? 'UNKNOWN',
-              count: Number(row.count ?? 0),
-              amount: Number(row.amount ?? 0),
-            }))
-          : fallback.paymentStatus;
-
+    if (!hasPayments || !hasBookings) {
       return {
-        totalRevenue: Number(totalRevenueRow?.total_revenue ?? 0),
-        revenueSeries,
-        paymentStatus,
-        topRoutesByRevenue,
+        totalRevenue: 0,
+        revenueSeries: [],
+        paymentStatus: [],
+        topRoutesByRevenue: [],
       };
-    } catch (error) {
-      this.logger.warn(
-        `Falling back to mock revenue analytics: ${String(error)}`,
-      );
-      return fallback;
     }
+
+    const [totalRevenueRow] = await this.dataSource.query(
+      `
+        select coalesce(sum(p.amount), 0)::bigint as total_revenue
+        from payments p
+        where lower(p.status::text) in ('paid', 'processed');
+      `,
+    );
+
+    const revenueSeriesRaw = await this.dataSource.query(
+      `
+        select
+          to_char(coalesce(p.paid_at, p.updated_at, p.created_at)::date, 'YYYY-MM-DD') as date,
+          coalesce(sum(p.amount), 0)::bigint as revenue
+        from payments p
+        where lower(p.status::text) in ('paid', 'processed')
+          and coalesce(p.paid_at, p.updated_at, p.created_at) >= now() - interval '29 days'
+        group by coalesce(p.paid_at, p.updated_at, p.created_at)::date
+        order by coalesce(p.paid_at, p.updated_at, p.created_at)::date;
+      `,
+    );
+
+    const paymentStatusRaw = await this.dataSource.query(
+      `
+        select
+          p.status::text as status,
+          count(*)::int as count,
+          coalesce(sum(p.amount), 0)::bigint as amount
+        from payments p
+        group by p.status;
+      `,
+    );
+
+    let topRoutesByRevenue: RevenueAnalytics['topRoutesByRevenue'] = [];
+    if (hasTrips && hasRoutes) {
+      const topRoutesRaw = await this.dataSource.query(
+        `
+          select
+            concat(r.origin, ' → ', r.destination) as route,
+            coalesce(sum(case when lower(p.status::text) in ('paid', 'processed') then p.amount end), 0)::bigint as revenue,
+            count(distinct b.id)::int as bookings
+          from routes r
+          join trips t on t.route_id = r.id
+          join bookings b on b.trip_id = t.id
+          left join payments p on p.booking_id = b.id
+          group by r.origin, r.destination
+          order by revenue desc
+          limit 5;
+        `,
+      );
+
+      if (Array.isArray(topRoutesRaw) && topRoutesRaw.length > 0) {
+        topRoutesByRevenue = topRoutesRaw.map((row: any) => ({
+          route: row.route ?? '—',
+          revenue: Number(row.revenue ?? 0),
+          bookings: Number(row.bookings ?? 0),
+        }));
+      }
+    }
+
+    const revenueSeries =
+      Array.isArray(revenueSeriesRaw) && revenueSeriesRaw.length
+        ? revenueSeriesRaw.map((row: any) => ({
+            date: row.date,
+            revenue: Number(row.revenue ?? 0),
+          }))
+        : [];
+
+    const paymentStatus =
+      Array.isArray(paymentStatusRaw) && paymentStatusRaw.length
+        ? paymentStatusRaw.map((row: any) => ({
+            status: row.status ?? 'UNKNOWN',
+            count: Number(row.count ?? 0),
+            amount: Number(row.amount ?? 0),
+          }))
+        : [];
+
+    return {
+      totalRevenue: Number(totalRevenueRow?.total_revenue ?? 0),
+      revenueSeries,
+      paymentStatus,
+      topRoutesByRevenue,
+    };
   }
 
   async getAdminBookingAnalytics(): Promise<BookingAnalytics> {
