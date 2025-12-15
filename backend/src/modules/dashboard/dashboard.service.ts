@@ -15,6 +15,18 @@ type RecentBooking = {
   route: string;
   status: string;
 };
+type RevenueAnalytics = {
+  totalRevenue: number;
+  revenueSeries: Array<{ date: string; revenue: number }>;
+  paymentStatus: Array<{ status: string; count: number; amount: number }>;
+  topRoutesByRevenue: Array<{ route: string; revenue: number; bookings: number }>;
+};
+type BookingAnalytics = {
+  bookingTrend: Array<{ date: string; bookings: number }>;
+  statusBreakdown: Array<{ status: string; count: number }>;
+  topRoutesByBookings: Array<{ route: string; bookings: number }>;
+  cancellationRate: number;
+};
 
 @Injectable()
 export class DashboardService {
@@ -252,6 +264,254 @@ export class DashboardService {
     } catch (error) {
       this.logger.warn(
         `Falling back to mock admin dashboard: ${String(error)}`,
+      );
+      return fallback;
+    }
+  }
+
+  async getAdminRevenueAnalytics(): Promise<RevenueAnalytics> {
+    const fallback: RevenueAnalytics = {
+      totalRevenue: 45200000,
+      revenueSeries: [
+        { date: 'Mon', revenue: 6200000 },
+        { date: 'Tue', revenue: 7000000 },
+        { date: 'Wed', revenue: 7200000 },
+        { date: 'Thu', revenue: 6400000 },
+        { date: 'Fri', revenue: 9100000 },
+        { date: 'Sat', revenue: 7600000 },
+        { date: 'Sun', revenue: 8500000 },
+      ],
+      paymentStatus: [
+        { status: 'PAID', count: 120, amount: 38000000 },
+        { status: 'PENDING', count: 18, amount: 5200000 },
+        { status: 'FAILED', count: 6, amount: 0 },
+      ],
+      topRoutesByRevenue: [
+        { route: 'HCM → Hanoi', revenue: 8200000, bookings: 234 },
+        { route: 'HCM → Dalat', revenue: 3400000, bookings: 189 },
+        { route: 'HCM → Can Tho', revenue: 2800000, bookings: 142 },
+      ],
+    };
+
+    try {
+      const hasPayments = await this.hasTable('payments');
+      const hasBookings = await this.hasTable('bookings');
+      const hasTrips = await this.hasTable('trips');
+      const hasRoutes = await this.hasTable('routes');
+
+      if (!hasPayments || !hasBookings) {
+        return fallback;
+      }
+
+      const [totalRevenueRow] = await this.dataSource.query(
+        `
+          select coalesce(sum(p.amount), 0)::bigint as total_revenue
+          from payments p
+          where p.status = 'PAID';
+        `,
+      );
+
+      const revenueSeriesRaw = await this.dataSource.query(
+        `
+          select
+            to_char(p.paid_at::date, 'YYYY-MM-DD') as date,
+            coalesce(sum(p.amount), 0)::bigint as revenue
+          from payments p
+          where p.status = 'PAID'
+            and p.paid_at is not null
+            and p.paid_at >= now() - interval '29 days'
+          group by p.paid_at::date
+          order by p.paid_at::date;
+        `,
+      );
+
+      const paymentStatusRaw = await this.dataSource.query(
+        `
+          select
+            p.status as status,
+            count(*)::int as count,
+            coalesce(sum(p.amount), 0)::bigint as amount
+          from payments p
+          group by p.status;
+        `,
+      );
+
+      let topRoutesByRevenue = fallback.topRoutesByRevenue;
+      if (hasTrips && hasRoutes) {
+        const topRoutesRaw = await this.dataSource.query(
+          `
+            select
+              concat(r.origin, ' → ', r.destination) as route,
+              coalesce(sum(case when p.status = 'PAID' then p.amount end), 0)::bigint as revenue,
+              count(distinct b.id)::int as bookings
+            from routes r
+            join trips t on t.route_id = r.id
+            join bookings b on b.trip_id = t.id
+            left join payments p on p.booking_id = b.id
+            group by r.origin, r.destination
+            order by revenue desc
+            limit 5;
+          `,
+        );
+
+        if (Array.isArray(topRoutesRaw) && topRoutesRaw.length > 0) {
+          topRoutesByRevenue = topRoutesRaw.map((row: any) => ({
+            route: row.route ?? '—',
+            revenue: Number(row.revenue ?? 0),
+            bookings: Number(row.bookings ?? 0),
+          }));
+        }
+      }
+
+      const revenueSeries =
+        Array.isArray(revenueSeriesRaw) && revenueSeriesRaw.length
+          ? revenueSeriesRaw.map((row: any) => ({
+              date: row.date,
+              revenue: Number(row.revenue ?? 0),
+            }))
+          : fallback.revenueSeries;
+
+      const paymentStatus =
+        Array.isArray(paymentStatusRaw) && paymentStatusRaw.length
+          ? paymentStatusRaw.map((row: any) => ({
+              status: row.status ?? 'UNKNOWN',
+              count: Number(row.count ?? 0),
+              amount: Number(row.amount ?? 0),
+            }))
+          : fallback.paymentStatus;
+
+      return {
+        totalRevenue: Number(totalRevenueRow?.total_revenue ?? 0),
+        revenueSeries,
+        paymentStatus,
+        topRoutesByRevenue,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Falling back to mock revenue analytics: ${String(error)}`,
+      );
+      return fallback;
+    }
+  }
+
+  async getAdminBookingAnalytics(): Promise<BookingAnalytics> {
+    const fallback: BookingAnalytics = {
+      bookingTrend: [
+        { date: 'Mon', bookings: 120 },
+        { date: 'Tue', bookings: 150 },
+        { date: 'Wed', bookings: 170 },
+        { date: 'Thu', bookings: 140 },
+        { date: 'Fri', bookings: 210 },
+        { date: 'Sat', bookings: 180 },
+        { date: 'Sun', bookings: 200 },
+      ],
+      statusBreakdown: [
+        { status: 'PAID', count: 120 },
+        { status: 'PENDING', count: 18 },
+        { status: 'CANCELLED', count: 12 },
+        { status: 'EXPIRED', count: 5 },
+      ],
+      topRoutesByBookings: [
+        { route: 'HCM → Hanoi', bookings: 234 },
+        { route: 'HCM → Dalat', bookings: 189 },
+        { route: 'HCM → Can Tho', bookings: 142 },
+      ],
+      cancellationRate: 0.08,
+    };
+
+    try {
+      const hasBookings = await this.hasTable('bookings');
+      const hasTrips = await this.hasTable('trips');
+      const hasRoutes = await this.hasTable('routes');
+
+      if (!hasBookings) {
+        return fallback;
+      }
+
+      const bookingTrendRaw = await this.dataSource.query(
+        `
+          select
+            to_char(b.booked_at::date, 'YYYY-MM-DD') as date,
+            count(*)::int as bookings
+          from bookings b
+          where b.booked_at >= now() - interval '13 days'
+          group by b.booked_at::date
+          order by b.booked_at::date;
+        `,
+      );
+
+      const statusBreakdownRaw = await this.dataSource.query(
+        `
+          select
+            upper(coalesce(b.status, 'PENDING')) as status,
+            count(*)::int as count
+          from bookings b
+          group by upper(coalesce(b.status, 'PENDING'));
+        `,
+      );
+
+      let topRoutesByBookings = fallback.topRoutesByBookings;
+      if (hasTrips && hasRoutes) {
+        const topRoutesRaw = await this.dataSource.query(
+          `
+            select
+              concat(r.origin, ' → ', r.destination) as route,
+              count(b.id)::int as bookings
+            from routes r
+            join trips t on t.route_id = r.id
+            left join bookings b on b.trip_id = t.id
+            group by r.origin, r.destination
+            order by bookings desc
+            limit 5;
+          `,
+        );
+
+        if (Array.isArray(topRoutesRaw) && topRoutesRaw.length > 0) {
+          topRoutesByBookings = topRoutesRaw.map((row: any) => ({
+            route: row.route ?? '—',
+            bookings: Number(row.bookings ?? 0),
+          }));
+        }
+      }
+
+      const [cancelAgg] = await this.dataSource.query(
+        `
+          select
+            sum(case when lower(b.status) = 'cancelled' then 1 else 0 end)::int as cancelled,
+            count(*)::int as total
+          from bookings b;
+        `,
+      );
+
+      const bookingTrend =
+        Array.isArray(bookingTrendRaw) && bookingTrendRaw.length
+          ? bookingTrendRaw.map((row: any) => ({
+              date: row.date,
+              bookings: Number(row.bookings ?? 0),
+            }))
+          : fallback.bookingTrend;
+
+      const statusBreakdown =
+        Array.isArray(statusBreakdownRaw) && statusBreakdownRaw.length
+          ? statusBreakdownRaw.map((row: any) => ({
+              status: row.status ?? 'UNKNOWN',
+              count: Number(row.count ?? 0),
+            }))
+          : fallback.statusBreakdown;
+
+      const total = Number(cancelAgg?.total ?? 0) || 0;
+      const cancelled = Number(cancelAgg?.cancelled ?? 0) || 0;
+      const cancellationRate = total > 0 ? cancelled / total : 0;
+
+      return {
+        bookingTrend,
+        statusBreakdown,
+        topRoutesByBookings,
+        cancellationRate,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Falling back to mock booking analytics: ${String(error)}`,
       );
       return fallback;
     }

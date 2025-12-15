@@ -358,6 +358,34 @@
         ]
       }
     },
+    "/dashboard/admin/analytics/revenue": {
+      "get": {
+        "operationId": "DashboardController_getAdminRevenueAnalytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
+    "/dashboard/admin/analytics/bookings": {
+      "get": {
+        "operationId": "DashboardController_getAdminBookingAnalytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Dashboard"
+        ]
+      }
+    },
     "/dashboard/user": {
       "get": {
         "operationId": "DashboardController_getUserDashboard",
@@ -1703,6 +1731,100 @@
         },
         "tags": [
           "Payment"
+        ]
+      }
+    },
+    "/reports/admin": {
+      "get": {
+        "operationId": "ReportController_getAdminReport",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operatorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Report"
+        ]
+      }
+    },
+    "/reports/admin/export": {
+      "get": {
+        "operationId": "ReportController_exportAdminReport",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operatorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Report"
         ]
       }
     }

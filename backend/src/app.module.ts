@@ -24,6 +24,7 @@ import { PassengerDetailModule } from '@/modules/passenger-detail/passenger-deta
 import { PaymentModule } from '@/modules/payment/payment.module';
 import { NotificationModule } from '@/modules/notification/notification.module';
 import { FeedbackModule } from '@/modules/feedback/feedback.module';
+import { ReportModule } from '@/modules/report/report.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MyScheduleModule } from './modules/schedule/schedule.module';
@@ -74,6 +75,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     PaymentModule,
     NotificationModule,
     FeedbackModule,
+    ReportModule,
     //Schedule module for cron jobs
     ScheduleModule.forRoot(),
     MyScheduleModule,

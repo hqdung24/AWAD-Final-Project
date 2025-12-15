@@ -40,8 +40,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: 'Buses', url: '/buses', icon: BusFront },
     { title: 'Operators', url: '#operators', icon: Users },
     { title: 'Users', url: '/account', icon: Users },
-    { title: 'Analytics', url: '#analytics', icon: ChartNoAxesCombined },
-    { title: 'Reports', url: '#reports', icon: Map },
+    { title: 'Analytics', url: '/analytics', icon: ChartNoAxesCombined },
+    { title: 'Reports', url: '/reports', icon: Map },
     { title: 'Settings', url: '#settings', icon: Settings2 },
   ];
 

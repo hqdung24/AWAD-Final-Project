@@ -16,6 +16,18 @@ export class DashboardController {
     return this.dashboardService.getAdminDashboard();
   }
 
+  @Get('admin/analytics/revenue')
+  @Roles(RoleType.ADMIN)
+  getAdminRevenueAnalytics() {
+    return this.dashboardService.getAdminRevenueAnalytics();
+  }
+
+  @Get('admin/analytics/bookings')
+  @Roles(RoleType.ADMIN)
+  getAdminBookingAnalytics() {
+    return this.dashboardService.getAdminBookingAnalytics();
+  }
+
   @Get('user')
   @Auth(AuthType.Bearer)
   @Roles(RoleType.USER, RoleType.ADMIN)
