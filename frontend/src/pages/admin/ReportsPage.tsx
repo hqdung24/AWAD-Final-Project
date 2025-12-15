@@ -25,7 +25,8 @@ import {
   exportAdminReport,
   type AdminReport,
 } from '@/services/reportService';
-import { listOperators, listAdminRoutes, type Operator, type AdminRoute } from '@/services/adminRoutesService';
+import { listAdminRoutes, type AdminRoute } from '@/services/adminRoutesService';
+import { listOperators, type Operator } from '@/services/operatorService';
 import { Download, Filter, PieChart, TrendingUp, RotateCcw } from 'lucide-react';
 
 type RangeOption = '7d' | '30d' | '90d';

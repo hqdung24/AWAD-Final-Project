@@ -27,6 +27,7 @@ import RoutesPage from './pages/admin/RoutesPage';
 import BusesPage from './pages/admin/BusesPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import ReportsPage from './pages/admin/ReportsPage';
+import OperatorsPage from './pages/admin/OperatorsPage';
 import GuestBookingLookup from './pages/guest/GuestBookingLookup';
 import PaymentConfirmation from './pages/payment/PaymentConfirmation';
 
@@ -136,6 +137,14 @@ function App() {
                     element={
                       <ProtectedRoute roles={['ADMIN']}>
                         <BusesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/operators"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <OperatorsPage />
                       </ProtectedRoute>
                     }
                   />

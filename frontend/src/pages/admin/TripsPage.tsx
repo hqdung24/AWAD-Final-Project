@@ -147,6 +147,14 @@ export default function TripsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <header className="space-y-1">
+        <p className="text-sm font-semibold text-primary">Admin</p>
+        <h1 className="text-3xl font-bold tracking-tight">Trips</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage scheduled trips, buses, and routes.
+        </p>
+      </header>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">

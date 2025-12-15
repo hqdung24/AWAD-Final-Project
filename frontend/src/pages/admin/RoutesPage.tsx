@@ -15,9 +15,8 @@ import {
   updateAdminRoute,
   deleteAdminRoute,
   type AdminRoute,
-  listOperators,
-  type Operator,
 } from '@/services/adminRoutesService';
+import { listOperators, type Operator } from '@/services/operatorService';
 import { listRoutesWithStops, type RouteStop, type RouteWithStops } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/lib/notify';
@@ -113,6 +112,14 @@ export default function RoutesPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <header className="space-y-1">
+        <p className="text-sm font-semibold text-primary">Admin</p>
+        <h1 className="text-3xl font-bold tracking-tight">Routes</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage routes, operators, and stops.
+        </p>
+      </header>
+
       <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">

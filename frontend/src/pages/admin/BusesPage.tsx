@@ -21,7 +21,7 @@ import {
   type Bus,
   type Seat,
 } from '@/services/busService';
-import { listOperators, type Operator } from '@/services/adminRoutesService';
+import { listOperators, type Operator } from '@/services/operatorService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/lib/notify';
 
@@ -239,6 +239,14 @@ export default function BusesPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <header className="space-y-1">
+        <p className="text-sm font-semibold text-primary">Admin</p>
+        <h1 className="text-3xl font-bold tracking-tight">Buses</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage bus fleet, seats, and operators.
+        </p>
+      </header>
+
       <Card>
         <CardHeader>
           <CardTitle>Buses</CardTitle>

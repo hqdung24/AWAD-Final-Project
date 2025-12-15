@@ -38,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: 'Routes', url: '/routes', icon: RouteIcon },
     { title: 'Trips', url: '/trips', icon: BusFront },
     { title: 'Buses', url: '/buses', icon: BusFront },
-    { title: 'Operators', url: '#operators', icon: Users },
+    { title: 'Operators', url: '/operators', icon: Users },
     { title: 'Users', url: '/account', icon: Users },
     { title: 'Analytics', url: '/analytics', icon: ChartNoAxesCombined },
     { title: 'Reports', url: '/reports', icon: Map },

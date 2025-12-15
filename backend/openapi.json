@@ -418,6 +418,127 @@
         "tags": [
           "Admin - Operators"
         ]
+      },
+      "post": {
+        "operationId": "OperatorController_createOperator",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOperatorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create operator",
+        "tags": [
+          "Admin - Operators"
+        ]
+      }
+    },
+    "/admin/operators/{id}": {
+      "get": {
+        "operationId": "OperatorController_getOperator",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get operator detail",
+        "tags": [
+          "Admin - Operators"
+        ]
+      },
+      "patch": {
+        "operationId": "OperatorController_updateOperator",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOperatorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update operator",
+        "tags": [
+          "Admin - Operators"
+        ]
+      },
+      "delete": {
+        "operationId": "OperatorController_deleteOperator",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete operator",
+        "tags": [
+          "Admin - Operators"
+        ]
       }
     },
     "/admin/routes": {
@@ -1957,6 +2078,14 @@
           "email",
           "token"
         ]
+      },
+      "CreateOperatorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateOperatorDto": {
+        "type": "object",
+        "properties": {}
       },
       "CreateRouteDto": {
         "type": "object",
