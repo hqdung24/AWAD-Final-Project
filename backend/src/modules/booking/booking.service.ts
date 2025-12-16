@@ -101,6 +101,25 @@ export class BookingService {
     return await this.bookingRepository.update(id, { status: status });
   }
 
+  async findBookingsForReminder(
+    windowStart: Date,
+    windowEnd: Date,
+    reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
+  ): Promise<Booking[]> {
+    return this.bookingRepository.findBookingsForReminder(
+      windowStart,
+      windowEnd,
+      reminderField,
+    );
+  }
+
+  async markReminderSent(
+    bookingId: string,
+    reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
+  ): Promise<boolean> {
+    return this.bookingRepository.markReminderSent(bookingId, reminderField);
+  }
+
   // For scheduled tasks
   async expirePendingBooking(): Promise<{ updated: number }> {
     // Update all bookings that are still 'pending' more than 12 hours old to 'expired'

@@ -199,4 +199,42 @@ export class BookingRepository {
       .where('bookingId = :bookingId', { bookingId })
       .execute();
   }
+
+  async findBookingsForReminder(
+    windowStart: Date,
+    windowEnd: Date,
+    reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
+  ): Promise<Booking[]> {
+    const qb = this.repository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.trip', 'trip')
+      .leftJoinAndSelect('trip.route', 'route')
+      .leftJoinAndSelect('booking.passengerDetails', 'passengerDetails')
+      .leftJoinAndSelect('booking.seatStatuses', 'seatStatus')
+      .leftJoinAndSelect('seatStatus.seat', 'seat')
+      .leftJoinAndSelect('booking.user', 'user')
+      .where('booking.status IN (:...statuses)', { statuses: ['paid'] })
+      .andWhere('trip.departureTime BETWEEN :start AND :end', {
+        start: windowStart,
+        end: windowEnd,
+      })
+      .andWhere(`booking.${reminderField} IS NULL`);
+
+    return qb.getMany();
+  }
+
+  async markReminderSent(
+    bookingId: string,
+    reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
+  ): Promise<boolean> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Booking)
+      .set({ [reminderField]: () => 'CURRENT_TIMESTAMP' })
+      .where('id = :bookingId', { bookingId })
+      .andWhere(`"${reminderField}" IS NULL`)
+      .execute();
+
+    return (result.affected ?? 0) > 0;
+  }
 }

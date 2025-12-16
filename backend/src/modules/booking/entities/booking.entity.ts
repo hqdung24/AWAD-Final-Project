@@ -39,6 +39,12 @@ export class Booking {
   @CreateDateColumn({ type: 'timestamptz' })
   bookedAt: Date;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  reminder24hSentAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  reminder3hSentAt: Date | null;
+
   //Contact info
   @Column({ type: 'varchar', nullable: true })
   name: string | null;

@@ -5,7 +5,9 @@ import { Resend } from 'resend';
 import {
   BOOKING_EMAIL_SUBJECTS,
   type BookingConfirmationParams,
+  type TripReminderParams,
   getBookingConfirmationTemplate,
+  getTripReminderTemplate,
 } from '../constant/email.constant';
 
 @Injectable()
@@ -40,6 +42,31 @@ export class BookingEmailProvider {
       // Log error but don't throw - email is non-critical
       this.logger.error(
         `Failed to send booking confirmation email to ${toAddress}: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  async sendTripReminderEmail(
+    toAddress: string,
+    payload: TripReminderParams,
+  ): Promise<void> {
+    try {
+      const resend = new Resend(this.appConfiguration.resendApiKey);
+      const emailContent = getTripReminderTemplate(payload);
+
+      await resend.emails.send({
+        from: `Bus Ticket <${this.appConfiguration.adminEmailAddress}>`,
+        to: toAddress,
+        subject: BOOKING_EMAIL_SUBJECTS.TRIP_REMINDER,
+        html: emailContent,
+      });
+
+      this.logger.log(
+        `Trip reminder (${payload.reminderType}) sent to ${toAddress} for booking ${payload.bookingId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send trip reminder (${payload.reminderType}) to ${toAddress}: ${(error as Error).message}`,
       );
     }
   }
