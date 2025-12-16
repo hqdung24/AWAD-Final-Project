@@ -5,6 +5,7 @@ import { ScheduleService } from './schedule.service';
 import { SeatStatusModule } from '../seat-status/seat-status.module';
 import { PaymentModule } from '../payment/payment.module';
 import { BookingModule } from '../booking/booking.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [ScheduleController],
@@ -15,6 +16,7 @@ import { BookingModule } from '../booking/booking.module';
     NestScheduleModule.forRoot(),
     PaymentModule,
     BookingModule,
+    NotificationModule,
   ],
   exports: [ScheduleService],
 })

@@ -1855,6 +1855,60 @@
         ]
       }
     },
+    "/notification/preferences/me": {
+      "get": {
+        "operationId": "NotificationController_getMyPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get current user notification preferences",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification/preferences": {
+      "patch": {
+        "operationId": "NotificationController_updateMyPreferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update current user notification preferences",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
     "/reports/admin": {
       "get": {
         "operationId": "ReportController_getAdminReport",
@@ -2976,6 +3030,43 @@
       "CreatePaymentSession": {
         "type": "object",
         "properties": {}
+      },
+      "NotificationPreferencesResponseDto": {
+        "type": "object",
+        "properties": {
+          "emailRemindersEnabled": {
+            "type": "boolean",
+            "description": "Whether email reminders are enabled"
+          },
+          "smsRemindersEnabled": {
+            "type": "boolean",
+            "description": "Whether SMS reminders are enabled"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the preferences were last updated"
+          }
+        },
+        "required": [
+          "emailRemindersEnabled",
+          "smsRemindersEnabled",
+          "updatedAt"
+        ]
+      },
+      "UpdateNotificationPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "emailRemindersEnabled": {
+            "type": "boolean",
+            "description": "Enable or disable email notifications for reminders",
+            "example": true
+          },
+          "smsRemindersEnabled": {
+            "type": "boolean",
+            "description": "Enable or disable SMS notifications for reminders (requires phone)",
+            "example": false
+          }
+        }
       }
     }
   }

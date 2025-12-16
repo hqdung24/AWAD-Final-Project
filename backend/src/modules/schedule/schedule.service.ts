@@ -4,6 +4,7 @@ import { Cron } from '@nestjs/schedule';
 import { BookingService } from '../booking/booking.service';
 import { PaymentService } from '../payment/providers/payment.service';
 import { BookingEmailProvider } from '../booking/providers/booking-email.provider';
+import { NotificationService } from '../notification/notification.service';
 import type { Booking } from '../booking/entities/booking.entity';
 @Injectable()
 export class ScheduleService {
@@ -12,6 +13,7 @@ export class ScheduleService {
     private readonly bookingService: BookingService,
     private readonly paymentService: PaymentService,
     private readonly bookingEmailProvider: BookingEmailProvider,
+    private readonly notificationService: NotificationService,
   ) {}
   // Add scheduling related methods here
 
@@ -87,6 +89,15 @@ export class ScheduleService {
     );
 
     for (const booking of bookings) {
+      if (booking.userId) {
+        const prefs = await this.notificationService.getPreferencesForUser(
+          booking.userId,
+        );
+        if (!prefs.emailRemindersEnabled) {
+          continue;
+        }
+      }
+
       const to = booking.email || booking.user?.email;
       if (!to) continue;
 
