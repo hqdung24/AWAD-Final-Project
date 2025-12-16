@@ -9,11 +9,13 @@ import { BookingProvider } from './providers/booking.provider';
 import { BookingEmailProvider } from './providers/booking-email.provider';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig } from '@/config/app.config';
+import { bookingConfig } from '@/config/booking.config';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Booking]),
     SeatStatusModule,
     ConfigModule.forFeature(appConfig),
+    ConfigModule.forFeature(bookingConfig),
   ],
   controllers: [BookingController],
   providers: [

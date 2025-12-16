@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { BookingRepository } from './booking.repository';
 import { BookingProvider } from './providers/booking.provider';
@@ -10,13 +11,39 @@ import type { ContactInfoDto } from './dto/contact-info.dto';
 import type { BookingListQueryDto } from './dto';
 import type { Booking } from './entities/booking.entity';
 import type { UpdateBookingDto } from './dto/update-booking.dto';
+import { bookingConfig } from '@/config/booking.config';
+import { Inject } from '@nestjs/common';
+import { type ConfigType } from '@nestjs/config';
+import type { UpdateSeatsDto } from './dto/update-seats.dto';
 
 @Injectable()
 export class BookingService {
+  private readonly logger = new Logger(BookingService.name);
   constructor(
     private readonly bookingRepository: BookingRepository,
     private readonly bookingProvider: BookingProvider,
+    @Inject(bookingConfig.KEY)
+    private readonly bookingConfiguration: ConfigType<typeof bookingConfig>,
   ) {}
+
+  private ensureEditable(booking: Booking) {
+    if (booking.status === 'expired' || booking.status === 'cancelled') {
+      throw new BadRequestException('Booking cannot be modified in this status');
+    }
+
+    const cutoffHours = this.bookingConfiguration.editCutoffHours || 3;
+    const cutoffTime =
+      booking.trip?.departureTime &&
+      new Date(
+        booking.trip.departureTime.getTime() - cutoffHours * 60 * 60 * 1000,
+      );
+
+    if (cutoffTime && new Date() > cutoffTime) {
+      throw new BadRequestException(
+        `Booking can only be modified at least ${cutoffHours} hours before departure`,
+      );
+    }
+  }
 
   /**
    * Create a new booking with seat lock validation
@@ -54,6 +81,13 @@ export class BookingService {
 
   async updateBooking(id: string, dto: UpdateBookingDto): Promise<Booking> {
     try {
+      const booking = await this.bookingRepository.findDetailById(id);
+      if (!booking) {
+        throw new NotFoundException('Booking not found');
+      }
+
+      this.ensureEditable(booking);
+
       const contact: { name?: string; email?: string; phone?: string } = {
         name: dto.name,
         email: dto.email,
@@ -99,6 +133,52 @@ export class BookingService {
     status: string,
   ): Promise<Booking | null> {
     return await this.bookingRepository.update(id, { status: status });
+  }
+
+  async changeSeats(
+    bookingId: string,
+    dto: UpdateSeatsDto,
+  ): Promise<Booking> {
+    try {
+      const booking = await this.bookingRepository.findDetailById(bookingId);
+      if (!booking) {
+        throw new NotFoundException('Booking not found');
+      }
+
+      this.ensureEditable(booking);
+
+      return await this.bookingRepository.swapSeats(bookingId, dto.seatChanges);
+    } catch (error: unknown) {
+      const err = error as Error;
+
+      if (err.message === 'BOOKING_NOT_FOUND') {
+        throw new NotFoundException('Booking not found');
+      }
+      if (err.message === 'SEAT_NOT_IN_BOOKING') {
+        throw new BadRequestException('One or more seats are not in booking');
+      }
+      if (err.message === 'TARGET_SEAT_NOT_FOUND') {
+        throw new BadRequestException('Target seat not found in this trip');
+      }
+      if (err.message === 'TARGET_SEAT_UNAVAILABLE') {
+        const seat = (err as any).seat as string | undefined;
+        throw new BadRequestException(
+          seat
+            ? `Seat ${seat} is unavailable`
+            : 'Target seat is unavailable',
+        );
+      }
+      if (err.message === 'TARGET_SEAT_DUPLICATE') {
+        throw new BadRequestException('Duplicate target seats provided');
+      }
+
+      this.logger.error(
+        `Seat change failed for booking ${bookingId}: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+
+      throw error;
+    }
   }
 
   async findBookingsForReminder(

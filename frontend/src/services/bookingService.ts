@@ -55,3 +55,18 @@ export async function updateBooking(
   const res = await http.patch(`/booking/${bookingId}`, payload);
   return (res as { data: BookingDetailResponse }).data;
 }
+
+export type SeatChange = {
+  currentSeatId: string;
+  newSeatId: string;
+};
+
+export async function changeBookingSeats(
+  bookingId: string,
+  seatChanges: SeatChange[]
+): Promise<BookingDetailResponse> {
+  const res = await http.patch(`/booking/${bookingId}/seats`, {
+    seatChanges,
+  });
+  return (res as { data: BookingDetailResponse }).data;
+}

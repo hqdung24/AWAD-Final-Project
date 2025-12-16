@@ -1771,6 +1771,48 @@
         ]
       }
     },
+    "/booking/{id}/seats": {
+      "patch": {
+        "operationId": "BookingController_changeSeats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Booking ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeatsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seats updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListItemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change seats for a booking",
+        "tags": [
+          "Booking"
+        ]
+      }
+    },
     "/booking/{id}/cancel": {
       "patch": {
         "operationId": "BookingController_cancelBooking",
@@ -3026,6 +3068,40 @@
             }
           }
         }
+      },
+      "SeatChangeDto": {
+        "type": "object",
+        "properties": {
+          "currentSeatId": {
+            "type": "string",
+            "description": "Current seat ID in this booking",
+            "example": "current-seat-uuid"
+          },
+          "newSeatId": {
+            "type": "string",
+            "description": "Target seat ID to switch to (must be available in this trip)",
+            "example": "new-seat-uuid"
+          }
+        },
+        "required": [
+          "currentSeatId",
+          "newSeatId"
+        ]
+      },
+      "UpdateSeatsDto": {
+        "type": "object",
+        "properties": {
+          "seatChanges": {
+            "description": "List of seat changes to apply in one operation",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatChangeDto"
+            }
+          }
+        },
+        "required": [
+          "seatChanges"
+        ]
       },
       "CreatePaymentSession": {
         "type": "object",

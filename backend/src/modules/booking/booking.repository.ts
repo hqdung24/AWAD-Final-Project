@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { BookingListQueryDto } from './dto';
+import { SeatStatus } from '../seat-status/entities/seat-status.entity';
+import { PassengerDetail } from '../passenger-detail/entities/passenger-detail.entity';
+import { Seat } from '../seat/entities/seat.entity';
 
 @Injectable()
 export class BookingRepository {
@@ -236,5 +239,142 @@ export class BookingRepository {
       .execute();
 
     return (result.affected ?? 0) > 0;
+  }
+
+  async swapSeats(
+    bookingId: string,
+    seatChanges: Array<{ currentSeatId: string; newSeatId: string }>,
+  ): Promise<Booking> {
+    return this.repository.manager.transaction(async (manager) => {
+      const booking = await manager.findOne(Booking, {
+        where: { id: bookingId },
+        relations: [
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+
+      if (!booking) {
+        throw new Error('BOOKING_NOT_FOUND');
+      }
+
+      const currentSeatIds = new Set(
+        booking.seatStatuses.map((ss) => ss.seatId),
+      );
+
+      const targetSeatIds = new Set<string>();
+      for (const change of seatChanges) {
+        if (!currentSeatIds.has(change.currentSeatId)) {
+          throw new Error('SEAT_NOT_IN_BOOKING');
+        }
+        if (change.currentSeatId === change.newSeatId) continue;
+        if (targetSeatIds.has(change.newSeatId)) {
+          throw new Error('TARGET_SEAT_DUPLICATE');
+        }
+        targetSeatIds.add(change.newSeatId);
+      }
+
+      if (targetSeatIds.size === 0) {
+        return booking;
+      }
+
+      const targetSeatStatusList = await manager
+        .createQueryBuilder(SeatStatus, 'ss')
+        .setLock('pessimistic_write')
+        .where('ss.tripId = :tripId', { tripId: booking.tripId })
+        .andWhere('ss.seatId IN (:...targetSeatIds)', {
+          targetSeatIds: Array.from(targetSeatIds),
+        })
+        .getMany();
+
+      if (targetSeatStatusList.length !== targetSeatIds.size) {
+        throw new Error('TARGET_SEAT_NOT_FOUND');
+      }
+
+      for (const target of targetSeatStatusList) {
+        if (target.state !== 'available') {
+          const err: any = new Error('TARGET_SEAT_UNAVAILABLE');
+          err.seat = target.seatId;
+          throw err;
+        }
+      }
+
+      // Release current seats involved in change
+      const currentSeatIdsToRelease = seatChanges.map((c) => c.currentSeatId);
+      const seats = await manager.find(Seat, {
+        where: { id: In([...targetSeatIds, ...currentSeatIdsToRelease]) },
+      });
+      const seatCodeMap = new Map<string, string>();
+      seats.forEach((s) => seatCodeMap.set(s.id, s.seatCode));
+      await manager
+        .createQueryBuilder()
+        .update(SeatStatus)
+        .set({
+          state: 'available',
+          bookingId: null,
+          lockedUntil: null,
+        })
+        .where('tripId = :tripId', { tripId: booking.tripId })
+        .andWhere('seatId IN (:...seatIds)', { seatIds: currentSeatIdsToRelease })
+        .execute();
+
+      // Assign new seats
+      await manager
+        .createQueryBuilder()
+        .update(SeatStatus)
+        .set({
+          state: 'booked',
+          bookingId: booking.id,
+          lockedUntil: null,
+        })
+        .where('tripId = :tripId', { tripId: booking.tripId })
+        .andWhere('seatId IN (:...seatIds)', {
+          seatIds: Array.from(targetSeatIds),
+        })
+        .execute();
+
+      // Update passenger seat codes based on mapping
+      const newSeatMap = new Map<string, SeatStatus>();
+      targetSeatStatusList.forEach((ss) => newSeatMap.set(ss.seatId, ss));
+
+      const currentSeatStatusMap = new Map<string, SeatStatus>();
+      booking.seatStatuses.forEach((ss) =>
+        currentSeatStatusMap.set(ss.seatId, ss),
+      );
+
+      for (const change of seatChanges) {
+        if (change.currentSeatId === change.newSeatId) continue;
+        const oldSeatCode =
+          currentSeatStatusMap.get(change.currentSeatId)?.seat?.seatCode ||
+          seatCodeMap.get(change.currentSeatId);
+        const passenger = booking.passengerDetails.find(
+          (p) => p.seatCode === oldSeatCode,
+        );
+        const newSeatStatus = newSeatMap.get(change.newSeatId);
+        const newSeatCode =
+          newSeatStatus?.seat?.seatCode ||
+          seatCodeMap.get(change.newSeatId) ||
+          null;
+        if (passenger && newSeatCode) {
+          passenger.seatCode = newSeatCode;
+        }
+      }
+
+      await manager.save(PassengerDetail, booking.passengerDetails);
+
+      return await manager.findOneOrFail(Booking, {
+        where: { id: booking.id },
+        relations: [
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+    });
   }
 }

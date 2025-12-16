@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,12 +24,21 @@ import { Input } from '@/components/ui/input';
 import { useBooking } from '@/hooks/useBooking';
 import { useUserStore } from '@/stores/user';
 import type { BookingListItem } from '@/schemas/booking/booking.response';
-import type { UpdateBookingRequest } from '@/services/bookingService';
+import type { SeatChange, UpdateBookingRequest } from '@/services/bookingService';
+import { getSeatStatusesByTrip, type SeatStatusItem } from '@/services/seatStatusService';
 import { ArrowRight, Clock, MapPin, Pencil, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
 
@@ -45,6 +54,8 @@ const editBookingSchema = z.object({
         seatCode: z.string(),
         fullName: z.string().min(1, 'Full name is required'),
         documentId: z.string().min(3, 'Document ID is required'),
+        seatId: z.string().optional(),
+        newSeatId: z.string().optional(),
       })
     )
     .nonempty('At least one passenger'),
@@ -57,11 +68,17 @@ function UserDashboard() {
   const user = useUserStore((s) => s.me);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('all');
   const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
-  const { bookingList, cancelBooking, updateBooking } = useBooking(
+  const { bookingList, cancelBooking, updateBooking, changeSeats } = useBooking(
     user ? { userId: user.id } : undefined
   );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+  const [editingBooking, setEditingBooking] = useState<BookingListItem | null>(
+    null
+  );
+  const [seatStatuses, setSeatStatuses] = useState<SeatStatusItem[]>([]);
+  const [seatLoading, setSeatLoading] = useState(false);
+  const cutoffHours = 3;
 
   const form = useForm<EditBookingForm>({
     resolver: zodResolver(editBookingSchema),
@@ -93,49 +110,108 @@ function UserDashboard() {
     setPendingCancelId(id);
   };
 
-  const openEditModal = (booking: BookingListItem) => {
-    if (booking.status !== 'pending') return;
+  const openEditModal = async (booking: BookingListItem) => {
+    if (booking.status === 'expired' || booking.status === 'cancelled') return;
     setEditingBookingId(booking.id);
+    setEditingBooking(booking);
     form.reset({
       contact: {
         name: booking.name || '',
         email: booking.email || '',
         phone: booking.phone || '',
       },
-      passengers: booking.passengers.map((p) => ({
-        seatCode: p.seatCode,
-        fullName: p.fullName || '',
-        documentId: p.documentId || '',
-      })),
+      passengers: booking.passengers.map((p) => {
+        const seat = booking.seats.find((s) => s.seatCode === p.seatCode);
+        return {
+          seatCode: p.seatCode,
+          fullName: p.fullName || '',
+          documentId: p.documentId || '',
+          seatId: seat?.seatId,
+          newSeatId: seat?.seatId,
+        };
+      }),
     });
-    setEditDialogOpen(true);
+    setSeatLoading(true);
+    try {
+      const seats = await getSeatStatusesByTrip(booking.trip.id);
+      setSeatStatuses(seats);
+    } catch {
+      toast.error('Could not load seat availability');
+    } finally {
+      setSeatLoading(false);
+      setEditDialogOpen(true);
+    }
   };
 
   const handleEditSubmit = (values: EditBookingForm) => {
     if (!editingBookingId) return;
+    const booking = editingBooking;
+    if (!booking) return;
+
+    const seatCodeById = new Map(
+      booking.seats.map((s) => [s.seatId, s.seatCode])
+    );
+    seatStatuses.forEach((s) => {
+      if (s.seatId && s.seatCode) {
+        seatCodeById.set(s.seatId, s.seatCode);
+      }
+    });
+
+    const seatChanges: SeatChange[] = [];
+
     const payload: UpdateBookingRequest = {
       name: values.contact.name,
       email: values.contact.email,
       phone: values.contact.phone,
-      passengers: values.passengers.map((p) => ({
-        seatCode: p.seatCode,
-        fullName: p.fullName,
-        documentId: p.documentId,
-      })),
+      passengers: values.passengers.map((p) => {
+        const targetSeatId = p.newSeatId || p.seatId;
+        const targetSeatCode =
+          (targetSeatId && seatCodeById.get(targetSeatId)) || p.seatCode;
+        const currentSeatId = p.seatId;
+
+        if (targetSeatId && currentSeatId && targetSeatId !== currentSeatId) {
+          seatChanges.push({
+            currentSeatId: currentSeatId,
+            newSeatId: targetSeatId,
+          });
+        }
+
+        return {
+          seatCode: targetSeatCode,
+          fullName: p.fullName,
+          documentId: p.documentId,
+        };
+      }),
     };
 
-    updateBooking.mutate(
-      { id: editingBookingId, payload },
-      {
-        onSuccess: () => {
-          setEditDialogOpen(false);
-          setEditingBookingId(null);
-        },
-        onSettled: () => {
-          form.reset();
-        },
+    const runUpdate = async () => {
+      if (seatChanges.length > 0) {
+        await changeSeats.mutateAsync({
+          id: editingBookingId,
+          seatChanges,
+        });
       }
-    );
+      await updateBooking.mutateAsync({ id: editingBookingId, payload });
+    };
+
+    runUpdate()
+      .then(() => {
+        setEditDialogOpen(false);
+        setEditingBookingId(null);
+        setEditingBooking(null);
+      })
+      .catch(() => {
+        // errors handled via mutations' onError
+      })
+      .finally(() => {
+        form.reset();
+      });
+  };
+
+  const canEditBooking = (b: BookingListItem) => {
+    if (b.status === 'expired' || b.status === 'cancelled') return false;
+    const dep = new Date(b.trip.departureTime).getTime();
+    return dep - Date.now() > cutoffHours * 60 * 60 * 1000;
   };
 
   const upcomingTrips = (bookingList.data?.data ?? [])
@@ -156,6 +232,7 @@ function UserDashboard() {
       bookingId: b.id,
       bookingRef: b.bookingReference || b.id,
       status: b.status as BookingStatus,
+      canEdit: canEditBooking(b),
     }));
 
   const paidBooking = upcomingTrips.filter((b) => b.status === 'paid').length;
@@ -249,7 +326,7 @@ function UserDashboard() {
                     <Badge className={statusBadgeClass[trip.status]}>
                       {trip.status}
                     </Badge>
-                    {trip.status === 'pending' && (
+                    {trip.canEdit && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -347,6 +424,8 @@ function UserDashboard() {
             form.reset();
             setEditDialogOpen(false);
             setEditingBookingId(null);
+            setEditingBooking(null);
+            setSeatStatuses([]);
           }
         }}
       >
@@ -451,6 +530,44 @@ function UserDashboard() {
                             <FormMessage />
                           </FormItem>
                         )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`passengers.${idx}.newSeatId`}
+                        render={({ field }) => {
+                          const currentSeatId =
+                            form.watch(`passengers.${idx}.seatId`) || '';
+                          const options = seatStatuses.filter(
+                            (s) =>
+                              s.state === 'available' ||
+                              s.seatId === currentSeatId
+                          );
+                          return (
+                            <FormItem>
+                              <FormLabel>Seat</FormLabel>
+                              <Select
+                                value={field.value}
+                                onValueChange={(val) => field.onChange(val)}
+                                disabled={seatLoading || changeSeats.isPending}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose seat" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {options.map((opt) => (
+                                    <SelectItem key={opt.seatId} value={opt.seatId}>
+                                      {opt.seatCode || opt.seatId}{' '}
+                                      {opt.state !== 'available' ? '(current)' : ''}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
                     </div>
                   </div>

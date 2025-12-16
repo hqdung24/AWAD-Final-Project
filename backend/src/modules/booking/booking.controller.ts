@@ -29,6 +29,7 @@ import {
   BookingListItemDto,
   UpdateBookingDto,
 } from './dto';
+import { UpdateSeatsDto } from './dto/update-seats.dto';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -236,6 +237,56 @@ export class BookingController {
   @Auth(AuthType.None) // adjust if you want auth
   async updateBooking(@Param('id') id: string, @Body() dto: UpdateBookingDto) {
     const booking = await this.bookingService.updateBooking(id, dto);
+
+    return {
+      bookingId: booking.id,
+      tripId: booking.tripId,
+      userId: booking.userId,
+      bookingReference: booking.bookingReference || null,
+      status: booking.status,
+      name: booking.name,
+      email: booking.email,
+      phone: booking.phone,
+      trip: booking.trip
+        ? {
+            id: booking.trip.id,
+            routeId: booking.trip.routeId,
+            origin: booking.trip.route?.origin,
+            destination: booking.trip.route?.destination,
+            busId: booking.trip.busId,
+            departureTime: booking.trip.departureTime.toISOString(),
+            arrivalTime: booking.trip.arrivalTime.toISOString(),
+            basePrice: Number(booking.trip.basePrice),
+            status: booking.trip.status,
+          }
+        : undefined,
+      seats: (booking.seatStatuses || []).map((ss) => ({
+        seatId: ss.seatId,
+        seatCode: ss.seat?.seatCode,
+      })),
+      passengers: (booking.passengerDetails || []).map((p) => ({
+        fullName: p.fullName,
+        documentId: p.documentId,
+        seatCode: p.seatCode,
+      })),
+      totalAmount: Number(booking.totalAmount),
+      createdAt: booking.bookedAt.toISOString(),
+    };
+  }
+
+  @Patch(':id/seats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change seats for a booking' })
+  @ApiParam({ name: 'id', description: 'Booking ID', type: String })
+  @ApiBody({ type: UpdateSeatsDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Seats updated',
+    type: BookingListItemDto,
+  })
+  @Auth(AuthType.None)
+  async changeSeats(@Param('id') id: string, @Body() dto: UpdateSeatsDto) {
+    const booking = await this.bookingService.changeSeats(id, dto);
 
     return {
       bookingId: booking.id,

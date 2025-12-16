@@ -5,6 +5,7 @@ import {
   getBookingDetail,
   getBookings,
   updateBooking,
+  changeBookingSeats,
 } from '@/services/bookingService';
 import { notify } from '@/lib/notify';
 import { extractApiError } from '@/lib/api-error';
@@ -13,7 +14,7 @@ import type {
   CreateBookingRequest,
   BookingDetailResponse,
 } from '@/schemas/booking';
-import type { UpdateBookingRequest } from '@/services/bookingService';
+import type { SeatChange, UpdateBookingRequest } from '@/services/bookingService';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useBooking(params?: BookingListQuery, bookingId?: string) {
@@ -80,11 +81,33 @@ export function useBooking(params?: BookingListQuery, bookingId?: string) {
     },
   });
 
+  const changeSeatsMutation = useMutation({
+    mutationFn: ({
+      id,
+      seatChanges,
+    }: {
+      id: string;
+      seatChanges: SeatChange[];
+    }) => changeBookingSeats(id, seatChanges),
+    onSuccess: (data: BookingDetailResponse) => {
+      notify.success('Seats updated successfully');
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['booking', data.bookingId],
+      });
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to update seats');
+    },
+  });
+
   return {
     createBooking: createBookingMutation,
     bookingList: bookingListQuery,
     bookingDetail: bookingDetailQuery,
     cancelBooking: cancelBookingMutation,
     updateBooking: updateBookingMutation,
+    changeSeats: changeSeatsMutation,
   };
 }
