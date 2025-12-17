@@ -186,7 +186,7 @@ export class DashboardService {
           `
             select
               b.id as id,
-              coalesce(u."firstName", 'User') || ' ' || coalesce(u."lastName", '') as user,
+              coalesce(u.first_name, 'User') || ' ' || coalesce(u.last_name, '') as user,
               concat(r.origin, ' → ', r.destination) as route,
               coalesce(b.status, 'Pending') as status
             from bookings b

@@ -29,6 +29,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MyScheduleModule } from './modules/schedule/schedule.module';
 import { AppController } from './app.controller';
+import { MetricsModule } from './modules/metrics/metrics.module';
 
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
@@ -79,6 +80,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     //Schedule module for cron jobs
     ScheduleModule.forRoot(),
     MyScheduleModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [

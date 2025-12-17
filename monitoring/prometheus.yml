@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: backend
+    metrics_path: /api/metrics
+    static_configs:
+      # Point to your backend host/port; adjust if running elsewhere.
+      - targets: ['host.docker.internal:3000']

@@ -16,6 +16,8 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` (JWT-based lock token, DB pessimistic locking) and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings; mock guest lookup/dashboard history still pending real data wiring. Real-time seat availability currently uses 30s polling until a lock is acquired (WebSocket not yet implemented).
 - **Admin UX (Trips/Routes/Buses/Seats)**: Admin tables now have filters + pagination, failure toasts, and consistent nav highlighting. Trip admin endpoints are no longer shadowed (`/trips/admin`). Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and lets admins toggle seats active/inactive; deleting a bus soft-deletes its seats.
 - **Booking management**: Pending bookings can be edited or cancelled; cancelling a pending booking releases seats back to available state. Booking confirmation emails are sent via Resend when contact email is provided.
+- **Scheduling & payments**: Cleanup cron fixed to every 5 minutes; reminder cron runs every 15 minutes. Cleanup expires stale locks/payments/bookings; reminders send 24h/3h trip emails and respect notification preferences.
+- **Metrics/monitoring scaffold**: Prometheus metrics exposed at `/api/metrics` (Prometheus format) with job counters/gauges; optional `docker-compose.monitoring.yml` spins up Prometheus (9090) + Grafana (3001) using `monitoring/prometheus.yml` (target defaults to `host.docker.internal:3000`).
 
 ## Prerequisites
 - Node.js 20+ and npm
@@ -88,6 +90,10 @@ REFRESH_COOKIE_MAX_AGE=2592000
   - ensure the database exists and `.env` is set
   - `npm run seed`
   - CSV seed files live in `backend/src/seeders/data`.
+- **Optional monitoring**
+  - Start backend first.
+  - `docker-compose -f docker-compose.monitoring.yml up -d`
+  - Prometheus scrapes `/api/metrics` (adjust target in `monitoring/prometheus.yml` if needed); Grafana at http://localhost:3001 (admin/admin) with Prometheus datasource URL `http://prometheus:9090`.
 
 3) **Frontend**
 - `cd frontend`

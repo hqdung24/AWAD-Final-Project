@@ -6,6 +6,7 @@ import { PaymentService } from '../payment/providers/payment.service';
 import { BookingEmailProvider } from '../booking/providers/booking-email.provider';
 import { NotificationService } from '../notification/notification.service';
 import type { Booking } from '../booking/entities/booking.entity';
+import { MetricsService } from '../metrics/metrics.service';
 @Injectable()
 export class ScheduleService {
   private readonly logger = new Logger(ScheduleService.name);
@@ -17,6 +18,7 @@ export class ScheduleService {
     private readonly paymentService: PaymentService,
     private readonly bookingEmailProvider: BookingEmailProvider,
     private readonly notificationService: NotificationService,
+    private readonly metricsService: MetricsService,
   ) {}
   // Add scheduling related methods here
 
@@ -26,6 +28,7 @@ export class ScheduleService {
     this.logger.log(
       `[CRON] releaseExpiredSeats start at ${now.toISOString()}`,
     );
+    const start = Date.now();
     try {
       const releasedLocks = await this.seatStatusService.releaseLockedSeats(now);
       const paymentResult =
@@ -33,12 +36,27 @@ export class ScheduleService {
       const bookingResult = await this.bookingService.expirePendingBooking();
       this.lastReleaseRun = new Date();
 
+      this.metricsService.markJobSuccess('releaseExpiredSeats', Date.now() - start);
+      this.metricsService.countCleanup(
+        'payments_expired',
+        paymentResult?.updated ?? 0,
+      );
+      this.metricsService.countCleanup(
+        'bookings_expired',
+        bookingResult?.updated ?? 0,
+      );
+      this.metricsService.countCleanup('seat_locks_released', releasedLocks);
+
       this.logger.log(
         `[CRON] releaseExpiredSeats done - payments expired: ${
           paymentResult?.updated ?? 0
         }, bookings expired: ${bookingResult?.updated ?? 0}, seat locks released: ${releasedLocks}`,
       );
     } catch (error) {
+      this.metricsService.markJobFailure(
+        'releaseExpiredSeats',
+        Date.now() - start,
+      );
       this.logger.warn(
         `[CRON] releaseExpiredSeats failed: ${(error as Error).message}`,
       );
@@ -155,6 +173,7 @@ export class ScheduleService {
   @Cron('0 */15 * * * *') // every 15 minutes
   async sendTripReminders() {
     this.logger.log('[CRON] sendTripReminders start');
+    const start = Date.now();
     try {
       await this.processReminderWindow({
         hoursFromNow: 24,
@@ -171,8 +190,16 @@ export class ScheduleService {
       });
 
       this.lastReminderRun = new Date();
+      this.metricsService.markJobSuccess(
+        'sendTripReminders',
+        Date.now() - start,
+      );
       this.logger.log('[CRON] sendTripReminders done');
     } catch (error) {
+      this.metricsService.markJobFailure(
+        'sendTripReminders',
+        Date.now() - start,
+      );
       this.logger.warn(
         `[CRON] sendTripReminders failed: ${(error as Error).message}`,
       );

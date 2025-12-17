@@ -6,6 +6,7 @@ import { SeatStatusModule } from '../seat-status/seat-status.module';
 import { PaymentModule } from '../payment/payment.module';
 import { BookingModule } from '../booking/booking.module';
 import { NotificationModule } from '../notification/notification.module';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
   controllers: [ScheduleController],
@@ -17,6 +18,7 @@ import { NotificationModule } from '../notification/notification.module';
     PaymentModule,
     BookingModule,
     NotificationModule,
+    MetricsModule,
   ],
   exports: [ScheduleService],
 })
