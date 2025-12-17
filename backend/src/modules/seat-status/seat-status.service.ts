@@ -79,7 +79,7 @@ export class SeatStatusService {
     return await this.seatLockProvider.unlockSeats(tripId, seatIds);
   }
 
-  async releaseLockedSeats(timeCheck: Date): Promise<void> {
+  async releaseLockedSeats(timeCheck: Date): Promise<number> {
     return await this.seatStatusRepository.releaseSeatLocks(timeCheck);
   }
 

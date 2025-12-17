@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SeatStatusService } from '../seat-status/seat-status.service';
 import { Cron } from '@nestjs/schedule';
 import { BookingService } from '../booking/booking.service';
@@ -8,6 +8,9 @@ import { NotificationService } from '../notification/notification.service';
 import type { Booking } from '../booking/entities/booking.entity';
 @Injectable()
 export class ScheduleService {
+  private readonly logger = new Logger(ScheduleService.name);
+  private lastReleaseRun?: Date;
+  private lastReminderRun?: Date;
   constructor(
     private readonly seatStatusService: SeatStatusService,
     private readonly bookingService: BookingService,
@@ -17,15 +20,29 @@ export class ScheduleService {
   ) {}
   // Add scheduling related methods here
 
-  @Cron('*/300 * * * * *') // chạy mỗi 5 phút
+  @Cron('0 */5 * * * *') // chạy mỗi 5 phút
   async releaseExpiredSeats() {
     const now = new Date();
-    console.log('now UTC      :', now.toISOString());
+    this.logger.log(
+      `[CRON] releaseExpiredSeats start at ${now.toISOString()}`,
+    );
+    try {
+      const releasedLocks = await this.seatStatusService.releaseLockedSeats(now);
+      const paymentResult =
+        await this.paymentService.checkAndUpdatePendingPayments();
+      const bookingResult = await this.bookingService.expirePendingBooking();
+      this.lastReleaseRun = new Date();
 
-    await this.seatStatusService.releaseLockedSeats(now);
-    await this.paymentService.checkAndUpdatePendingPayments();
-    await this.bookingService.expirePendingBooking();
-    console.log(`[CRON] Released expired seat locks, update payment statuses `);
+      this.logger.log(
+        `[CRON] releaseExpiredSeats done - payments expired: ${
+          paymentResult?.updated ?? 0
+        }, bookings expired: ${bookingResult?.updated ?? 0}, seat locks released: ${releasedLocks}`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `[CRON] releaseExpiredSeats failed: ${(error as Error).message}`,
+      );
+    }
   }
 
   private buildReminderPayload(
@@ -88,46 +105,84 @@ export class ScheduleService {
       options.reminderField,
     );
 
+    let sent = 0;
+    let skippedPrefs = 0;
+    let skippedMissingContact = 0;
+    let skippedDuplicate = 0;
+
     for (const booking of bookings) {
       if (booking.userId) {
         const prefs = await this.notificationService.getPreferencesForUser(
           booking.userId,
         );
         if (!prefs.emailRemindersEnabled) {
+          skippedPrefs++;
           continue;
         }
       }
 
       const to = booking.email || booking.user?.email;
-      if (!to) continue;
+      if (!to) {
+        skippedMissingContact++;
+        continue;
+      }
 
       const marked = await this.bookingService.markReminderSent(
         booking.id,
         options.reminderField,
       );
-      if (!marked) continue;
+      if (!marked) {
+        skippedDuplicate++;
+        continue;
+      }
 
       await this.bookingEmailProvider.sendTripReminderEmail(
         to,
         this.buildReminderPayload(booking, options.reminderType),
       );
+      sent++;
     }
+
+    this.logger.log(
+      `[CRON] reminders ${options.reminderType}h window start=${
+        windowStart.toISOString().split('T')[0]
+      } end=${windowEnd.toISOString().split('T')[0]} found=${
+        bookings.length
+      } sent=${sent} skippedPrefs=${skippedPrefs} skippedMissingContact=${skippedMissingContact} skippedDuplicate=${skippedDuplicate}`,
+    );
   }
 
   @Cron('0 */15 * * * *') // every 15 minutes
   async sendTripReminders() {
-    await this.processReminderWindow({
-      hoursFromNow: 24,
-      bufferMinutes: 15,
-      reminderField: 'reminder24hSentAt',
-      reminderType: '24h',
-    });
+    this.logger.log('[CRON] sendTripReminders start');
+    try {
+      await this.processReminderWindow({
+        hoursFromNow: 24,
+        bufferMinutes: 15,
+        reminderField: 'reminder24hSentAt',
+        reminderType: '24h',
+      });
 
-    await this.processReminderWindow({
-      hoursFromNow: 3,
-      bufferMinutes: 10,
-      reminderField: 'reminder3hSentAt',
-      reminderType: '3h',
-    });
+      await this.processReminderWindow({
+        hoursFromNow: 3,
+        bufferMinutes: 10,
+        reminderField: 'reminder3hSentAt',
+        reminderType: '3h',
+      });
+
+      this.lastReminderRun = new Date();
+      this.logger.log('[CRON] sendTripReminders done');
+    } catch (error) {
+      this.logger.warn(
+        `[CRON] sendTripReminders failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  getHealth() {
+    return {
+      lastReleaseRun: this.lastReleaseRun?.toISOString() ?? null,
+      lastReminderRun: this.lastReminderRun?.toISOString() ?? null,
+    };
   }
 }

@@ -2044,6 +2044,20 @@
           "Report"
         ]
       }
+    },
+    "/schedule/health": {
+      "get": {
+        "operationId": "ScheduleController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Schedule"
+        ]
+      }
     }
   },
   "info": {
