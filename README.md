@@ -9,7 +9,7 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - `project.md`, `week2_trip_management.md`: milestone briefs.
 
 ## Highlights (current state)
-- **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry.
+- **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry; email verification + password reset emails via Resend with per-user tokens; Google sign-in now links existing email accounts and marks them verified.
 - **Dashboards**: Role-aware shell with admin/user dashboard pages; data mostly mock/fallback.
 - **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType` and amenities JSON; seed data populates operators, routes, buses, seats, trips, and seat statuses.
 - **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
@@ -48,6 +48,11 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 REFRESH_COOKIE_NAME=refreshToken
 REFRESH_COOKIE_MAX_AGE=2592000
 ALLOWED_ORIGINS=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:3000
+RESEND_API_KEY=your-resend-api-key
+ADMIN_EMAIL_ADRRESS=admin@example.com
+ADMIN_EMAIL_NAME=Bus Ticket Admin
 ```
 
 Create `frontend/.env`:
@@ -111,6 +116,9 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `POST /api/auth/signup` – email/password registration
 - `POST /api/auth/signin` – email/username + password
 - `POST /api/auth/google-authentication` – Google ID token to access/refresh tokens
+- `POST /api/auth/request-password-reset` – send password reset email (Resend)
+- `POST /api/auth/reset-password` – reset password with email + token
+- `POST /api/auth/verify-email` – verify account with email + token
 - `POST /api/auth/refresh` – rotate RT cookie, return new AT
 - `POST /api/auth/signout` – clear RT cookie
 - `GET /api/users/me` – current user profile (requires AT)
