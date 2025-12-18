@@ -10,6 +10,9 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AccountInfoPage from './pages/Account/AccountInfoPage';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import VerificationPage from './pages/auth/VerificationPage';
+import PasswordResetEmailPage from './pages/auth/PasswordResetEmailPage';
 import LandingPage from './pages/home/LandingPage';
 import SearchResults from './pages/search/SearchResults';
 import TripDetails from './pages/search/TripDetails';
@@ -194,6 +197,30 @@ function App() {
                   element={
                     <PublicRoute>
                       <SignUpPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <PublicRoute>
+                      <ForgotPasswordPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/auth/verification-email"
+                  element={
+                    <PublicRoute>
+                      <VerificationPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/auth/password-reset-email"
+                  element={
+                    <PublicRoute>
+                      <PasswordResetEmailPage />
                     </PublicRoute>
                   }
                 />

@@ -25,18 +25,20 @@ export class ScheduleService {
   @Cron('0 */5 * * * *') // chạy mỗi 5 phút
   async releaseExpiredSeats() {
     const now = new Date();
-    this.logger.log(
-      `[CRON] releaseExpiredSeats start at ${now.toISOString()}`,
-    );
+    this.logger.log(`[CRON] releaseExpiredSeats start at ${now.toISOString()}`);
     const start = Date.now();
     try {
-      const releasedLocks = await this.seatStatusService.releaseLockedSeats(now);
+      const releasedLocks =
+        await this.seatStatusService.releaseLockedSeats(now);
       const paymentResult =
         await this.paymentService.checkAndUpdatePendingPayments();
       const bookingResult = await this.bookingService.expirePendingBooking();
       this.lastReleaseRun = new Date();
 
-      this.metricsService.markJobSuccess('releaseExpiredSeats', Date.now() - start);
+      this.metricsService.markJobSuccess(
+        'releaseExpiredSeats',
+        Date.now() - start,
+      );
       this.metricsService.countCleanup(
         'payments_expired',
         paymentResult?.updated ?? 0,
@@ -63,10 +65,7 @@ export class ScheduleService {
     }
   }
 
-  private buildReminderPayload(
-    booking: Booking,
-    reminderType: '24h' | '3h',
-  ) {
+  private buildReminderPayload(booking: Booking, reminderType: '24h' | '3h') {
     const seats =
       booking.seatStatuses?.map((s) => s.seat?.seatCode).filter(Boolean) ?? [];
 

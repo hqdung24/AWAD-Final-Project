@@ -297,6 +297,7 @@ export class BookingRepository {
       for (const target of targetSeatStatusList) {
         if (target.state !== 'available') {
           const err: any = new Error('TARGET_SEAT_UNAVAILABLE');
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           err.seat = target.seatId;
           throw err;
         }
@@ -318,7 +319,9 @@ export class BookingRepository {
           lockedUntil: null,
         })
         .where('tripId = :tripId', { tripId: booking.tripId })
-        .andWhere('seatId IN (:...seatIds)', { seatIds: currentSeatIdsToRelease })
+        .andWhere('seatId IN (:...seatIds)', {
+          seatIds: currentSeatIdsToRelease,
+        })
         .execute();
 
       // Assign new seats
