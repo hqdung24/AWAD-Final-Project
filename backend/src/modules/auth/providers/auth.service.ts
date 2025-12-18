@@ -52,9 +52,11 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
-    //check if verification token exists
-    if (!user.verificationToken) {
-      throw new BadRequestException('Verification token not found');
+    //check if user is already verified AND no token exists
+    if (user.isVerified && !user.verificationToken) {
+      throw new BadRequestException(
+        'User is already verified or no token found',
+      );
     }
 
     //check if token matches
@@ -88,13 +90,14 @@ export class AuthService {
 
   public async sendPasswordResetEmail(email: string) {
     //find user by email
-    const user = await this.userService.findOneByEmail(email);
+    console.log('email: ', email);
+    const user = await this.userService.findOneByEmail(email).catch(() => null);
+
     if (!user || !user.isVerified) {
       //if user not found or not verified, ensure not overwrite existing token
       //still return success message to prevent email enumeration
       return;
     }
-
     const resetToken = await this.generateVerificationToken(email);
     const { email: toAddress, username, firstName, lastName } = user;
     const toName = username || `${firstName} ${lastName}`; //fallback to full name if username not available

@@ -35,8 +35,6 @@ export class SignInProvider {
       user = await this.userService.findOneByUsername(identifier);
     }
 
-    console.log(user);
-    console.log(password);
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -47,13 +45,16 @@ export class SignInProvider {
       );
     }
 
+    if (!user.isVerified) {
+      throw new BadRequestException('Email is not verified');
+    }
+
     // Further sign-in logic goes here (e.g., password verification, token generation, etc.)
     const isPasswordValid = await this.hashingProvider.compare(
       password,
       user.password,
     );
 
-    console.log(isPasswordValid);
     if (!isPasswordValid) {
       throw new BadRequestException('Invalid credentials');
     }

@@ -58,24 +58,30 @@ export class GoogleAuthenticationService implements OnModuleInit {
       throw new Error('Missing required user information from Google');
     }
 
+    //check if user with the email exists in our database but without googleId, only check when the database already has users
+    const existingUser = await this.usersService
+      .findOneByEmail(email)
+      .catch(() => null); //ignore error if user not found
+
+    if (existingUser && !existingUser.googleId) {
+      //link googleId to existing user
+      existingUser.googleId = googleId;
+      existingUser.isVerified = true; //mark user as verified since google account is verified
+      existingUser.verificationToken = null; //clear any existing verification token if user was unverified but logged in with google
+      //update user record
+      await this.usersService.updateUser(existingUser.id, existingUser);
+      const { accessToken, refreshToken } =
+        await this.generateTokensProvider.generateTokens(existingUser);
+      return { accessToken, refreshToken, user: existingUser };
+    }
+
+    //create new user with google data
     const newUser = await this.usersService.createGoogleUser({
       email,
       firstName,
       lastName,
       googleId,
     });
-
-    //check if user with the email exists in our database but without googleId, only check when the database already has users
-    // const existingUser = await this.usersService.findOneByEmail(email);
-    // if (existingUser && !existingUser.googleId) {
-    //   //link googleId to existing user
-    //   existingUser.googleId = googleId;
-    //   //update user record
-    //   await this.usersService.updateUser(existingUser.id, existingUser);
-    //   const { accessToken, refreshToken } =
-    //     await this.generateTokensProvider.generateTokens(existingUser);
-    //   return { accessToken, refreshToken, user: existingUser };
-    // }
 
     const { accessToken, refreshToken } =
       await this.generateTokensProvider.generateTokens(newUser);

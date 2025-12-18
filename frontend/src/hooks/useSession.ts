@@ -6,6 +6,9 @@ import {
   signup,
   signout,
   googleAuthentication,
+  requestPasswordReset,
+  verifyEmail,
+  resetPassword,
 } from '@/services/authService';
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
@@ -113,6 +116,42 @@ export function useSignout() {
       logout();
       clearUser();
       await qc.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+}
+
+export function useRequestPasswordReset() {
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async (email: string) => requestPasswordReset(email),
+    onSuccess: (data) => {
+      notify.success(data.msg || 'Password reset email sent');
+      navigate('/signin');
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to send reset link 😢');
+    },
+  });
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: verifyEmail,
+  });
+}
+
+export function useResetPassword() {
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: resetPassword,
+    onSuccess: (data) => {
+      notify.success(data.msg || 'Password reset successfully');
+      navigate('/signin');
+    },
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      notify.error(message || 'Failed to reset password');
     },
   });
 }

@@ -3,6 +3,8 @@ import { registerAs } from '@nestjs/config';
 export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.APP_PORT || '3000', 10),
   host: process.env.APP_HOST || 'localhost',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3900',
+  backendUrl: process.env.BACKEND_URL || 'http://localhost:3000',
   environment: process.env.NODE_ENV || 'production',
   apiVersion: process.env.API_VERSION || '0.0.1',
   refreshCookie: {

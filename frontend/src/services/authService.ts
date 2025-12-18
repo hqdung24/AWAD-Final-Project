@@ -46,3 +46,27 @@ export async function getMe(): Promise<MeResponse> {
   const res = await http.get('/users/me');
   return MeResponseSchema.parse(res.data);
 }
+
+export async function requestPasswordReset(
+  email: string
+): Promise<{ msg: string }> {
+  const res = await http.post('/auth/request-password-reset', { email });
+  return res.data as { msg: string };
+}
+
+export async function verifyEmail(payload: {
+  email: string;
+  token: string;
+}): Promise<{ msg: string }> {
+  const res = await http.post('/auth/verify-email', payload);
+  return res.data as { msg: string };
+}
+
+export async function resetPassword(payload: {
+  email: string;
+  token: string;
+  password: string;
+}): Promise<{ msg: string }> {
+  const res = await http.post('/auth/reset-password', payload);
+  return res.data as { msg: string };
+}

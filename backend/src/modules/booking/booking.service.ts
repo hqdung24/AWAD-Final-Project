@@ -28,7 +28,9 @@ export class BookingService {
 
   private ensureEditable(booking: Booking) {
     if (booking.status === 'expired' || booking.status === 'cancelled') {
-      throw new BadRequestException('Booking cannot be modified in this status');
+      throw new BadRequestException(
+        'Booking cannot be modified in this status',
+      );
     }
 
     const cutoffHours = this.bookingConfiguration.editCutoffHours || 3;
@@ -135,10 +137,7 @@ export class BookingService {
     return await this.bookingRepository.update(id, { status: status });
   }
 
-  async changeSeats(
-    bookingId: string,
-    dto: UpdateSeatsDto,
-  ): Promise<Booking> {
+  async changeSeats(bookingId: string, dto: UpdateSeatsDto): Promise<Booking> {
     try {
       const booking = await this.bookingRepository.findDetailById(bookingId);
       if (!booking) {
@@ -161,11 +160,10 @@ export class BookingService {
         throw new BadRequestException('Target seat not found in this trip');
       }
       if (err.message === 'TARGET_SEAT_UNAVAILABLE') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const seat = (err as any).seat as string | undefined;
         throw new BadRequestException(
-          seat
-            ? `Seat ${seat} is unavailable`
-            : 'Target seat is unavailable',
+          seat ? `Seat ${seat} is unavailable` : 'Target seat is unavailable',
         );
       }
       if (err.message === 'TARGET_SEAT_DUPLICATE') {
@@ -173,8 +171,8 @@ export class BookingService {
       }
 
       this.logger.error(
-        `Seat change failed for booking ${bookingId}: ${(err as Error).message}`,
-        (err as Error).stack,
+        `Seat change failed for booking ${bookingId}: ${err.message}`,
+        err.stack,
       );
 
       throw error;

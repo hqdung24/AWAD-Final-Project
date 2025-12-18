@@ -123,15 +123,15 @@ export class EmailProvider {
     verificationToken?: string,
   ): Promise<void> => {
     const resend = new Resend(this.appConfiguration.resendApiKey);
-    const link = `https://${this.appConfiguration.host}/auth/verification?email=${encodeURIComponent(toAddress)}&token=${encodeURIComponent(
-      verificationToken || '',
-    )}`;
-    const emailContent = this.getEmailContent(template, link, toName);
     const subject =
       template === EMAIL_TEMPLATES.PASSWORD_RESET
         ? EMAIL_SUBJECTS.PASSWORD_RESET
         : EMAIL_SUBJECTS.VERIFICATION;
-
+    const emailType = template;
+    const link = `${this.appConfiguration.frontendUrl}/auth/${emailType}?email=${encodeURIComponent(toAddress)}&token=${encodeURIComponent(
+      verificationToken || '',
+    )}`;
+    const emailContent = this.getEmailContent(template, link, toName);
     await resend.emails.send({
       from: `${this.appConfiguration.adminEmailName} <${this.appConfiguration.adminEmailAddress}>`,
       to: toAddress,
