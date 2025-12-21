@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 // import { PrismaModule } from './prisma/prisma.module';
@@ -9,6 +10,7 @@ import { DataResponseInterceptor } from './common/interceptors/data-response.int
 import { ErrorsInterceptor } from './common/interceptors/errors.interceptor';
 import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
+import { redisConfig } from './config/redis.config';
 import { environmentValidationSchema } from './config/envinronment.validation';
 import { UploadModule } from './modules/upload/upload.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -30,7 +32,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MyScheduleModule } from './modules/schedule/schedule.module';
 import { AppController } from './app.controller';
 import { MetricsModule } from './modules/metrics/metrics.module';
-
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { RedisModule } from './modules/redis/redis.module';
+import KeyvRedis from '@keyv/redis';
+import { Keyv } from 'keyv';
+import { CacheableMemory } from 'cacheable';
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
 @Module({
@@ -38,8 +44,28 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: !ENV ? `.env` : `.env.${ENV}`,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, redisConfig],
       validationSchema: environmentValidationSchema,
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const url = config.get<string>('redis.url');
+        const host = config.get<string>('redis.host');
+        const port = config.get<number>('redis.port');
+        const ttl = config.get<number>('redis.ttl');
+
+        return {
+          stores: [
+            new Keyv<string>({
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+              store: new CacheableMemory({ ttl: ttl, lruSize: 5000 }) as any,
+            }),
+            new KeyvRedis(url ?? `redis://${host}:${port}`),
+          ],
+        };
+      },
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -60,6 +86,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
             : false,
       }),
     }),
+    //Redis
     UsersModule,
     AuthModule,
     UploadModule,
@@ -81,6 +108,8 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     ScheduleModule.forRoot(),
     MyScheduleModule,
     MetricsModule,
+    RealtimeModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

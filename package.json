@@ -12,6 +12,8 @@
   "type": "commonjs",
   "dependencies": {
     "@nestjs/config": "^4.0.2",
-    "@nestjs/schedule": "^6.0.1"
+    "@nestjs/platform-socket.io": "^11.1.9",
+    "@nestjs/schedule": "^6.0.1",
+    "@nestjs/websockets": "^11.1.9"
   }
 }

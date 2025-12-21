@@ -24,7 +24,7 @@ export class SeatStatus {
   seatId: string;
 
   @Column()
-  state: string; // available / locked / booked
+  state: string; // available / locked / booked / selected
 
   @Column({ nullable: true })
   bookingId: string;

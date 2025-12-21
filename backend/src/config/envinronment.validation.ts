@@ -19,4 +19,9 @@ export const environmentValidationSchema = joi.object({
   JWT_ACCESS_TOKEN_TTL: joi.number().default(3600),
   JWT_REFRESH_TOKEN_TTL: joi.number().default(2920000),
   API_VERSION: joi.string().default('0.0.1'),
+  // Redis
+  REDIS_HOST: joi.string().default('localhost'),
+  REDIS_PORT: joi.number().default(6379),
+  REDIS_URL: joi.string().uri().optional(),
+  REDIS_TTL: joi.number().default(60),
 });
