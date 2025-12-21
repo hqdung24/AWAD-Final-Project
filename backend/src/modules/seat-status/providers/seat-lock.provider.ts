@@ -70,11 +70,10 @@ export class SeatLockProvider {
         );
       }
 
-      // temporarily disable check for past trips for testing purposes  ------
-      // // Check if trip is in future
-      // if (new Date(trip.departureTime) <= new Date()) {
-      //   throw new ConflictException('Trip departure time has passed.');
-      // }
+      // Check departure time is in the future
+      if (new Date(trip.departureTime) <= new Date()) {
+        throw new ConflictException('Trip departure time has passed.');
+      }
 
       // Check operator is active
       if (!trip.bus.operator || trip.bus.operator.status !== 'active') {
@@ -227,7 +226,6 @@ export class SeatLockProvider {
         expiresIn: this.lockDuration,
       });
 
-      console.log('TOKEN:', token);
       return token;
     } catch (err) {
       console.error('JWT SIGN ERROR:', err);

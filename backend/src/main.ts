@@ -4,7 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { writeFileSync } from 'fs';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { HttpExceptionsFilter } from './common/filters/http-exceptions.filter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT ?? 3000;
@@ -20,6 +21,7 @@ async function bootstrap() {
     origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
     credentials: true,
   });
+
   //Enable cookie parser
   app.use(cookieParser());
   app.useGlobalPipes(
@@ -33,7 +35,7 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(new HttpExceptionsFilter());
 
   //Swagger configuration
   const swaggerConfig = new DocumentBuilder()

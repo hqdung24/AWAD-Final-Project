@@ -4,7 +4,7 @@ export interface SeatStatus {
   id: string;
   tripId: string;
   seatId: string;
-  state: 'available' | 'locked' | 'booked';
+  state: 'available' | 'locked' | 'booked' | 'selected';
   bookingId?: string;
   lockedUntil?: string;
   seat: {

@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { RealtimeGateway } from '@/modules/realtime/realtime.gateway';
 import { SeatStatusRepository } from './seat-status.repository';
 import { SeatStatus } from './entities/seat-status.entity';
 import { SeatLockProvider } from './providers/seat-lock.provider';
+import { SeatSelectingProvider } from './providers/seat-selecting.provider';
 
 @Injectable()
 export class SeatStatusService {
   constructor(
     private readonly seatStatusRepository: SeatStatusRepository,
     private readonly seatLockProvider: SeatLockProvider,
+    private readonly seatSelectingProvider: SeatSelectingProvider,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async save(seatStatus: SeatStatus): Promise<SeatStatus> {
@@ -19,7 +23,24 @@ export class SeatStatusService {
   }
 
   async findByTripId(tripId: string): Promise<SeatStatus[]> {
-    return await this.seatStatusRepository.findByTripId(tripId);
+    const seatStatuses = await this.seatStatusRepository.findByTripId(tripId);
+    //merge with selecting status
+    for (const seatStatus of seatStatuses) {
+      //Selected by others
+      const isSelecting = await this.seatSelectingProvider.isSeatSelected(
+        tripId,
+        seatStatus.seatId,
+      );
+      if (isSelecting && seatStatus.state === 'available') {
+        seatStatus.state = 'selected';
+      }
+    }
+    console.log(
+      seatStatuses.map((s) => {
+        return 'seatId: ' + s.seatId + ', status: ' + s.state;
+      }),
+    );
+    return seatStatuses;
   }
 
   async findBySeatId(seatId: string): Promise<SeatStatus[]> {
@@ -62,7 +83,20 @@ export class SeatStatusService {
     lockedUntil: string;
     lockToken: string;
   }> {
-    return await this.seatLockProvider.lockSeatsForTrip(tripId, seatIds);
+    const {
+      seatIds: lockedIds,
+      lockedUntil,
+      lockToken,
+    } = await this.seatLockProvider.lockSeatsForTrip(tripId, seatIds);
+
+    // Broadcast lock event to trip room so other clients update immediately
+    this.realtimeGateway.emitToRoom(`trip:${tripId}`, 'seat:locked', {
+      tripId,
+      seatIds: lockedIds,
+      timestamp: new Date(),
+    });
+
+    return { seatIds: lockedIds, lockedUntil, lockToken };
   }
 
   /**

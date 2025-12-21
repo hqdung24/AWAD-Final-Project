@@ -26,7 +26,6 @@ export class UsersController {
   @Get('/me')
   async getMe(@ActiveUser('sub') id: string) {
     const currentUser = await this.usersService.findOneById(id);
-    console.log(currentUser);
     return new AuthUserDto(currentUser);
   }
   @Get('/:id')

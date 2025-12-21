@@ -39,8 +39,8 @@ import { appConfig } from '@/config/app.config';
   ],
   imports: [
     forwardRef(() => UsersModule),
-    ConfigModule.forFeature(jwtConfig),
     ConfigModule.forFeature(appConfig),
+    ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
   exports: [AuthService, HashingProvider],
