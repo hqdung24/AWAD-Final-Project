@@ -65,6 +65,10 @@ export default function SeatSelection() {
     queryKey: ['trip-seats', id],
     queryFn: () => getSeatsByTrip(id!),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
     refetchInterval: lockToken ? false : 30000, // Stop refetching when seats are locked
   });
 
@@ -97,6 +101,8 @@ export default function SeatSelection() {
     socketRef.current = socket;
 
     socket.emit('trip:join', { tripId: id });
+    // ensure we get the latest snapshot when entering the room
+    void refetchSeats();
 
     socket.on('seat:selected', ({ seatId, userId }) => {
       console.log('receive broadcast message from socket: ', seatId);
