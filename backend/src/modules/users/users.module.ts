@@ -7,9 +7,10 @@ import { User } from './entities/user.entity';
 import { UsersRepository } from './providers/users.repository';
 import { UsersService } from './providers/users.service';
 import { UsersController } from './users.controller';
+import { AdminUsersController } from './admin-users.controller';
 
 @Module({
-  controllers: [UsersController],
+  controllers: [UsersController, AdminUsersController],
   providers: [UsersService, UsersRepository],
   exports: [UsersService],
   imports: [

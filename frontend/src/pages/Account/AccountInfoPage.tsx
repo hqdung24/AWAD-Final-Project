@@ -14,10 +14,32 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMyNotificationPreferences, updateMyNotificationPreferences } from '@/services/notificationService';
 import { toast } from 'sonner';
 import { useUserStore } from '@/stores/user';
+import { changePassword, updateMe } from '@/services/authService';
+import { useEffect, useState } from 'react';
 
 export default function AccountInfoPage() {
-  const { me } = useUserStore();
+  const { me, setMe } = useUserStore();
   const queryClient = useQueryClient();
+  const [profileForm, setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+  useEffect(() => {
+    if (!me) return;
+    setProfileForm({
+      firstName: me.firstName ?? '',
+      lastName: me.lastName ?? '',
+      email: me.email ?? '',
+    });
+  }, [me]);
 
   const preferencesQuery = useQuery({
     queryKey: ['notification-preferences'],
@@ -32,6 +54,30 @@ export default function AccountInfoPage() {
     },
     onError: () => {
       toast.error('Failed to update notification preferences');
+    },
+  });
+
+  const updateProfile = useMutation({
+    mutationFn: updateMe,
+    onSuccess: (data) => {
+      setMe(data);
+      toast.success('Profile updated');
+    },
+    onError: () => {
+      toast.error('Failed to update profile');
+    },
+  });
+
+  const updatePassword = useMutation({
+    mutationFn: changePassword,
+    onSuccess: () => {
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowPasswordForm(false);
+      toast.success('Password updated');
+    },
+    onError: (err: any) => {
+      const message = err?.response?.data?.message || err?.message || 'Failed to update password';
+      toast.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 
@@ -73,22 +119,41 @@ export default function AccountInfoPage() {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" defaultValue={me?.firstName} />
+              <Input
+                id="firstName"
+                value={profileForm.firstName}
+                onChange={(e) =>
+                  setProfileForm((prev) => ({ ...prev, firstName: e.target.value }))
+                }
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" defaultValue={me?.lastName} />
+              <Input
+                id="lastName"
+                value={profileForm.lastName}
+                onChange={(e) =>
+                  setProfileForm((prev) => ({ ...prev, lastName: e.target.value }))
+                }
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" defaultValue="username" />
+              <Input id="username" defaultValue="username" disabled />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={me?.email} />
+              <Input
+                id="email"
+                type="email"
+                value={profileForm.email}
+                onChange={(e) =>
+                  setProfileForm((prev) => ({ ...prev, email: e.target.value }))
+                }
+              />
             </div>
 
             <div className="grid gap-2">
@@ -101,15 +166,117 @@ export default function AccountInfoPage() {
                   disabled
                   className="flex-1"
                 />
-                <Button variant="outline">Change</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPasswordForm((prev) => !prev)}
+                >
+                  Change
+                </Button>
               </div>
             </div>
+            {showPasswordForm && (
+              <div className="grid gap-3 rounded-md border p-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="currentPassword">Current password</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="newPassword">New password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        newPassword: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="confirmPassword">Confirm new password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+                        toast.error('Please fill all password fields');
+                        return;
+                      }
+                      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                        toast.error('New password confirmation does not match');
+                        return;
+                      }
+                      updatePassword.mutate({
+                        currentPassword: passwordForm.currentPassword,
+                        newPassword: passwordForm.newPassword,
+                      });
+                    }}
+                    disabled={updatePassword.isPending}
+                  >
+                    Update password
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordForm({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: '',
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline">Cancel</Button>
-            <Button>Save Changes</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!me) return;
+                setProfileForm({
+                  firstName: me.firstName ?? '',
+                  lastName: me.lastName ?? '',
+                  email: me.email ?? '',
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updateProfile.mutate(profileForm)}
+              disabled={updateProfile.isPending}
+            >
+              Save Changes
+            </Button>
           </div>
         </CardContent>
       </Card>

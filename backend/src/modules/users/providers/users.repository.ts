@@ -12,6 +12,8 @@ import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { GoogleUser } from '../interfaces/googleUser';
 import { HashingProvider } from '@/modules/auth/providers/hashing.provider';
+import { RoleType } from '@/modules/auth/enums/roles-type.enum';
+import { CreateAdminUserDto } from '../dtos/create-admin-user.dto';
 
 @Injectable()
 export class UsersRepository {
@@ -67,6 +69,36 @@ export class UsersRepository {
     }
   }
 
+  public async createAdminUser(
+    userData: CreateAdminUserDto & { role: RoleType; isActive?: boolean },
+  ) {
+    const email = userData.email.trim().toLowerCase();
+    const exists = await this.usersRepository.exists({ where: { email } });
+    if (exists)
+      throw new BadRequestException('User with this email already exists');
+
+    const user = this.usersRepository.create({
+      ...userData,
+      email,
+      lastName: userData.lastName ?? '',
+      role: userData.role,
+      isVerified: true,
+      verificationToken: null,
+      isActive: userData.isActive ?? true,
+      password: await this.hashingProvider.hash(userData.password),
+    });
+
+    try {
+      const saved = await this.usersRepository.save(user);
+      const safeUser = await this.usersRepository.findOne({
+        where: { id: saved.id },
+      });
+      return safeUser;
+    } catch (e: unknown) {
+      throw new InternalServerErrorException(e, 'Could not create admin user');
+    }
+  }
+
   public async findManyByIds(userIds: string[]) {
     const users = await this.usersRepository.findBy({ id: In(userIds) });
     return users;
@@ -77,6 +109,15 @@ export class UsersRepository {
     if (!user) {
       throw new BadRequestException('User not found');
     }
+    return user;
+  }
+
+  public async findOneByIdWithPassword(id: string): Promise<User | null> {
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :id', { id })
+      .getOne();
     return user;
   }
 
@@ -133,5 +174,38 @@ export class UsersRepository {
     );
 
     return updatedUserResult;
+  }
+
+  public async findAdmins(params: {
+    roles: RoleType[];
+    search?: string;
+    isActive?: boolean;
+    page: number;
+    limit: number;
+  }) {
+    const { roles, search, isActive, page, limit } = params;
+    const qb = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.role IN (:...roles)', { roles });
+
+    if (typeof isActive === 'boolean') {
+      qb.andWhere('user.isActive = :isActive', { isActive });
+    }
+
+    if (search) {
+      const q = `%${search.toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(user.email) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q)',
+        { q },
+      );
+    }
+
+    qb.orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    return { data, total, page, limit, totalPages };
   }
 }

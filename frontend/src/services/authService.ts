@@ -47,6 +47,23 @@ export async function getMe(): Promise<MeResponse> {
   return MeResponseSchema.parse(res.data);
 }
 
+export async function updateMe(payload: {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}): Promise<MeResponse> {
+  const res = await http.patch('/users/me', payload);
+  return MeResponseSchema.parse(res.data);
+}
+
+export async function changePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ message: string }> {
+  const res = await http.patch('/users/me/password', payload);
+  return (res as { data: { message: string } }).data;
+}
+
 export async function requestPasswordReset(
   email: string
 ): Promise<{ msg: string }> {

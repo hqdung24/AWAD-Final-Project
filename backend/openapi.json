@@ -32,6 +32,64 @@
         "tags": [
           "Users"
         ]
+      },
+      "patch": {
+        "operationId": "UsersController_updateMe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Update current user profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/me/password": {
+      "patch": {
+        "operationId": "UsersController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Change current user password",
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/users/{id}": {
@@ -82,6 +140,173 @@
         "summary": "Fetch user by id",
         "tags": [
           "Users"
+        ]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "AdminUsersController_listAdmins",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search by name or email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "USER",
+                "CLIENT",
+                "MODERATOR"
+              ]
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List admin accounts",
+        "tags": [
+          "Admin - Users"
+        ]
+      },
+      "post": {
+        "operationId": "AdminUsersController_createAdmin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create admin account",
+        "tags": [
+          "Admin - Users"
+        ]
+      }
+    },
+    "/admin/users/{id}": {
+      "patch": {
+        "operationId": "AdminUsersController_updateAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update admin account",
+        "tags": [
+          "Admin - Users"
+        ]
+      }
+    },
+    "/admin/users/{id}/deactivate": {
+      "patch": {
+        "operationId": "AdminUsersController_deactivateAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate admin account",
+        "tags": [
+          "Admin - Users"
         ]
       }
     },
@@ -2099,6 +2324,132 @@
       }
     },
     "schemas": {
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "First Name",
+            "example": "Admin"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Last Name",
+            "example": "User"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "admin@example.com"
+          }
+        }
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "title": "Current Password",
+            "example": "currentPass123"
+          },
+          "newPassword": {
+            "type": "string",
+            "title": "New Password",
+            "example": "newPass123"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "CreateAdminUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "First Name",
+            "example": "Admin"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Last Name",
+            "example": "User"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "admin@example.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "strongPassword123"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "example": "ADMIN",
+            "enum": [
+              "ADMIN",
+              "USER",
+              "CLIENT",
+              "MODERATOR"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Active",
+            "example": true
+          }
+        },
+        "required": [
+          "firstName",
+          "email",
+          "password"
+        ]
+      },
+      "UpdateAdminUserDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "First Name",
+            "example": "Admin"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Last Name",
+            "example": "User"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "admin@example.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "newPassword123"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "example": "ADMIN",
+            "enum": [
+              "ADMIN",
+              "USER",
+              "CLIENT",
+              "MODERATOR"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Active",
+            "example": true
+          }
+        }
+      },
       "SignInDto": {
         "type": "object",
         "properties": {

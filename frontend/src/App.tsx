@@ -10,6 +10,7 @@ import { Toaster } from 'sonner';
 import MainLayout from './layouts/main-layout/MainLayout';
 import AccountInfoPage from './pages/Account/AccountInfoPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
 import BusesPage from './pages/admin/BusesPage';
 import OperatorsPage from './pages/admin/OperatorsPage';
 import ReportsPage from './pages/admin/ReportsPage';
@@ -164,6 +165,14 @@ function App() {
                     element={
                       <ProtectedRoute roles={['ADMIN']}>
                         <ReportsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin-users"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <AdminUsersPage />
                       </ProtectedRoute>
                     }
                   />

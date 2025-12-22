@@ -1,9 +1,13 @@
 import {
+  Body,
   Controller,
   DefaultValuePipe,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Query,
 } from '@nestjs/common';
 
@@ -17,6 +21,8 @@ import { ActiveUser } from '../auth/decorator/active-user.decorator';
 import { AuthUserDto } from '../auth/dtos/signin-response.dto';
 import { GetUsersParamsDto } from './dtos/get-user-params.dto';
 import { UsersService } from './providers/users.service';
+import { UpdateProfileDto } from './dtos/update-profile.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 
 @ApiBearerAuth('accessToken')
 @Controller('users')
@@ -27,6 +33,28 @@ export class UsersController {
   async getMe(@ActiveUser('sub') id: string) {
     const currentUser = await this.usersService.findOneById(id);
     return new AuthUserDto(currentUser);
+  }
+
+  @Patch('/me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update current user profile' })
+  async updateMe(
+    @ActiveUser('sub') id: string,
+    @Body() payload: UpdateProfileDto,
+  ) {
+    const updated = await this.usersService.updateProfile(id, payload);
+    return new AuthUserDto(updated);
+  }
+
+  @Patch('/me/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change current user password' })
+  async changePassword(
+    @ActiveUser('sub') id: string,
+    @Body() payload: ChangePasswordDto,
+  ) {
+    await this.usersService.changePassword(id, payload);
+    return { message: 'Password updated' };
   }
   @Get('/:id')
   @ApiOperation({ summary: 'Fetch user by id' })
