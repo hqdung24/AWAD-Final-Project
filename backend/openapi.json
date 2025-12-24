@@ -2164,6 +2164,94 @@
         ]
       }
     },
+    "/admin/trips/{tripId}/passengers": {
+      "get": {
+        "operationId": "PassengerDetailController_listPassengers",
+        "parameters": [
+          {
+            "name": "tripId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List passengers by trip",
+        "tags": [
+          "Admin - Passengers"
+        ]
+      }
+    },
+    "/admin/trips/{tripId}/passengers/{passengerId}/check-in": {
+      "patch": {
+        "operationId": "PassengerDetailController_checkInPassenger",
+        "parameters": [
+          {
+            "name": "tripId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passengerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Check-in passenger",
+        "tags": [
+          "Admin - Passengers"
+        ]
+      }
+    },
+    "/admin/trips/{tripId}/passengers/{passengerId}/check-in/reset": {
+      "patch": {
+        "operationId": "PassengerDetailController_resetCheckIn",
+        "parameters": [
+          {
+            "name": "tripId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passengerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Reset passenger check-in",
+        "tags": [
+          "Admin - Passengers"
+        ]
+      }
+    },
     "/payment": {
       "post": {
         "operationId": "PaymentController_createPayment",

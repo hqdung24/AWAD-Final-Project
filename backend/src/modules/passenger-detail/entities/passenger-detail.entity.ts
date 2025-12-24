@@ -26,6 +26,9 @@ export class PassengerDetail {
   @Column()
   seatCode: string;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  checkedInAt?: Date | null;
+
   @ManyToOne(() => Booking, (booking) => booking.passengerDetails, {
     onDelete: 'RESTRICT',
   })

@@ -13,6 +13,7 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import BookingsPage from './pages/admin/BookingsPage';
 import BusesPage from './pages/admin/BusesPage';
+import PassengersPage from './pages/admin/PassengersPage';
 import OperatorsPage from './pages/admin/OperatorsPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import RoutesPage from './pages/admin/RoutesPage';
@@ -134,6 +135,14 @@ function App() {
                     element={
                       <ProtectedRoute roles={['ADMIN']}>
                         <BookingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/passengers"
+                    element={
+                      <ProtectedRoute roles={['ADMIN']}>
+                        <PassengersPage />
                       </ProtectedRoute>
                     }
                   />

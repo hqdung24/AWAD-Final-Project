@@ -16,6 +16,16 @@ export type Trip = {
   arrivalTime: string;
   basePrice: number;
   status?: string;
+  route?: {
+    origin?: string;
+    destination?: string;
+  };
+  bus?: {
+    operatorId?: string;
+    operator?: {
+      name?: string;
+    };
+  };
 };
 
 export type Bus = {

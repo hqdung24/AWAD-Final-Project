@@ -10,6 +10,7 @@ import {
   Route as RouteIcon,
   Send,
   Settings2,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import { useLocation } from 'react-router';
@@ -39,6 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: 'Routes', url: '/routes', icon: RouteIcon },
     { title: 'Trips', url: '/trips', icon: BusFront },
     { title: 'Bookings', url: '/bookings', icon: Receipt },
+    { title: 'Passengers', url: '/passengers', icon: UserCheck },
     { title: 'Buses', url: '/buses', icon: BusFront },
     { title: 'Operators', url: '/operators', icon: Users },
     { title: 'Admin Accounts', url: '/admin-users', icon: Users },
