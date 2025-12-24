@@ -70,3 +70,11 @@ export async function changeBookingSeats(
   });
   return (res as { data: BookingDetailResponse }).data;
 }
+
+export async function updateBookingStatus(
+  bookingId: string,
+  status: 'pending' | 'paid' | 'cancelled' | 'expired'
+): Promise<{ bookingId: string; status: string }> {
+  const res = await http.patch(`/booking/${bookingId}/status`, { status });
+  return (res as { data: { bookingId: string; status: string } }).data;
+}

@@ -1,6 +1,7 @@
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import { AuthType } from '@/modules/auth/enums/auth-type.enum';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -30,6 +31,9 @@ import {
   UpdateBookingDto,
 } from './dto';
 import { UpdateSeatsDto } from './dto/update-seats.dto';
+import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { Roles } from '@/modules/auth/decorator/roles.decorator';
+import { RoleType } from '@/modules/auth/enums/roles-type.enum';
 
 @ApiTags('Booking')
 @Controller('booking')
@@ -370,5 +374,23 @@ export class BookingController {
       totalAmount: Number(booking.totalAmount),
       createdAt: booking.bookedAt.toISOString(),
     };
+  }
+
+  @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update booking status (Admin only)' })
+  @Roles(RoleType.ADMIN)
+  async updateBookingStatus(
+    @Param('id') id: string,
+    @Body() payload: UpdateBookingStatusDto,
+  ) {
+    const updated = await this.bookingService.updateBookingStatus(
+      id,
+      payload.status,
+    );
+    if (!updated) {
+      throw new BadRequestException('Booking not found');
+    }
+    return { bookingId: updated.id, status: updated.status };
   }
 }

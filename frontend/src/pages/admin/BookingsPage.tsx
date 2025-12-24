@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -12,10 +12,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { getBookingDetail, getBookings } from '@/services/bookingService';
+import { getBookingDetail, getBookings, updateBookingStatus } from '@/services/bookingService';
+import { notify } from '@/lib/notify';
 
 export default function BookingsPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [filters, setFilters] = useState<{
     email?: string;
     phone?: string;
@@ -27,6 +29,7 @@ export default function BookingsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [statusDraft, setStatusDraft] = useState<string>('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-bookings', filters, page, pageSize],
@@ -47,6 +50,26 @@ export default function BookingsPage() {
     queryKey: ['booking-detail', selectedId],
     queryFn: () => getBookingDetail(selectedId!),
     enabled: Boolean(selectedId),
+  });
+
+  useEffect(() => {
+    if (bookingDetailQuery.data?.status) {
+      setStatusDraft(bookingDetailQuery.data.status);
+    }
+  }, [bookingDetailQuery.data?.status]);
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (payload: { id: string; status: 'pending' | 'paid' | 'cancelled' | 'expired' }) =>
+      updateBookingStatus(payload.id, payload.status),
+    onSuccess: () => {
+      notify.success('Booking status updated');
+      void qc.invalidateQueries({ queryKey: ['admin-bookings'] });
+      void qc.invalidateQueries({ queryKey: ['booking-detail'] });
+    },
+    onError: (err: any) => {
+      const message = err?.response?.data?.message || err?.message || 'Failed to update status';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
   });
 
   if (error) {
@@ -231,7 +254,31 @@ export default function BookingsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Status</p>
-                        <p className="font-medium capitalize">{bookingDetailQuery.data.status}</p>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                            value={statusDraft}
+                            onChange={(e) => setStatusDraft(e.target.value)}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="expired">Expired</option>
+                          </select>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (!selectedId) return;
+                              updateStatusMutation.mutate({
+                                id: selectedId,
+                                status: statusDraft as 'pending' | 'paid' | 'cancelled' | 'expired',
+                              });
+                            }}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            Update
+                          </Button>
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Total</p>
