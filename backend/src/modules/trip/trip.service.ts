@@ -236,6 +236,7 @@ export class TripService {
       busModel: trip.bus?.model,
       plateNumber: trip.bus?.plateNumber,
       distanceKm: trip.route?.distanceKm,
+      busPhotos: this.parsePhotos(trip.bus?.photosJson),
       routePoints,
     };
   }
@@ -253,6 +254,16 @@ export class TripService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const parsed = JSON.parse(amenitiesJson);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private parsePhotos(photosJson?: string): string[] {
+    if (!photosJson) return [];
+    try {
+      const parsed = JSON.parse(photosJson);
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];

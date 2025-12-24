@@ -12,7 +12,7 @@ import { Auth } from '../auth/decorator/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
 import { Roles } from '../auth/decorator/roles.decorator';
 import { RoleType } from '../auth/enums/roles-type.enum';
-@Auth(AuthType.None)
+@Auth(AuthType.Bearer)
 @Roles(RoleType.ADMIN, RoleType.USER, RoleType.MODERATOR)
 @Controller('upload')
 export class UploadController {

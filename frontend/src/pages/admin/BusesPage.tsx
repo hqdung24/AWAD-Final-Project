@@ -22,6 +22,7 @@ import {
   type Seat,
 } from '@/services/busService';
 import { listOperators, type Operator } from '@/services/operatorService';
+import { uploadFile } from '@/services/uploadService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/lib/notify';
 
@@ -33,6 +34,7 @@ const initialBus: Omit<Bus, 'id'> = {
   busType: '',
   seatCapacity: 40,
   amenitiesJson: '',
+  photosJson: '',
 };
 
 const seatTypes = ['STANDARD', 'PREMIUM', 'VIP'];
@@ -41,6 +43,8 @@ export default function BusesPage() {
   const qc = useQueryClient();
   const [busForm, setBusForm] = useState<Omit<Bus, 'id'>>(initialBus);
   const [editingBusId, setEditingBusId] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [seatBusId, setSeatBusId] = useState<string>('');
   const [seatForm, setSeatForm] = useState<{ seatCode: string; seatType: string }>({
     seatCode: '',
@@ -116,6 +120,7 @@ export default function BusesPage() {
     onSuccess: () => {
       setBusForm(initialBus);
       setEditingBusId(null);
+      setPhotoUrls([]);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
     onError: (error: any) => {
@@ -130,6 +135,7 @@ export default function BusesPage() {
       updateBus(payload.id, payload.data),
     onSuccess: () => {
       setEditingBusId(null);
+      setPhotoUrls([]);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
     onError: (error: any) => {
@@ -198,10 +204,11 @@ export default function BusesPage() {
   const handleSubmitBus = () => {
     if (!busForm.operatorId || !busForm.plateNumber || !busForm.model) return;
     const { name: _ignoredName, ...payload } = busForm;
+    const photosJson = photoUrls.length > 0 ? JSON.stringify(photoUrls) : '';
     if (editingBusId) {
-      updateBusMutation.mutate({ id: editingBusId, data: payload });
+      updateBusMutation.mutate({ id: editingBusId, data: { ...payload, photosJson } });
     } else {
-      createBusMutation.mutate(payload);
+      createBusMutation.mutate({ ...payload, photosJson });
     }
   };
 
@@ -405,6 +412,64 @@ export default function BusesPage() {
                 Example: {"{ \"wifi\": true, \"water\": true, \"charger\": true }"}
               </span>
             </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+              Bus Photos
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={isUploading}
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length === 0) return;
+                  setIsUploading(true);
+                  try {
+                    const uploads = await Promise.all(files.map((file) => uploadFile(file)));
+                    const urls = uploads.map((u) => u.path).filter(Boolean);
+                    setPhotoUrls((prev) => [...prev, ...urls]);
+                  } catch (error: any) {
+                    const message =
+                      error?.response?.data?.message ||
+                      error?.message ||
+                      'Failed to upload photos';
+                    notify.error(Array.isArray(message) ? message.join(', ') : message);
+                  } finally {
+                    setIsUploading(false);
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                Upload JPG/PNG/GIF images. Saved URLs are stored with the bus.
+              </span>
+            </label>
+            <div className="md:col-span-3">
+              {photoUrls.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {photoUrls.map((url) => (
+                    <div key={url} className="relative">
+                      <img
+                        src={url}
+                        alt="Bus"
+                        className="h-24 w-36 rounded-md object-cover border"
+                      />
+                      <button
+                        type="button"
+                        className="absolute -right-2 -top-2 rounded-full bg-destructive text-destructive-foreground text-xs px-2 py-1"
+                        onClick={() =>
+                          setPhotoUrls((prev) => prev.filter((item) => item !== url))
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No photos uploaded yet.</p>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -429,6 +494,7 @@ export default function BusesPage() {
               onClick={() => {
                 setBusForm(initialBus);
                 setEditingBusId(null);
+                setPhotoUrls([]);
               }}
             >
               Reset
@@ -488,7 +554,18 @@ export default function BusesPage() {
                             busType: bus.busType,
                             seatCapacity: bus.seatCapacity,
                             amenitiesJson: bus.amenitiesJson,
+                            photosJson: bus.photosJson ?? '',
                           });
+                          if (bus.photosJson) {
+                            try {
+                              const parsed = JSON.parse(bus.photosJson);
+                              setPhotoUrls(Array.isArray(parsed) ? parsed : []);
+                            } catch {
+                              setPhotoUrls([]);
+                            }
+                          } else {
+                            setPhotoUrls([]);
+                          }
                         }}
                       >
                         Edit

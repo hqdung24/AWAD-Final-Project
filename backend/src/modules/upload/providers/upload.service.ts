@@ -4,6 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm/dist/common/typeorm.decorators
 import { Repository } from 'typeorm';
 import { FileType } from '../enums/file-type.enum';
 import { Upload } from '../upload.enity';
+import { promises as fs } from 'fs';
+import { join, extname } from 'path';
+import { randomUUID } from 'crypto';
 @Injectable()
 export class UploadService {
   constructor(
@@ -22,14 +25,29 @@ export class UploadService {
     ) {
       throw new BadRequestException('Invalid file type');
     }
-    //Upload file to S3 or any storage service
+    const uploadsDir = join(process.cwd(), 'uploads');
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const extension = extname(file.originalname) || '';
+    const filename = `${Date.now()}-${randomUUID()}${extension}`;
+    const destination = join(uploadsDir, filename);
+
+    if (file.buffer) {
+      await fs.writeFile(destination, file.buffer);
+    } else if ((file as any).path) {
+      await fs.copyFile((file as any).path, destination);
+    } else {
+      throw new BadRequestException('Unsupported upload storage');
+    }
+
+    const backendUrl = this.configService.get<string>('app.backendUrl') || 'http://localhost:3000';
+    const publicUrl = `${backendUrl}/uploads/${filename}`;
 
     // Save file info to database
     try {
       // Generate a new entry in the database
       const upload = this.uploadRepository.create({
-        name: 'temporary not used',
-        path: `https`,
+        name: file.originalname,
+        path: publicUrl,
         type: FileType.IMAGE,
         size: file.size,
         mime: file.mimetype,

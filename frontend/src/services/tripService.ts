@@ -98,6 +98,7 @@ export interface TripDetails {
   busModel?: string;
   plateNumber?: string;
   distanceKm?: number;
+  busPhotos?: string[];
   routePoints?: {
     pickup: Array<{ name: string; address?: string; note?: string }>;
     dropoff: Array<{ name: string; address?: string; note?: string }>;

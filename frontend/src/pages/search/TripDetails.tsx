@@ -116,6 +116,8 @@ export default function TripDetails() {
     );
   }
 
+  const busPhotos = Array.isArray(trip.busPhotos) ? trip.busPhotos : [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8">
@@ -153,6 +155,30 @@ export default function TripDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Trip Details */}
           <div className="lg:col-span-2 space-y-6">
+            {busPhotos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bus className="h-5 w-5" />
+                    Bus Photos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {busPhotos.map((photo, index) => (
+                      <div key={`${photo}-${index}`} className="overflow-hidden rounded-lg border">
+                        <img
+                          src={photo}
+                          alt={`Bus photo ${index + 1}`}
+                          className="h-32 w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Journey Timeline */}
             <Card>
               <CardHeader>

@@ -35,6 +35,9 @@ export class Bus {
   @Column({ type: 'text', nullable: true })
   amenitiesJson: string;
 
+  @Column({ type: 'text', nullable: true })
+  photosJson: string;
+
   @Column({ default: true })
   isActive: boolean;
 
