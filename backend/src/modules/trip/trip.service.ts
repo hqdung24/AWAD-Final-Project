@@ -57,10 +57,12 @@ export class TripService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 10, ...filters } = query;
+    const { page = 1, limit = 10, sortBy, sortOrder, ...filters } = query;
 
     const [trips, total] = await this.tripRepository.findAll({
       ...filters,
+      sortBy,
+      sortOrder,
       page,
       limit,
     });

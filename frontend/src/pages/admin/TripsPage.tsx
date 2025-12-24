@@ -46,6 +46,8 @@ export default function TripsPage() {
     routeId?: string;
     busId?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }>({});
 
   const { data: adminRoutes = [] } = useQuery<AdminRoute[]>({
@@ -61,6 +63,8 @@ export default function TripsPage() {
         routeId: filters.routeId,
         busId: filters.busId,
         status: filters.status,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
       }),
   });
   const { data: buses = [] } = useQuery<Bus[]>({
@@ -180,7 +184,7 @@ export default function TripsPage() {
                 Reset filters
               </Button>
             </div>
-            <div className="grid gap-2 md:grid-cols-4">
+            <div className="grid gap-2 md:grid-cols-6">
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                 Route
                 <select
@@ -216,6 +220,42 @@ export default function TripsPage() {
                       {b.plateNumber} · {b.model} ({b.seatCapacity})
                     </option>
                   ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Sort by
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={filters.sortBy ?? ''}
+                  onChange={(e) => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      sortBy: e.target.value || undefined,
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  <option value="">Departure time</option>
+                  <option value="arrivalTime">Arrival time</option>
+                  <option value="basePrice">Base price</option>
+                  <option value="bookings">Bookings</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Order
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={filters.sortOrder ?? 'desc'}
+                  onChange={(e) => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      sortOrder: (e.target.value as 'asc' | 'desc') || 'desc',
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
                 </select>
               </label>
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">

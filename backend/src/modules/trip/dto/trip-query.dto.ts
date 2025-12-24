@@ -9,6 +9,18 @@ enum TripStatus {
   ARCHIVED = 'archived',
 }
 
+enum TripSortBy {
+  DEPARTURE_TIME = 'departureTime',
+  ARRIVAL_TIME = 'arrivalTime',
+  BASE_PRICE = 'basePrice',
+  BOOKINGS = 'bookings',
+}
+
+enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
 export class TripQueryDto {
   @ApiPropertyOptional({
     description: 'Filter by route ID',
@@ -59,4 +71,22 @@ export class TripQueryDto {
   @IsInt()
   @Min(1)
   limit?: number = 10;
+
+  @ApiPropertyOptional({
+    description: 'Sort by field',
+    enum: TripSortBy,
+    example: TripSortBy.DEPARTURE_TIME,
+  })
+  @IsOptional()
+  @IsEnum(TripSortBy)
+  sortBy?: TripSortBy;
+
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    enum: SortOrder,
+    example: SortOrder.DESC,
+  })
+  @IsOptional()
+  @IsEnum(SortOrder)
+  sortOrder?: SortOrder;
 }

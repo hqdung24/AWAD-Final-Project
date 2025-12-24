@@ -40,10 +40,12 @@ export class TripRepository {
     routeId?: string;
     busId?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
     page: number;
     limit: number;
   }): Promise<[Trip[], number]> {
-    const { routeId, busId, status, page, limit } = filters;
+    const { routeId, busId, status, sortBy, sortOrder, page, limit } = filters;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.repository
@@ -51,8 +53,7 @@ export class TripRepository {
       .leftJoinAndSelect('trip.route', 'route')
       .leftJoinAndSelect('trip.bus', 'bus')
       .skip(skip)
-      .take(limit)
-      .orderBy('trip.departureTime', 'DESC');
+      .take(limit);
 
     if (routeId) {
       queryBuilder.andWhere('trip.routeId = :routeId', { routeId });
@@ -64,6 +65,26 @@ export class TripRepository {
 
     if (status) {
       queryBuilder.andWhere('trip.status = :status', { status });
+    }
+
+    const order = (sortOrder || 'desc').toUpperCase() as 'ASC' | 'DESC';
+    switch (sortBy) {
+      case 'arrivalTime':
+        queryBuilder.orderBy('trip.arrivalTime', order);
+        break;
+      case 'basePrice':
+        queryBuilder.orderBy('trip.basePrice', order);
+        break;
+      case 'bookings':
+        queryBuilder.orderBy(
+          `(SELECT COUNT(*) FROM bookings booking WHERE booking."tripId" = trip.id AND booking.status = 'paid')`,
+          order,
+        );
+        break;
+      case 'departureTime':
+      default:
+        queryBuilder.orderBy('trip.departureTime', order);
+        break;
     }
 
     return await queryBuilder.getManyAndCount();

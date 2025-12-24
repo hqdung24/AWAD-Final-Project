@@ -46,6 +46,8 @@ type TripListParams = {
   status?: string;
   routeId?: string;
   busId?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 };
 
 export async function listTrips(params?: TripListParams): Promise<TripListResponse> {
