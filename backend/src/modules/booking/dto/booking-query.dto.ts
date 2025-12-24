@@ -3,6 +3,7 @@ import {
   IsInt,
   IsOptional,
   IsPositive,
+  IsIn,
   IsString,
   IsUUID,
   Min,
@@ -51,4 +52,28 @@ export class BookingListQueryDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by booking status',
+    example: 'paid',
+  })
+  @IsOptional()
+  @IsIn(['pending', 'paid', 'cancelled', 'expired'])
+  status?: string;
+
+  @ApiPropertyOptional({
+    description: 'From date (YYYY-MM-DD)',
+    example: '2025-01-01',
+  })
+  @IsOptional()
+  @IsString()
+  from?: string;
+
+  @ApiPropertyOptional({
+    description: 'To date (YYYY-MM-DD)',
+    example: '2025-01-31',
+  })
+  @IsOptional()
+  @IsString()
+  to?: string;
 }

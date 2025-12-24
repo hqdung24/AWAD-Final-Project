@@ -6,6 +6,9 @@ export const bookingListQuerySchema = z.object({
   userId: z.string().uuid().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  status: z.enum(['pending', 'paid', 'cancelled', 'expired']).optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 export type BookingListQuery = z.infer<typeof bookingListQuerySchema>;

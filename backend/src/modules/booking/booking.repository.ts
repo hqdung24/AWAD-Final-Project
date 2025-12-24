@@ -17,7 +17,7 @@ export class BookingRepository {
   async findAllWithFilters(
     query: BookingListQueryDto,
   ): Promise<{ data: Booking[]; total: number }> {
-    const { page = 1, limit = 10, userId, email, phone } = query;
+    const { page = 1, limit = 10, userId, email, phone, status, from, to } = query;
 
     const qb = this.repository
       .createQueryBuilder('booking')
@@ -38,6 +38,19 @@ export class BookingRepository {
     }
     if (phone) {
       qb.andWhere('booking.phone = :phone', { phone });
+    }
+    if (status) {
+      qb.andWhere('booking.status = :status', { status });
+    }
+    if (from) {
+      qb.andWhere('booking.bookedAt >= :from', {
+        from: new Date(`${from}T00:00:00.000Z`),
+      });
+    }
+    if (to) {
+      qb.andWhere('booking.bookedAt <= :to', {
+        to: new Date(`${to}T23:59:59.999Z`),
+      });
     }
 
     const [data, total] = await qb.getManyAndCount();
