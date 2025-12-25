@@ -48,14 +48,38 @@ export default function AccountInfoPage() {
     queryFn: getMyNotificationPreferences,
   });
 
-  const { updatePreferences, updateProfile, updatePassword, setNewPassword } =
-    useProfile();
+  const {
+    updatePreferences,
+    updateProfile,
+    updatePassword,
+    setNewPassword,
+    uploadAvatar,
+  } = useProfile();
 
   const handleToggle = (
     field: 'emailRemindersEnabled' | 'smsRemindersEnabled',
     value: boolean
   ) => {
     updatePreferences.mutate({ [field]: value });
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    uploadAvatar.mutate(file);
   };
 
   const smsDisabled = !me?.phone;
@@ -72,19 +96,38 @@ export default function AccountInfoPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar Section */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage
-                src={me?.avatarUrl || '/default-avatar.png'}
-                alt="User avatar"
-              />
-              <AvatarFallback>US</AvatarFallback>
-            </Avatar>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage
+                  src={me?.avatarUrl || '/default-avatar.png'}
+                  alt="User avatar"
+                />
+                <AvatarFallback>US</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold">Profile Picture</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your account avatar
+                </p>
+              </div>
+            </div>
             <div>
-              <h3 className="font-semibold">Profile Picture</h3>
-              <p className="text-sm text-muted-foreground">
-                Your account avatar
-              </p>
+              <input
+                type="file"
+                id="avatar-input"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={uploadAvatar.isPending}
+                className="hidden"
+              />
+              <Button
+                variant="secondary"
+                onClick={() => document.getElementById('avatar-input')?.click()}
+                disabled={uploadAvatar.isPending}
+              >
+                {uploadAvatar.isPending ? 'Uploading...' : 'Change Avatar'}
+              </Button>
             </div>
           </div>
 
@@ -154,7 +197,7 @@ export default function AccountInfoPage() {
                   className="flex-1"
                 />
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setShowPasswordForm((prev) => !prev)}
                 >
                   {me?.isActive ? 'Change' : 'Set'}
@@ -267,7 +310,7 @@ export default function AccountInfoPage() {
                     {me?.isActive ? 'Update password' : 'Set password'}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => {
                       setShowPasswordForm(false);
                       setPasswordForm({
@@ -288,7 +331,7 @@ export default function AccountInfoPage() {
           {showPasswordForm ? null : (
             <div className="flex justify-end gap-2 pt-4">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   if (!me) return;
                   setProfileForm({

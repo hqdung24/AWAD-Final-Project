@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 
@@ -23,11 +24,16 @@ import { GetUsersParamsDto } from './dtos/get-user-params.dto';
 import { UsersService } from './providers/users.service';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import { ChangePasswordDto, SetPasswordDto } from './dtos/change-password.dto';
+import { MediaService } from '../media/media.service';
+import { ConfirmUploadDto } from '../media/dtos/confirm-upload.dto';
 
 @ApiBearerAuth('accessToken')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get('/me')
   async getMe(@ActiveUser('sub') id: string) {
@@ -103,6 +109,18 @@ export class UsersController {
   ) {
     await this.usersService.setPassword(id, payload.newPassword);
     return { message: 'Password set successfully' };
+  }
+
+  @Post('me/confirm-avatar-upload')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Confirm avatar upload and bind to user',
+  })
+  async confirmAvatarUpload(
+    @ActiveUser('sub') id: string,
+    @Body() dto: ConfirmUploadDto,
+  ) {
+    return this.usersService.confirmAvatarUpload(id, dto);
   }
 
   // @Patch()

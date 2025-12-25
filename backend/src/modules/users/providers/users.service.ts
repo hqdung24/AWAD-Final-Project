@@ -264,4 +264,28 @@ export class UsersService {
     }
     throw new BadRequestException('Failed to set password');
   }
+
+  async confirmAvatarUpload(
+    userId: string,
+    confirmDto: {
+      key: string;
+      domain: MediaDomain;
+      domainId: string;
+      type: MediaType;
+    },
+  ) {
+    // Confirm upload and create media record
+    const media = await this.mediaService.confirmUpload(confirmDto);
+
+    // Bind avatar to user
+    const result = await this.usersRepository.updateUser(userId, {
+      avatarMediaId: media.id,
+      avatarUrl: media.url,
+    });
+
+    if (result.affected && result.affected > 0) {
+      return media;
+    }
+    throw new BadRequestException('Failed to update user avatar');
+  }
 }

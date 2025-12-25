@@ -3,7 +3,12 @@ import { toast } from 'sonner';
 import { useUserStore } from '@/stores/user';
 import { updateMyNotificationPreferences } from '@/services/notificationService';
 import { changePassword, setPassword, updateMe } from '@/services/authService';
-
+import {
+  createPresignedUrlForAvatar,
+  uploadFileToS3,
+  confirmAvatarUpload,
+} from '@/services/userService';
+import { extractApiError } from '@/lib/api-error';
 export function useProfile() {
   const { me, setMe } = useUserStore();
   const queryClient = useQueryClient();
@@ -25,8 +30,9 @@ export function useProfile() {
       setMe(data);
       toast.success('Profile updated');
     },
-    onError: () => {
-      toast.error('Failed to update profile');
+    onError: (err) => {
+      const { message } = extractApiError(err);
+      toast.error(message || 'Failed to update profile');
     },
   });
 
@@ -35,11 +41,9 @@ export function useProfile() {
     onSuccess: () => {
       toast.success('Password updated');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to update password';
+        extractApiError(err).message || 'Failed to update password';
       toast.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
@@ -55,14 +59,51 @@ export function useProfile() {
         .invalidateQueries({ queryKey: ['me'] })
         .catch(() => undefined);
     },
-    onError: (err: any) => {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to set password';
+    onError: (err) => {
+      const message = extractApiError(err).message || 'Failed to set password';
       toast.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
 
-  return { updatePreferences, updateProfile, updatePassword, setNewPassword };
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      if (!me?.id) {
+        throw new Error('User ID not found');
+      }
+
+      const extension = file.name.split('.').pop();
+
+      // Get presigned URL from backend
+      const presigned = await createPresignedUrlForAvatar(me.id, extension);
+
+      //  Upload file directly to S3/R2 using presigned URL
+      await uploadFileToS3(presigned.uploadUrl, file);
+
+      // Confirm upload and bind avatar to user
+      const confirmed = await confirmAvatarUpload(presigned.key, me.id);
+
+      return confirmed;
+    },
+    onSuccess: (data) => {
+      if (me) {
+        setMe({ ...me, avatarUrl: data.url });
+      }
+      queryClient
+        .invalidateQueries({ queryKey: ['me'] })
+        .catch(() => undefined);
+      toast.success('Avatar updated successfully');
+    },
+    onError: (err) => {
+      const message = extractApiError(err).message || 'Failed to upload avatar';
+      toast.error(Array.isArray(message) ? message.join(', ') : message);
+    },
+  });
+
+  return {
+    updatePreferences,
+    updateProfile,
+    updatePassword,
+    setNewPassword,
+    uploadAvatar,
+  };
 }

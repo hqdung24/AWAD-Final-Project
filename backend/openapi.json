@@ -173,6 +173,36 @@
         ]
       }
     },
+    "/users/me/confirm-avatar-upload": {
+      "post": {
+        "operationId": "UsersController_confirmAvatarUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Confirm avatar upload and bind to user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/admin/users": {
       "get": {
         "operationId": "AdminUsersController_listAdmins",
@@ -2714,6 +2744,41 @@
           "newPassword"
         ]
       },
+      "ConfirmUploadDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Object storage key used during presign"
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "bus",
+              "route",
+              "trip",
+              "user"
+            ]
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "avatar"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "domain",
+          "domainId",
+          "type"
+        ]
+      },
       "CreateAdminUserDto": {
         "type": "object",
         "properties": {
@@ -2934,41 +2999,6 @@
           }
         },
         "required": [
-          "domain",
-          "domainId",
-          "type"
-        ]
-      },
-      "ConfirmUploadDto": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "description": "Object storage key used during presign"
-          },
-          "domain": {
-            "type": "string",
-            "enum": [
-              "bus",
-              "route",
-              "trip",
-              "user"
-            ]
-          },
-          "domainId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "image",
-              "avatar"
-            ]
-          }
-        },
-        "required": [
-          "key",
           "domain",
           "domainId",
           "type"
