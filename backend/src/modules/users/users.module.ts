@@ -8,6 +8,7 @@ import { UsersRepository } from './providers/users.repository';
 import { UsersService } from './providers/users.service';
 import { UsersController } from './users.controller';
 import { AdminUsersController } from './admin-users.controller';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   controllers: [UsersController, AdminUsersController],
@@ -17,6 +18,7 @@ import { AdminUsersController } from './admin-users.controller';
     forwardRef(() => AuthModule),
     TypeOrmModule.forFeature([User]),
     ConfigModule.forFeature(profileConfig),
+    MediaModule,
   ],
 })
 export class UsersModule {}

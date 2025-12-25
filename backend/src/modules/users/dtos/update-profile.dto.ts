@@ -27,4 +27,11 @@ export class UpdateProfileDto {
   @MaxLength(100)
   @ApiPropertyOptional({ title: 'Email', example: 'admin@example.com' })
   email?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(50)
+  @ApiPropertyOptional({ title: 'Username', example: 'admin_user' })
+  username?: string;
 }

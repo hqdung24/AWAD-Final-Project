@@ -6,6 +6,11 @@ export const MeSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   role: z.string(),
+  isActive: z.boolean(),
+  isVerified: z.boolean(),
+  phone: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  username: z.string().nullable(),
 });
 export type Me = z.infer<typeof MeSchema>;
 

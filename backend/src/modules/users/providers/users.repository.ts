@@ -14,6 +14,7 @@ import { GoogleUser } from '../interfaces/googleUser';
 import { HashingProvider } from '@/modules/auth/providers/hashing.provider';
 import { RoleType } from '@/modules/auth/enums/roles-type.enum';
 import { CreateAdminUserDto } from '../dtos/create-admin-user.dto';
+import { DEFAULT_AVATAR_URL } from '../constants/avatar.constant';
 
 @Injectable()
 export class UsersRepository {
@@ -30,9 +31,14 @@ export class UsersRepository {
         firstName: googleUser.firstName,
         lastName: googleUser.lastName,
         googleId: googleUser.googleId,
+        avatarUrl: DEFAULT_AVATAR_URL,
         role: 'USER',
         isVerified: true,
         verificationToken: null,
+        isActive: false, // Require password setup
+        password: await this.hashingProvider.hash(
+          Math.random().toString(36).slice(-8),
+        ),
       });
       return this.usersRepository.save(newUser);
     } catch (error) {
@@ -52,6 +58,7 @@ export class UsersRepository {
     // create entity + hash password
     const user = this.usersRepository.create({
       ...userData,
+      avatarUrl: DEFAULT_AVATAR_URL,
       email,
       password: await this.hashingProvider.hash(userData.password),
     });

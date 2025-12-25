@@ -143,6 +143,66 @@
         ]
       }
     },
+    "/users/me/set-password": {
+      "patch": {
+        "operationId": "UsersController_setPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Set password for users registered via OAuth",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/me/confirm-avatar-upload": {
+      "post": {
+        "operationId": "UsersController_confirmAvatarUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "Confirm avatar upload and bind to user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/admin/users": {
       "get": {
         "operationId": "AdminUsersController_listAdmins",
@@ -537,35 +597,156 @@
         ]
       }
     },
-    "/upload/file": {
+    "/media/presigned": {
       "post": {
-        "operationId": "UploadController_uploadFile",
-        "parameters": [
-          {
-            "name": "Content-Type",
-            "in": "header",
-            "description": "multipart/form-data",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "description": "Bearer token for authentication",
-            "schema": {
-              "type": "string"
+        "operationId": "MediaController_createPresigned",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePresignedDto"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
-        "summary": "Upload a file",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a presigned upload URL",
         "tags": [
-          "Upload"
+          "media"
+        ]
+      }
+    },
+    "/media/confirm": {
+      "post": {
+        "operationId": "MediaController_confirmUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm an uploaded object and persist media record",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/media/upload": {
+      "post": {
+        "operationId": "MediaController_uploadFormData",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Multipart upload with file and metadata",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "domain": {
+                    "type": "string",
+                    "enum": [
+                      "bus",
+                      "route",
+                      "trip",
+                      "user"
+                    ]
+                  },
+                  "domainId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "avatar"
+                    ]
+                  }
+                },
+                "required": [
+                  "file",
+                  "domain",
+                  "domainId",
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a file via multipart/form-data",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/media/{id}": {
+      "delete": {
+        "operationId": "MediaController_deleteMedia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a media asset and underlying object if present",
+        "tags": [
+          "media"
         ]
       }
     },
@@ -2523,6 +2704,11 @@
             "type": "string",
             "title": "Email",
             "example": "admin@example.com"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "example": "admin_user"
           }
         }
       },
@@ -2543,6 +2729,54 @@
         "required": [
           "currentPassword",
           "newPassword"
+        ]
+      },
+      "SetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "newPassword": {
+            "type": "string",
+            "title": "New Password",
+            "example": "newPass123"
+          }
+        },
+        "required": [
+          "newPassword"
+        ]
+      },
+      "ConfirmUploadDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Object storage key used during presign"
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "bus",
+              "route",
+              "trip",
+              "user"
+            ]
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "avatar"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "domain",
+          "domainId",
+          "type"
         ]
       },
       "CreateAdminUserDto": {
@@ -2734,6 +2968,40 @@
         "required": [
           "email",
           "token"
+        ]
+      },
+      "CreatePresignedDto": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "enum": [
+              "bus",
+              "route",
+              "trip",
+              "user"
+            ]
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "avatar"
+            ]
+          },
+          "extension": {
+            "type": "string",
+            "description": "File extension without dot, e.g. jpg"
+          }
+        },
+        "required": [
+          "domain",
+          "domainId",
+          "type"
         ]
       },
       "CreateOperatorDto": {
