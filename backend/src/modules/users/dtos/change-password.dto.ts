@@ -16,3 +16,12 @@ export class ChangePasswordDto {
   @ApiProperty({ title: 'New Password', example: 'newPass123' })
   newPassword: string;
 }
+
+export class SetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(100)
+  @ApiProperty({ title: 'New Password', example: 'newPass123' })
+  newPassword: string;
+}

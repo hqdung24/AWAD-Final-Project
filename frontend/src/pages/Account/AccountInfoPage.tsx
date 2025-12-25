@@ -7,24 +7,25 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMyNotificationPreferences, updateMyNotificationPreferences } from '@/services/notificationService';
-import { toast } from 'sonner';
+import { useProfile } from '@/hooks/useProfile';
+import { getMyNotificationPreferences } from '@/services/notificationService';
 import { useUserStore } from '@/stores/user';
-import { changePassword, updateMe } from '@/services/authService';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function AccountInfoPage() {
-  const { me, setMe } = useUserStore();
-  const queryClient = useQueryClient();
+  const { me } = useUserStore();
   const [profileForm, setProfileForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    username: '',
   });
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -38,6 +39,7 @@ export default function AccountInfoPage() {
       firstName: me.firstName ?? '',
       lastName: me.lastName ?? '',
       email: me.email ?? '',
+      username: me.username ?? '',
     });
   }, [me]);
 
@@ -46,40 +48,8 @@ export default function AccountInfoPage() {
     queryFn: getMyNotificationPreferences,
   });
 
-  const updatePreferences = useMutation({
-    mutationFn: updateMyNotificationPreferences,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['notification-preferences'], data);
-      toast.success('Notification preferences updated');
-    },
-    onError: () => {
-      toast.error('Failed to update notification preferences');
-    },
-  });
-
-  const updateProfile = useMutation({
-    mutationFn: updateMe,
-    onSuccess: (data) => {
-      setMe(data);
-      toast.success('Profile updated');
-    },
-    onError: () => {
-      toast.error('Failed to update profile');
-    },
-  });
-
-  const updatePassword = useMutation({
-    mutationFn: changePassword,
-    onSuccess: () => {
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setShowPasswordForm(false);
-      toast.success('Password updated');
-    },
-    onError: (err: any) => {
-      const message = err?.response?.data?.message || err?.message || 'Failed to update password';
-      toast.error(Array.isArray(message) ? message.join(', ') : message);
-    },
-  });
+  const { updatePreferences, updateProfile, updatePassword, setNewPassword } =
+    useProfile();
 
   const handleToggle = (
     field: 'emailRemindersEnabled' | 'smsRemindersEnabled',
@@ -104,8 +74,11 @@ export default function AccountInfoPage() {
           {/* Avatar Section */}
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src="/diverse-user-avatars.png" alt="User avatar" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage
+                src={me?.avatarUrl || '/default-avatar.png'}
+                alt="User avatar"
+              />
+              <AvatarFallback>US</AvatarFallback>
             </Avatar>
             <div>
               <h3 className="font-semibold">Profile Picture</h3>
@@ -123,7 +96,10 @@ export default function AccountInfoPage() {
                 id="firstName"
                 value={profileForm.firstName}
                 onChange={(e) =>
-                  setProfileForm((prev) => ({ ...prev, firstName: e.target.value }))
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    firstName: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -134,14 +110,27 @@ export default function AccountInfoPage() {
                 id="lastName"
                 value={profileForm.lastName}
                 onChange={(e) =>
-                  setProfileForm((prev) => ({ ...prev, lastName: e.target.value }))
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    lastName: e.target.value,
+                  }))
                 }
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" defaultValue="username" disabled />
+              <Input
+                id="username"
+                placeholder={profileForm.username ? '' : 'Choose a username'}
+                value={profileForm.username}
+                onChange={(e) =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    username: e.target.value,
+                  }))
+                }
+              />
             </div>
 
             <div className="grid gap-2">
@@ -150,9 +139,7 @@ export default function AccountInfoPage() {
                 id="email"
                 type="email"
                 value={profileForm.email}
-                onChange={(e) =>
-                  setProfileForm((prev) => ({ ...prev, email: e.target.value }))
-                }
+                disabled
               />
             </div>
 
@@ -170,26 +157,28 @@ export default function AccountInfoPage() {
                   variant="outline"
                   onClick={() => setShowPasswordForm((prev) => !prev)}
                 >
-                  Change
+                  {me?.isActive ? 'Change' : 'Set'}
                 </Button>
               </div>
             </div>
             {showPasswordForm && (
               <div className="grid gap-3 rounded-md border p-3">
-                <div className="grid gap-2">
-                  <Label htmlFor="currentPassword">Current password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) =>
-                      setPasswordForm((prev) => ({
-                        ...prev,
-                        currentPassword: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                {me?.isActive && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="currentPassword">Current password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) =>
+                        setPasswordForm((prev) => ({
+                          ...prev,
+                          currentPassword: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="newPassword">New password</Label>
                   <Input
@@ -221,22 +210,61 @@ export default function AccountInfoPage() {
                 <div className="flex gap-2">
                   <Button
                     onClick={() => {
-                      if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-                        toast.error('Please fill all password fields');
+                      if (!passwordForm.newPassword) {
+                        toast.error('Please fill the new password');
                         return;
                       }
-                      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                      if (
+                        passwordForm.newPassword !==
+                        passwordForm.confirmPassword
+                      ) {
                         toast.error('New password confirmation does not match');
                         return;
                       }
-                      updatePassword.mutate({
-                        currentPassword: passwordForm.currentPassword,
-                        newPassword: passwordForm.newPassword,
-                      });
+                      if (me?.isActive) {
+                        if (!passwordForm.currentPassword) {
+                          toast.error('Please fill current password');
+                          return;
+                        }
+                        updatePassword.mutate(
+                          {
+                            currentPassword: passwordForm.currentPassword,
+                            newPassword: passwordForm.newPassword,
+                          },
+                          {
+                            onSuccess: () => {
+                              setPasswordForm({
+                                currentPassword: '',
+                                newPassword: '',
+                                confirmPassword: '',
+                              });
+                              setShowPasswordForm(false);
+                            },
+                          }
+                        );
+                      } else {
+                        setNewPassword.mutate(
+                          {
+                            newPassword: passwordForm.newPassword,
+                          },
+                          {
+                            onSuccess: () => {
+                              setPasswordForm({
+                                currentPassword: '',
+                                newPassword: '',
+                                confirmPassword: '',
+                              });
+                              setShowPasswordForm(false);
+                            },
+                          }
+                        );
+                      }
                     }}
-                    disabled={updatePassword.isPending}
+                    disabled={
+                      updatePassword.isPending || setNewPassword.isPending
+                    }
                   >
-                    Update password
+                    {me?.isActive ? 'Update password' : 'Set password'}
                   </Button>
                   <Button
                     variant="outline"
@@ -257,27 +285,30 @@ export default function AccountInfoPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!me) return;
-                setProfileForm({
-                  firstName: me.firstName ?? '',
-                  lastName: me.lastName ?? '',
-                  email: me.email ?? '',
-                });
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => updateProfile.mutate(profileForm)}
-              disabled={updateProfile.isPending}
-            >
-              Save Changes
-            </Button>
-          </div>
+          {showPasswordForm ? null : (
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!me) return;
+                  setProfileForm({
+                    firstName: me.firstName ?? '',
+                    lastName: me.lastName ?? '',
+                    email: me.email ?? '',
+                    username: me.username ?? '',
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => updateProfile.mutate(profileForm)}
+                disabled={updateProfile.isPending}
+              >
+                Save Changes
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -290,7 +321,9 @@ export default function AccountInfoPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {preferencesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading preferences…</p>
+            <p className="text-sm text-muted-foreground">
+              Loading preferences…
+            </p>
           ) : (
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
@@ -326,9 +359,7 @@ export default function AccountInfoPage() {
                   )}
                 </div>
                 <Checkbox
-                  checked={
-                    preferencesQuery.data?.smsRemindersEnabled ?? false
-                  }
+                  checked={preferencesQuery.data?.smsRemindersEnabled ?? false}
                   onCheckedChange={(value) =>
                     handleToggle('smsRemindersEnabled', Boolean(value))
                   }
@@ -339,7 +370,8 @@ export default function AccountInfoPage() {
 
               {preferencesQuery.data?.updatedAt && (
                 <p className="text-xs text-muted-foreground">
-                  Last updated: {new Date(preferencesQuery.data.updatedAt).toLocaleString()}
+                  Last updated:{' '}
+                  {new Date(preferencesQuery.data.updatedAt).toLocaleString()}
                 </p>
               )}
             </div>

@@ -12,7 +12,7 @@ import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 import { environmentValidationSchema } from './config/envinronment.validation';
-import { UploadModule } from './modules/upload/upload.module';
+import { MediaModule } from './modules/media/media.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PaymentMethodModule } from '@/modules/payment-method/payment-method.module';
 import { OperatorModule } from '@/modules/operator/operator.module';
@@ -89,7 +89,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     //Redis
     UsersModule,
     AuthModule,
-    UploadModule,
+    MediaModule,
     DashboardModule,
     PaymentMethodModule,
     OperatorModule,

@@ -51,6 +51,7 @@ export async function updateMe(payload: {
   firstName?: string;
   lastName?: string;
   email?: string;
+  username?: string;
 }): Promise<MeResponse> {
   const res = await http.patch('/users/me', payload);
   return MeResponseSchema.parse(res.data);
@@ -61,6 +62,13 @@ export async function changePassword(payload: {
   newPassword: string;
 }): Promise<{ message: string }> {
   const res = await http.patch('/users/me/password', payload);
+  return (res as { data: { message: string } }).data;
+}
+
+export async function setPassword(payload: {
+  newPassword: string;
+}): Promise<{ message: string }> {
+  const res = await http.patch('/users/me/set-password', payload);
   return (res as { data: { message: string } }).data;
 }
 
