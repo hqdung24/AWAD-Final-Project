@@ -13,6 +13,7 @@ export type Bus = {
   busType?: string;
   seatCapacity: number;
   amenitiesJson?: string;
+  seatCount?: number;
 };
 
 export type Seat = {
@@ -77,4 +78,17 @@ export async function updateSeat(
 
 export async function deleteSeat(id: string): Promise<void> {
   await http.delete(`/admin/seats/${id}`);
+}
+
+export async function generateSeats(
+  busId: string,
+  payload: {
+    capacity?: number;
+    columns?: number;
+    seatType?: string;
+    replaceExisting?: boolean;
+  }
+): Promise<Seat[]> {
+  const res = await http.post(`/admin/buses/${busId}/seats/generate`, payload);
+  return (res as { data: Seat[] }).data;
 }

@@ -72,6 +72,10 @@ export class SeatStatusService {
     return await this.seatStatusRepository.delete(id);
   }
 
+  async deleteByTripId(tripId: string): Promise<void> {
+    await this.seatStatusRepository.deleteByTripId(tripId);
+  }
+
   /**
    * Lock seats for a trip
    */

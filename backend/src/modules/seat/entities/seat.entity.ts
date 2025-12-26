@@ -6,6 +6,7 @@ import {
   JoinColumn,
   OneToMany,
   Index,
+  CreateDateColumn,
 } from 'typeorm';
 import { Bus } from '@/modules/bus/entities/bus.entity';
 import { SeatStatus } from '@/modules/seat-status/entities/seat-status.entity';
@@ -30,6 +31,9 @@ export class Seat {
 
   @Column({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
 
   @ManyToOne(() => Bus, (bus) => bus.seats, {
     onDelete: 'RESTRICT',

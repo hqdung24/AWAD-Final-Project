@@ -33,7 +33,7 @@ export class Bus {
   seatCapacity: number;
 
   @Column({ type: 'text', nullable: true })
-  amenitiesJson: string;
+  amenitiesJson: string | null;
 
 
   @Column({ default: true })
@@ -50,6 +50,8 @@ export class Bus {
 
   @OneToMany(() => Seat, (seat) => seat.bus)
   seats: Seat[];
+
+  seatCount?: number;
 
   @OneToMany(() => Trip, (trip) => trip.bus)
   trips: Trip[];

@@ -1300,6 +1300,16 @@
       "post": {
         "operationId": "BusController_createBus",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -1329,6 +1339,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -1445,6 +1465,47 @@
           }
         ],
         "summary": "Create a new seat for a bus",
+        "tags": [
+          "Admin - Seats"
+        ]
+      }
+    },
+    "/admin/buses/{id}/seats/generate": {
+      "post": {
+        "operationId": "SeatController_generateSeats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Bus ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateSeatsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate seats for a bus",
         "tags": [
           "Admin - Seats"
         ]
@@ -3213,6 +3274,78 @@
           }
         }
       },
+      "CreateBusDto": {
+        "type": "object",
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "example": "operator-uuid"
+          },
+          "plateNumber": {
+            "type": "string",
+            "example": "51F-12345"
+          },
+          "model": {
+            "type": "string",
+            "example": "Hyundai Universe"
+          },
+          "busType": {
+            "type": "string",
+            "example": "Sleeper"
+          },
+          "seatCapacity": {
+            "type": "number",
+            "example": 40
+          },
+          "amenitiesJson": {
+            "type": "string",
+            "example": "{\"wifi\":true,\"water\":true}"
+          },
+          "name": {
+            "type": "string",
+            "example": "VIP Sleeper 40"
+          }
+        },
+        "required": [
+          "operatorId",
+          "plateNumber",
+          "model",
+          "seatCapacity"
+        ]
+      },
+      "UpdateBusDto": {
+        "type": "object",
+        "properties": {
+          "operatorId": {
+            "type": "string",
+            "example": "operator-uuid"
+          },
+          "plateNumber": {
+            "type": "string",
+            "example": "51F-12345"
+          },
+          "model": {
+            "type": "string",
+            "example": "Hyundai Universe"
+          },
+          "busType": {
+            "type": "string",
+            "example": "Sleeper"
+          },
+          "seatCapacity": {
+            "type": "number",
+            "example": 40
+          },
+          "amenitiesJson": {
+            "type": "string",
+            "example": "{\"wifi\":true,\"water\":true}"
+          },
+          "name": {
+            "type": "string",
+            "example": "VIP Sleeper 40"
+          }
+        }
+      },
       "CreateSeatDto": {
         "type": "object",
         "properties": {
@@ -3236,6 +3369,32 @@
           "seatCode",
           "seatType"
         ]
+      },
+      "GenerateSeatsDto": {
+        "type": "object",
+        "properties": {
+          "capacity": {
+            "type": "number",
+            "description": "Total seats to generate"
+          },
+          "columns": {
+            "type": "number",
+            "description": "Number of columns per row"
+          },
+          "seatType": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "PREMIUM",
+              "VIP"
+            ],
+            "description": "Seat type"
+          },
+          "replaceExisting": {
+            "type": "boolean",
+            "description": "Replace existing seats"
+          }
+        }
       },
       "UpdateSeatDto": {
         "type": "object",

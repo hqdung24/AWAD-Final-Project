@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { SeatModule } from '../seat/seat.module';
@@ -9,7 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
   providers: [RealtimeGateway, RealtimeService],
   exports: [RealtimeService, RealtimeGateway],
   imports: [
-    SeatModule,
+    forwardRef(() => SeatModule),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],

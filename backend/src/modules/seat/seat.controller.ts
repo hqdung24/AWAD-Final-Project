@@ -11,6 +11,8 @@ import { BusIdParamDto } from './dto/bus-id-param.dto';
 import { SeatIdParamDto } from './dto/seat-id-param.dto';
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
+import { GenerateSeatsDto } from './dto/generate-seats.dto';
+import { SeatType } from './enums/seat-type.enum';
 import { Roles } from '@/modules/auth/decorator/roles.decorator';
 import { RoleType } from '@/modules/auth/enums/roles-type.enum';
 
@@ -59,6 +61,25 @@ export class SeatController {
     @Body() createSeatDto: CreateSeatDto,
   ) {
     return await this.seatService.createSeat(params.id, createSeatDto);
+  }
+
+  @Post('buses/:id/seats/generate')
+  @Roles(RoleType.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Generate seats for a bus' })
+  async generateSeats(
+    @Param() params: BusIdParamDto,
+    @Body() dto: GenerateSeatsDto,
+  ) {
+    const capacity = dto.capacity ?? 0;
+    const columns = dto.columns ?? 4;
+    const seatType = dto.seatType ?? SeatType.STANDARD;
+    return await this.seatService.generateSeats(params.id, {
+      capacity,
+      columns,
+      seatType,
+      replaceExisting: dto.replaceExisting ?? true,
+    });
   }
 
   @Patch('buses/:busId/seats/:id')

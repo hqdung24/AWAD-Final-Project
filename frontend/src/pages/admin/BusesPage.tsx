@@ -18,6 +18,7 @@ import {
   createSeat,
   updateSeat,
   deleteSeat,
+  generateSeats,
   type Bus,
   type Seat,
 } from '@/services/busService';
@@ -42,6 +43,11 @@ const initialBus: Omit<Bus, 'id'> = {
 };
 
 const seatTypes = ['STANDARD', 'PREMIUM', 'VIP'];
+const seatTemplates = [
+  { key: 'standard', label: 'Standard (4 columns)', columns: 4, seatType: 'STANDARD' },
+  { key: 'sleeper', label: 'Sleeper (4 columns)', columns: 4, seatType: 'PREMIUM' },
+  { key: 'vip', label: 'VIP (3 columns)', columns: 3, seatType: 'VIP' },
+];
 
 export default function BusesPage() {
   const qc = useQueryClient();
@@ -49,6 +55,8 @@ export default function BusesPage() {
   const [editingBusId, setEditingBusId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [seatBusId, setSeatBusId] = useState<string>('');
+  const [seatTemplate, setSeatTemplate] = useState(seatTemplates[0].key);
+  const [replaceSeats, setReplaceSeats] = useState(true);
   const [seatForm, setSeatForm] = useState<{ seatCode: string; seatType: string }>({
     seatCode: '',
     seatType: 'STANDARD',
@@ -71,11 +79,21 @@ export default function BusesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const seatRows = useMemo(() => {
+    const uniqueByCode = new Map<string, Seat>();
+    seatDrafts.forEach((seat) => {
+      const code = seat.seatCode?.trim();
+      if (!code) return;
+      const existing = uniqueByCode.get(code);
+      if (!existing || (!existing.isActive && seat.isActive)) {
+        uniqueByCode.set(code, seat);
+      }
+    });
+
     const rows = new Map<string, Seat[]>();
-    seatDrafts.forEach((s) => {
-      const row = s.seatCode?.charAt(0) || '?';
+    uniqueByCode.forEach((seat) => {
+      const row = seat.seatCode?.charAt(0) || '?';
       if (!rows.has(row)) rows.set(row, []);
-      rows.get(row)!.push(s);
+      rows.get(row)!.push(seat);
     });
     rows.forEach((list) =>
       list.sort(
@@ -202,6 +220,30 @@ export default function BusesPage() {
     },
   });
 
+  const generateSeatsMutation = useMutation({
+    mutationFn: (payload: {
+      busId: string;
+      capacity: number;
+      columns: number;
+      seatType: string;
+      replaceExisting: boolean;
+    }) =>
+      generateSeats(payload.busId, {
+        capacity: payload.capacity,
+        columns: payload.columns,
+        seatType: payload.seatType,
+        replaceExisting: payload.replaceExisting,
+      }),
+    onSuccess: () => {
+      void refetchSeats();
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to generate seats';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
+  });
+
   const handleSubmitBus = () => {
     if (!busForm.operatorId || !busForm.plateNumber || !busForm.model) return;
     const { name: _ignoredName, ...payload } = busForm;
@@ -224,6 +266,15 @@ export default function BusesPage() {
   const selectedSeat = useMemo(
     () => seatDrafts.find((s) => s.id === editingSeatId),
     [seatDrafts, editingSeatId],
+  );
+
+  const selectedBus = useMemo(
+    () => buses.find((bus) => bus.id === seatBusId),
+    [buses, seatBusId],
+  );
+  const activeSeatCount = useMemo(
+    () => seatDrafts.filter((seat) => seat.isActive).length,
+    [seatDrafts],
   );
 
   const handleSaveSelectedSeat = () => {
@@ -689,6 +740,62 @@ export default function BusesPage() {
 
           {seatBusId ? (
             <>
+              <div className="grid gap-3 md:grid-cols-5">
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Template
+                  <select
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={seatTemplate}
+                    onChange={(e) => setSeatTemplate(e.target.value)}
+                  >
+                    {seatTemplates.map((template) => (
+                      <option key={template.key} value={template.key}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Replace existing
+                  <select
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={replaceSeats ? 'yes' : 'no'}
+                    onChange={(e) => setReplaceSeats(e.target.value === 'yes')}
+                  >
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </label>
+                <div className="flex items-end">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const template = seatTemplates.find((t) => t.key === seatTemplate);
+                      if (!template || !selectedBus) return;
+                      generateSeatsMutation.mutate({
+                        busId: selectedBus.id,
+                        capacity: selectedBus.seatCapacity,
+                        columns: template.columns,
+                        seatType: template.seatType,
+                        replaceExisting: replaceSeats,
+                      });
+                    }}
+                    disabled={!selectedBus || generateSeatsMutation.isPending}
+                  >
+                    Generate seats
+                  </Button>
+                </div>
+                {selectedBus && (
+                  <div className="md:col-span-2 text-xs text-muted-foreground flex items-end">
+                    Active seats: {activeSeatCount} / Capacity: {selectedBus.seatCapacity}
+                  </div>
+                )}
+              </div>
+              {selectedBus && activeSeatCount !== selectedBus.seatCapacity && (
+                <p className="text-xs text-amber-600">
+                  Seat count does not match seat capacity. Generate seats or adjust the bus capacity.
+                </p>
+              )}
               <div className="grid gap-3 md:grid-cols-4">
                 <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                   Seat code

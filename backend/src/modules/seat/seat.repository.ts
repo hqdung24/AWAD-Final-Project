@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Seat } from './entities/seat.entity';
 
 @Injectable()
@@ -18,10 +18,21 @@ export class SeatRepository {
     });
   }
 
+  async findActiveByBusId(busId: string): Promise<Seat[]> {
+    return await this.repository.find({
+      where: { busId, isActive: true },
+      order: { seatCode: 'ASC' },
+    });
+  }
+
   async findByBusIdAndCode(busId: string, seatCode: string): Promise<Seat | null> {
     return await this.repository.findOne({
       where: { busId, seatCode },
     });
+  }
+
+  async countActiveByBusId(busId: string): Promise<number> {
+    return await this.repository.count({ where: { busId, isActive: true } });
   }
 
   async findById(id: string): Promise<Seat | null> {
@@ -63,6 +74,11 @@ export class SeatRepository {
     return await this.repository.save(seat);
   }
 
+  async createMany(seats: Partial<Seat>[]): Promise<Seat[]> {
+    const entities = this.repository.create(seats);
+    return await this.repository.save(entities);
+  }
+
   async update(id: string, updateData: Partial<Seat>): Promise<Seat | null> {
     await this.repository.update(id, updateData);
     return await this.findById(id);
@@ -79,6 +95,17 @@ export class SeatRepository {
   async softDeleteByBusId(busId: string): Promise<void> {
     await this.repository.update(
       { busId },
+      {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    );
+  }
+
+  async softDeleteByIds(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.repository.update(
+      { id: In(ids) },
       {
         isActive: false,
         deletedAt: new Date(),

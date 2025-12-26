@@ -40,6 +40,7 @@ export type Bus = {
   busType?: string;
   seatCapacity: number;
   amenitiesJson?: string;
+  seatCount?: number;
 };
 
 export type TripListResponse = {

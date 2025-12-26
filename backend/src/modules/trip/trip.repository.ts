@@ -120,6 +120,15 @@ export class TripRepository {
     return await queryBuilder.getMany();
   }
 
+  async findUpcomingByBusId(busId: string): Promise<Trip[]> {
+    return this.repository
+      .createQueryBuilder('trip')
+      .where('trip.busId = :busId', { busId })
+      .andWhere('trip.departureTime >= :now', { now: new Date() })
+      .andWhere('trip.status = :status', { status: 'scheduled' })
+      .getMany();
+  }
+
   async save(trip: Trip): Promise<Trip> {
     return await this.repository.save(trip);
   }

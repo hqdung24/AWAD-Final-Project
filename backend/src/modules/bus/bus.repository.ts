@@ -29,6 +29,12 @@ export class BusRepository {
     const queryBuilder = this.repository
       .createQueryBuilder('bus')
       .leftJoinAndSelect('bus.operator', 'operator')
+      .loadRelationCountAndMap(
+        'bus.seatCount',
+        'bus.seats',
+        'seat',
+        (qb) => qb.andWhere('seat.isActive = true'),
+      )
       .skip(skip)
       .take(limit)
       .orderBy('bus.plateNumber', 'ASC');
@@ -45,6 +51,12 @@ export class BusRepository {
   async create(busData: Partial<Bus>): Promise<Bus> {
     const bus = this.repository.create(busData);
     return await this.repository.save(bus);
+  }
+
+  async findActiveByPlateNumber(plateNumber: string): Promise<Bus | null> {
+    return await this.repository.findOne({
+      where: { plateNumber, isActive: true },
+    });
   }
 
   async update(id: string, updateData: Partial<Bus>): Promise<Bus | null> {

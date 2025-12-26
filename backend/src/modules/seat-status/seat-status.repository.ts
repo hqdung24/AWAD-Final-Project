@@ -91,6 +91,15 @@ export class SeatStatusRepository {
     await this.repository.delete(id);
   }
 
+  async deleteByTripId(tripId: string): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .delete()
+      .from(SeatStatus)
+      .where('tripId = :tripId', { tripId })
+      .execute();
+  }
+
   async releaseSeatLocks(timeCheck: Date): Promise<number> {
     const result = await this.repository
       .createQueryBuilder()

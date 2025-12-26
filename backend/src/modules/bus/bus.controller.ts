@@ -19,6 +19,8 @@ import {
 import { BusService } from './bus.service';
 import { Roles } from '@/modules/auth/decorator/roles.decorator';
 import { RoleType } from '@/modules/auth/enums/roles-type.enum';
+import { CreateBusDto } from './dto/create-bus.dto';
+import { UpdateBusDto } from './dto/update-bus.dto';
 
 @ApiTags('Admin - Buses')
 @ApiBearerAuth()
@@ -49,7 +51,7 @@ export class BusController {
   @Roles(RoleType.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create bus' })
-  async createBus(@Body() dto: any) {
+  async createBus(@Body() dto: CreateBusDto) {
     return await this.busService.create(dto);
   }
 
@@ -57,7 +59,7 @@ export class BusController {
   @Roles(RoleType.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update bus' })
-  async updateBus(@Param('id') id: string, @Body() dto: any) {
+  async updateBus(@Param('id') id: string, @Body() dto: UpdateBusDto) {
     return await this.busService.update(id, dto);
   }
 

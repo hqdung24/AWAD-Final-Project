@@ -312,12 +312,16 @@ export default function TripsPage() {
                 }
               >
                 <option value="">Select bus</option>
-                {buses.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.operator?.name ? `${b.operator.name} — ` : ''}
-                    {b.plateNumber} · {b.model} ({b.seatCapacity})
-                  </option>
-                ))}
+                {buses.map((b) => {
+                  const seatCount = b.seatCount ?? 0;
+                  return (
+                    <option key={b.id} value={b.id} disabled={seatCount === 0}>
+                      {b.operator?.name ? `${b.operator.name} — ` : ''}
+                      {b.plateNumber} · {b.model} ({seatCount}/{b.seatCapacity})
+                      {seatCount === 0 ? ' · no seats' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">

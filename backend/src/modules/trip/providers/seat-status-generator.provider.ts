@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { SeatService } from '@/modules/seat/seat.service';
 import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
 import { SeatStatus } from '@/modules/seat-status/entities/seat-status.entity';
@@ -6,6 +6,7 @@ import { SeatStatus } from '@/modules/seat-status/entities/seat-status.entity';
 @Injectable()
 export class SeatStatusGeneratorProvider {
   constructor(
+    @Inject(forwardRef(() => SeatService))
     private readonly seatService: SeatService,
     private readonly seatStatusService: SeatStatusService,
   ) {}
@@ -15,7 +16,7 @@ export class SeatStatusGeneratorProvider {
     busId: string,
   ): Promise<SeatStatus[]> {
     // Get all seats for the bus
-    const seats = await this.seatService.findByBusId(busId);
+    const seats = await this.seatService.findActiveByBusId(busId);
 
     // Create seat status for each seat
     const seatStatuses: SeatStatus[] = [];

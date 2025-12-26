@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Trip } from './entities/trip.entity';
 import { TripController } from './trip.controller';
@@ -16,8 +16,8 @@ import { MediaModule } from '@/modules/media/media.module';
   imports: [
     TypeOrmModule.forFeature([Trip]),
     RouteModule,
-    BusModule,
-    SeatModule,
+    forwardRef(() => BusModule),
+    forwardRef(() => SeatModule),
     SeatStatusModule,
     MediaModule,
   ],

@@ -6,6 +6,7 @@ import { TripQueryDto } from './dto/trip-query.dto';
 import { Trip } from './entities/trip.entity';
 import { TripValidationProvider } from './providers/trip-validation.provider';
 import { SeatStatusGeneratorProvider } from './providers/seat-status-generator.provider';
+import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
 import { MediaService } from '@/modules/media/media.service';
 import { MediaDomain } from '@/modules/media/enums/media-domain.enum';
 import { MediaType } from '@/modules/media/enums/media-type.enum';
@@ -16,6 +17,7 @@ export class TripService {
     private readonly tripRepository: TripRepository,
     private readonly tripValidationProvider: TripValidationProvider,
     private readonly seatStatusGenerator: SeatStatusGeneratorProvider,
+    private readonly seatStatusService: SeatStatusService,
     private readonly mediaService: MediaService,
   ) {}
 
@@ -94,6 +96,8 @@ export class TripService {
     // Check if trip exists
     const existingTrip = await this.getTripById(id);
 
+    const busChanged = Boolean(updateTripDto.busId) && updateTripDto.busId !== existingTrip.busId;
+
     // If updating bus or time, validate scheduling
     if (
       updateTripDto.busId ||
@@ -142,7 +146,27 @@ export class TripService {
 
     // Update trip
     const updatedTrip = await this.tripRepository.update(id, updateData);
+
+    // If bus changed, regenerate seat statuses for the new bus
+    if (busChanged && updatedTrip) {
+      await this.seatStatusService.deleteByTripId(id);
+      await this.seatStatusGenerator.generateSeatStatusesForTrip(
+        id,
+        updatedTrip.busId,
+      );
+    }
     return updatedTrip!; // already exists if updated
+  }
+
+  async syncUpcomingTripsForBus(busId: string) {
+    const trips = await this.tripRepository.findUpcomingByBusId(busId);
+    for (const trip of trips) {
+      await this.seatStatusService.deleteByTripId(trip.id);
+      await this.seatStatusGenerator.generateSeatStatusesForTrip(
+        trip.id,
+        trip.busId,
+      );
+    }
   }
 
   async cancelTrip(id: string): Promise<Trip> {
@@ -262,7 +286,7 @@ export class TripService {
     return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
   }
 
-  private parseAmenities(amenitiesJson?: string): string[] {
+  private parseAmenities(amenitiesJson?: string | null): string[] {
     if (!amenitiesJson) return [];
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
