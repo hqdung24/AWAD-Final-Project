@@ -13,7 +13,6 @@ export type Bus = {
   busType?: string;
   seatCapacity: number;
   amenitiesJson?: string;
-  photosJson?: string;
 };
 
 export type Seat = {

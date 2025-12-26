@@ -690,7 +690,8 @@
                     "type": "string",
                     "enum": [
                       "image",
-                      "avatar"
+                      "avatar",
+                      "bus_photo"
                     ]
                   }
                 },
@@ -745,6 +746,51 @@
           }
         ],
         "summary": "Delete a media asset and underlying object if present",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/media": {
+      "get": {
+        "operationId": "MediaController_listMedia",
+        "parameters": [
+          {
+            "name": "domain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "domainId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List media by owner",
         "tags": [
           "media"
         ]
@@ -2768,7 +2814,8 @@
             "type": "string",
             "enum": [
               "image",
-              "avatar"
+              "avatar",
+              "bus_photo"
             ]
           }
         },
@@ -2990,7 +3037,8 @@
             "type": "string",
             "enum": [
               "image",
-              "avatar"
+              "avatar",
+              "bus_photo"
             ]
           },
           "extension": {

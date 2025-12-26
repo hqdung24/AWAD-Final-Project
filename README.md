@@ -9,12 +9,14 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - `project.md`, `week2_trip_management.md`: milestone briefs.
 
 ## Highlights (current state)
-- **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry; email verification + password reset emails via Resend with per-user tokens; Google sign-in now links existing email accounts and marks them verified.
+- **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry; email verification + password reset emails via Resend with per-user tokens; Google sign-in now links existing email accounts and supports setting a password later.
+- **Profiles**: `/account` supports profile updates, avatar upload, and password change.
 - **Dashboards**: Role-aware shell with admin/user dashboard pages; data mostly mock/fallback.
-- **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType` and amenities JSON; seed data populates operators, routes, buses, seats, trips, and seat statuses.
-- **Search**: Public `/api/trips/search` and `/api/trips/:id` now return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
-- **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` (JWT-based lock token, DB pessimistic locking) and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings; mock guest lookup/dashboard history still pending real data wiring. Real-time seat availability currently uses 30s polling until a lock is acquired (WebSocket not yet implemented).
-- **Admin UX (Trips/Routes/Buses/Seats)**: Admin tables now have filters + pagination, failure toasts, and consistent nav highlighting. Trip admin endpoints are no longer shadowed (`/trips/admin`). Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and lets admins toggle seats active/inactive; deleting a bus soft-deletes its seats.
+- **Trip management**: Admin endpoints for creating/updating trips with bus schedule conflict checks and auto seat-status generation. Buses now carry `busType`, amenities JSON, and photo URLs; seed data populates operators, routes, buses, seats, trips, and seat statuses.
+- **Search**: Public `/api/trips/search` and `/api/trips/:id` return seeded data (filters: from/to/date/passengers). Frontend search results use these APIs and link to a trip detail page (`/search/:id`); advanced filters still run client-side only.
+- **Seat selection & booking flow**: Seat map UI (`/search/:id/seats`) renders grouped seats with state badges; selections are locked via `/api/seat-status/lock` and passed to checkout. Checkout collects passenger/contact info with validation, calculates totals, and calls `/api/booking` to convert locks into bookings. Seat map uses realtime socket updates plus 30s polling when unlocked, and refetches snapshots on room join.
+- **Admin UX (Trips/Routes/Buses/Seats)**: Admin tables have filters + pagination, failure toasts, and consistent nav highlighting. Bus seat editor shows an interactive seat map, enforces unique seat codes per bus, and lets admins toggle seats active/inactive; deleting a bus soft-deletes its seats.
+- **Admin operations**: Admin accounts management, booking list + status updates, passenger list + check-in/redo, and trip sorting in admin UI.
 - **Booking management**: Pending bookings can be edited or cancelled; cancelling a pending booking releases seats back to available state. Booking confirmation emails are sent via Resend when contact email is provided.
 - **Scheduling & payments**: Cleanup cron fixed to every 5 minutes; reminder cron runs every 15 minutes. Cleanup expires stale locks/payments/bookings; reminders send 24h/3h trip emails and respect notification preferences.
 - **Metrics/monitoring scaffold**: Prometheus metrics exposed at `/api/metrics` (Prometheus format) with job counters/gauges; optional `docker-compose.monitoring.yml` spins up Prometheus (9090) + Grafana (3001) using `monitoring/prometheus.yml` (target defaults to `host.docker.internal:3000`).
@@ -122,6 +124,9 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `POST /api/auth/refresh` – rotate RT cookie, return new AT
 - `POST /api/auth/signout` – clear RT cookie
 - `GET /api/users/me` – current user profile (requires AT)
+- `PATCH /api/users/me` – update current user profile
+- `PATCH /api/users/me/password` – change current user password
+- `POST /api/users/me/confirm-avatar-upload` – bind uploaded avatar to user
 - `POST /api/admin/trips` – create trip with bus conflict checks; auto-generates seat statuses
 - `GET /api/trips/admin` / `GET /api/trips/admin/:id` – admin trip list/detail (auth + role)
 - `PATCH /api/trips/admin/:id` / `PATCH /api/trips/admin/:id/cancel` – update or cancel a trip
@@ -131,8 +136,14 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `GET /api/admin/buses/:busId/seats` – list seats for a bus
 - `POST /api/admin/buses/:busId/seats` – create a seat (duplicate seatCode blocked per bus)
 - `PATCH /api/admin/buses/:busId/seats/:id` – update a seat (toggle active/type/code)
+- `GET /api/admin/users` / `POST /api/admin/users` / `PATCH /api/admin/users/:id` – manage admin accounts
+- `PATCH /api/admin/users/:id/deactivate` – deactivate admin account
 - `PATCH /api/booking/:id` – edit pending booking contact/passenger details
 - `PATCH /api/booking/:id/cancel` – cancel a pending booking and release seats
+- `PATCH /api/booking/:id/status` – update booking status (admin only)
+- `GET /api/admin/trips/:tripId/passengers` – list passengers for a trip
+- `PATCH /api/admin/trips/:tripId/passengers/:passengerId/check-in` – check-in passenger
+- `PATCH /api/admin/trips/:tripId/passengers/:passengerId/check-in/reset` – reset passenger check-in
 - Swagger available at `/api/docs`
 
 ## Frontend routes (selected)
@@ -140,7 +151,12 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `/search` Trip search results UI (uses `/trips/search`; local filtering/pagination)
 - `/search/:id` Trip detail page (uses `/trips/:id`)
 - `/dashboard` Admin or user dashboard based on role
-- `/trips`, `/routes`, `/buses` Admin CRUD shells (endpoints still need wiring to backend)
+- `/trips`, `/routes`, `/buses` Admin CRUD
+- `/bookings` Admin booking list + status updates
+- `/passengers` Admin passenger list + check-in
+- `/admin-users` Admin accounts management
+- `/analytics`, `/reports` Admin reporting dashboards
+- `/account` Profile + avatar + password change
 
 ## Quality & tooling
 - ESLint configured in both apps. Prettier, lint-staged, and Husky are not yet wired—needs adding to match rubric.

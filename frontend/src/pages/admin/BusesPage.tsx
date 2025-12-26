@@ -22,7 +22,12 @@ import {
   type Seat,
 } from '@/services/busService';
 import { listOperators, type Operator } from '@/services/operatorService';
-import { uploadFile } from '@/services/uploadService';
+import {
+  deleteBusPhoto,
+  listBusPhotos,
+  uploadBusPhoto,
+  type MediaItem,
+} from '@/services/busMediaService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/lib/notify';
 
@@ -34,7 +39,6 @@ const initialBus: Omit<Bus, 'id'> = {
   busType: '',
   seatCapacity: 40,
   amenitiesJson: '',
-  photosJson: '',
 };
 
 const seatTypes = ['STANDARD', 'PREMIUM', 'VIP'];
@@ -43,7 +47,6 @@ export default function BusesPage() {
   const qc = useQueryClient();
   const [busForm, setBusForm] = useState<Omit<Bus, 'id'>>(initialBus);
   const [editingBusId, setEditingBusId] = useState<string | null>(null);
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [seatBusId, setSeatBusId] = useState<string>('');
   const [seatForm, setSeatForm] = useState<{ seatCode: string; seatType: string }>({
@@ -120,7 +123,6 @@ export default function BusesPage() {
     onSuccess: () => {
       setBusForm(initialBus);
       setEditingBusId(null);
-      setPhotoUrls([]);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
     onError: (error: any) => {
@@ -135,7 +137,6 @@ export default function BusesPage() {
       updateBus(payload.id, payload.data),
     onSuccess: () => {
       setEditingBusId(null);
-      setPhotoUrls([]);
       void qc.invalidateQueries({ queryKey: ['buses'] });
     },
     onError: (error: any) => {
@@ -204,11 +205,10 @@ export default function BusesPage() {
   const handleSubmitBus = () => {
     if (!busForm.operatorId || !busForm.plateNumber || !busForm.model) return;
     const { name: _ignoredName, ...payload } = busForm;
-    const photosJson = photoUrls.length > 0 ? JSON.stringify(photoUrls) : '';
     if (editingBusId) {
-      updateBusMutation.mutate({ id: editingBusId, data: { ...payload, photosJson } });
+      updateBusMutation.mutate({ id: editingBusId, data: payload });
     } else {
-      createBusMutation.mutate({ ...payload, photosJson });
+      createBusMutation.mutate(payload);
     }
   };
 
@@ -243,6 +243,12 @@ export default function BusesPage() {
     if (!editingSeatId) return;
     deleteSeatMutation.mutate(editingSeatId);
   };
+
+  const { data: busPhotos = [] } = useQuery<MediaItem[]>({
+    queryKey: ['bus-photos', editingBusId],
+    queryFn: () => listBusPhotos(editingBusId!),
+    enabled: Boolean(editingBusId),
+  });
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -419,15 +425,21 @@ export default function BusesPage() {
                 type="file"
                 accept="image/*"
                 multiple
-                disabled={isUploading}
+                disabled={isUploading || !editingBusId}
                 onChange={async (e) => {
                   const files = Array.from(e.target.files ?? []);
                   if (files.length === 0) return;
+                  if (!editingBusId) {
+                    notify.error('Create the bus before uploading photos');
+                    e.currentTarget.value = '';
+                    return;
+                  }
                   setIsUploading(true);
                   try {
-                    const uploads = await Promise.all(files.map((file) => uploadFile(file)));
-                    const urls = uploads.map((u) => u.path).filter(Boolean);
-                    setPhotoUrls((prev) => [...prev, ...urls]);
+                    const existing = await listBusPhotos(editingBusId);
+                    await Promise.all(existing.map((media) => deleteBusPhoto(media.id)));
+                    await Promise.all(files.map((file) => uploadBusPhoto(editingBusId, file)));
+                    void qc.invalidateQueries({ queryKey: ['bus-photos', editingBusId] });
                   } catch (error: any) {
                     const message =
                       error?.response?.data?.message ||
@@ -441,25 +453,34 @@ export default function BusesPage() {
                 }}
               />
               <span className="text-[11px] text-muted-foreground">
-                Upload JPG/PNG/GIF images. Saved URLs are stored with the bus.
+                Upload JPG/PNG/GIF images. Bus must be created first.
               </span>
             </label>
             <div className="md:col-span-3">
-              {photoUrls.length > 0 ? (
+              {busPhotos.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
-                  {photoUrls.map((url) => (
-                    <div key={url} className="relative">
+                  {busPhotos.map((media) => (
+                    <div key={media.id} className="relative">
                       <img
-                        src={url}
+                        src={media.url}
                         alt="Bus"
                         className="h-24 w-36 rounded-md object-cover border"
                       />
                       <button
                         type="button"
                         className="absolute -right-2 -top-2 rounded-full bg-destructive text-destructive-foreground text-xs px-2 py-1"
-                        onClick={() =>
-                          setPhotoUrls((prev) => prev.filter((item) => item !== url))
-                        }
+                        onClick={async () => {
+                          try {
+                            await deleteBusPhoto(media.id);
+                            void qc.invalidateQueries({ queryKey: ['bus-photos', editingBusId] });
+                          } catch (error: any) {
+                            const message =
+                              error?.response?.data?.message ||
+                              error?.message ||
+                              'Failed to delete photo';
+                            notify.error(Array.isArray(message) ? message.join(', ') : message);
+                          }
+                        }}
                       >
                         Remove
                       </button>
@@ -494,7 +515,6 @@ export default function BusesPage() {
               onClick={() => {
                 setBusForm(initialBus);
                 setEditingBusId(null);
-                setPhotoUrls([]);
               }}
             >
               Reset
@@ -554,18 +574,7 @@ export default function BusesPage() {
                             busType: bus.busType,
                             seatCapacity: bus.seatCapacity,
                             amenitiesJson: bus.amenitiesJson,
-                            photosJson: bus.photosJson ?? '',
                           });
-                          if (bus.photosJson) {
-                            try {
-                              const parsed = JSON.parse(bus.photosJson);
-                              setPhotoUrls(Array.isArray(parsed) ? parsed : []);
-                            } catch {
-                              setPhotoUrls([]);
-                            }
-                          } else {
-                            setPhotoUrls([]);
-                          }
                         }}
                       >
                         Edit

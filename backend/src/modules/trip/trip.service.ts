@@ -6,6 +6,9 @@ import { TripQueryDto } from './dto/trip-query.dto';
 import { Trip } from './entities/trip.entity';
 import { TripValidationProvider } from './providers/trip-validation.provider';
 import { SeatStatusGeneratorProvider } from './providers/seat-status-generator.provider';
+import { MediaService } from '@/modules/media/media.service';
+import { MediaDomain } from '@/modules/media/enums/media-domain.enum';
+import { MediaType } from '@/modules/media/enums/media-type.enum';
 
 @Injectable()
 export class TripService {
@@ -13,6 +16,7 @@ export class TripService {
     private readonly tripRepository: TripRepository,
     private readonly tripValidationProvider: TripValidationProvider,
     private readonly seatStatusGenerator: SeatStatusGeneratorProvider,
+    private readonly mediaService: MediaService,
   ) {}
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -223,6 +227,14 @@ export class TripService {
           })) || [],
     };
 
+    const busPhotos = trip.busId
+      ? await this.mediaService.listMediaByOwner(
+          MediaDomain.BUS,
+          trip.busId,
+          MediaType.BUS_PHOTO,
+        )
+      : [];
+
     return {
       id: trip.id,
       from: trip.route?.origin || '',
@@ -238,7 +250,7 @@ export class TripService {
       busModel: trip.bus?.model,
       plateNumber: trip.bus?.plateNumber,
       distanceKm: trip.route?.distanceKm,
-      busPhotos: this.parsePhotos(trip.bus?.photosJson),
+      busPhotos: busPhotos.map((media) => media.url),
       routePoints,
     };
   }
@@ -262,13 +274,4 @@ export class TripService {
     }
   }
 
-  private parsePhotos(photosJson?: string): string[] {
-    if (!photosJson) return [];
-    try {
-      const parsed = JSON.parse(photosJson);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
 }

@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -19,6 +21,8 @@ import {
 
 import { Auth } from '@/modules/auth/decorator/auth.decorator';
 import { AuthType } from '@/modules/auth/enums/auth-type.enum';
+import { Roles } from '@/modules/auth/decorator/roles.decorator';
+import { RoleType } from '@/modules/auth/enums/roles-type.enum';
 import { MediaService } from './media.service';
 import { CreatePresignedDto } from './dtos/create-presigned.dto';
 import { ConfirmUploadDto } from './dtos/confirm-upload.dto';
@@ -29,7 +33,8 @@ import type { Express } from 'express';
 
 @ApiTags('media')
 @ApiBearerAuth()
-@Auth(AuthType.None) // Allow public access for media operations for testing purposes
+@Auth(AuthType.Bearer)
+@Roles(RoleType.ADMIN, RoleType.USER, RoleType.MODERATOR)
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
@@ -81,5 +86,15 @@ export class MediaController {
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   deleteMedia(@Param('id') id: string) {
     return this.mediaService.deleteMedia(id);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'List media by owner' })
+  async listMedia(
+    @Query('domain') domain: MediaDomain,
+    @Query('domainId') domainId: string,
+    @Query('type') type?: MediaType,
+  ) {
+    return this.mediaService.listMediaByOwner(domain, domainId, type);
   }
 }

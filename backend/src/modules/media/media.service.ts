@@ -130,4 +130,12 @@ export class MediaService {
     await this.repo.deleteMedia(id);
     return existing;
   }
+
+  async listMediaByOwner(
+    domain: MediaDomain,
+    domainId: string,
+    type?: MediaType,
+  ) {
+    return this.repo.getMediaByOwner(domain, domainId, type);
+  }
 }

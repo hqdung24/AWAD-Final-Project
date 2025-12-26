@@ -10,6 +10,7 @@ import { RouteModule } from '@/modules/route/route.module';
 import { BusModule } from '@/modules/bus/bus.module';
 import { SeatModule } from '@/modules/seat/seat.module';
 import { SeatStatusModule } from '@/modules/seat-status/seat-status.module';
+import { MediaModule } from '@/modules/media/media.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SeatStatusModule } from '@/modules/seat-status/seat-status.module';
     BusModule,
     SeatModule,
     SeatStatusModule,
+    MediaModule,
   ],
   controllers: [TripController],
   providers: [

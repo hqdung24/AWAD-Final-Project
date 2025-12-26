@@ -45,9 +45,9 @@ export class MediaRepository {
     });
   }
 
-  getMediaByOwner(domain: MediaDomain, domainId: string) {
+  getMediaByOwner(domain: MediaDomain, domainId: string, type?: MediaType) {
     return this.mediaRepo.find({
-      where: { domain, domainId },
+      where: { domain, domainId, ...(type ? { type } : {}) },
       relations: ['user'],
     });
   }
