@@ -6,7 +6,7 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - `frontend/`: React + Vite + TypeScript + Tailwind (shadcn) SPA (protected landing/search, admin CRUD shells).
 - `backend/`: NestJS + TypeORM + PostgreSQL API (auth, trips, seats, buses, routes, bookings).
 - `design/`: Dashboard mockups.
-- `project.md`, `week2_trip_management.md`: milestone briefs.
+- `project.md`, `week_4_assignment.md`, `week4_self_evaluation.md`: milestone docs.
 
 ## Highlights (current state)
 - **Auth**: Email/password + Google OAuth; AT in Zustand, RT as HttpOnly cookie with refresh retry; email verification + password reset emails via Resend with per-user tokens; Google sign-in now links existing email accounts and supports setting a password later.
@@ -25,11 +25,12 @@ This monorepo hosts the AWAD project with authentication, dashboards, and in-pro
 - Node.js 20+ and npm
 - Docker (optional) for local Postgres via `docker-compose.yml`
 - PostgreSQL database reachable from the backend
+- Redis (optional; used for caching/locks, available via `docker-compose.yml`)
 - Google OAuth web client ID/secret
 
 ## Environment variables
 
-Create `backend/.env` (or `.env.development`) with:
+Create `backend/.env` (or `.env.development`) with (see `backend/.env.example` for the full list):
 ```
 NODE_ENV=development
 PORT=3000
@@ -37,7 +38,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASS=supersecret
-DB_NAME=blauchat_db
+DB_NAME=nestauth_db
 DB_SYNCHRONIZE=true
 DB_AUTO_LOAD_ENTITIES=true
 JWT_SECRET=change_me
@@ -48,13 +49,32 @@ JWT_REFRESH_TOKEN_TTL=2592000
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 REFRESH_COOKIE_NAME=refreshToken
+REFRESH_COOKIE_PATH=/auth
 REFRESH_COOKIE_MAX_AGE=2592000
+S3_BUCKET=your-bucket-name
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+Optional (email, payments, CORS, and media uploads):
+```
 ALLOWED_ORIGINS=http://localhost:5173
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:3000
+BASE_FRONTEND_URL=http://localhost:5173/
 RESEND_API_KEY=your-resend-api-key
 ADMIN_EMAIL_ADRRESS=admin@example.com
 ADMIN_EMAIL_NAME=Bus Ticket Admin
+PAYOS_CLIENT_ID=your-payos-client-id
+PAYOS_API_KEY=your-payos-api-key
+PAYOS_CHECKSUM_KEY=your-payos-checksum-key
+PAYOS_WEBHOOK_URL=your-payos-webhook-url
+S3_ENDPOINT=your-s3-endpoint
+PUBLIC_URL_BASE=https://cdn.example.com/
+R2_ACCESS_KEY_ID=your-r2-access-key
+R2_SECRET_ACCESS_KEY=your-r2-secret
+R2_BUCKET_NAME=your-r2-bucket
+R2_MEDIA_BASE_PATH=media
 ```
 
 Create `frontend/.env`:
@@ -87,7 +107,7 @@ REFRESH_COOKIE_MAX_AGE=2592000
 
 ## Local development
 1) **Database**
-- `docker compose up -d dev_db` (or point to an existing Postgres instance).
+- `docker compose up -d dev_db redis` (or point to existing Postgres/Redis instances).
 
 2) **Backend**
 - `cd backend`
@@ -144,19 +164,23 @@ Sign up with email/password, then sign in; or use “Continue with Google”. Pr
 - `GET /api/admin/trips/:tripId/passengers` – list passengers for a trip
 - `PATCH /api/admin/trips/:tripId/passengers/:passengerId/check-in` – check-in passenger
 - `PATCH /api/admin/trips/:tripId/passengers/:passengerId/check-in/reset` – reset passenger check-in
-- Swagger available at `/api/docs`
+- Swagger available at `/docs`
 
 ## Frontend routes (selected)
-- `/` Landing search form (protected; redirects to `/search` with params)
+- `/` Landing search form (protected with allow-guest; redirects to `/search` with params)
 - `/search` Trip search results UI (uses `/trips/search`; local filtering/pagination)
 - `/search/:id` Trip detail page (uses `/trips/:id`)
-- `/dashboard` Admin or user dashboard based on role
-- `/trips`, `/routes`, `/buses` Admin CRUD
+- `/search/:id/seats`, `/search/:id/checkout` Seat selection + checkout flow
+- `/upcoming-trip` Role-based dashboard (admin dashboard or user trips)
+- `/upcoming-trip/:id` Upcoming trip detail
+- `/payment/:bookingId` Payment confirmation
+- `/trips`, `/routes`, `/buses`, `/operators` Admin CRUD
 - `/bookings` Admin booking list + status updates
 - `/passengers` Admin passenger list + check-in
 - `/admin-users` Admin accounts management
 - `/analytics`, `/reports` Admin reporting dashboards
 - `/account` Profile + avatar + password change
+- `/guest-booking` Guest booking lookup
 
 ## Quality & tooling
 - ESLint configured in both apps. Prettier, lint-staged, and Husky are not yet wired—needs adding to match rubric.
