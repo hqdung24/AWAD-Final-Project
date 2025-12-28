@@ -4,6 +4,7 @@ import { type ConfigType } from '@nestjs/config';
 import { jwtConfig } from '@/config/jwt.config';
 import { User } from '@/modules/users/entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
+import * as crypto from 'crypto';
 @Injectable()
 export class GenerateTokensProvider {
   constructor(
@@ -32,19 +33,21 @@ export class GenerateTokensProvider {
     return token;
   }
 
-  public async generateTokens(
-    user: User,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const [accessToken, refreshToken] = await Promise.all([
-      //generate access token
-      this.signToken(user.id, this.jwtConfiguration.accessTokenTtl, {
+  public async generateTokens(user: User): Promise<{ accessToken: string }> {
+    const accessToken = await this.signToken(
+      user.id,
+      this.jwtConfiguration.accessTokenTtl,
+      {
         email: user.email,
         role: user.role,
-      }),
-      //generate refresh token
-      this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl),
-    ]);
+      },
+    );
 
-    return { accessToken, refreshToken };
+    return { accessToken };
+  }
+
+  public generateRandomToken(): string {
+    const randomToken = crypto.randomBytes(32).toString('hex');
+    return randomToken;
   }
 }

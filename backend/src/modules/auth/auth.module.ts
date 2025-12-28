@@ -19,6 +19,8 @@ import { AccessControlProvider } from './providers/access-control.provider';
 import { RoleGuard } from './guard/role-based.guard';
 import { EmailProvider } from './providers/email-provider.provider';
 import { appConfig } from '@/config/app.config';
+import { RedisModule } from '../redis/redis.module';
+import { SessionsProvider } from './providers/sessions.provider';
 @Module({
   controllers: [AuthController, GoogleAuthenticationController],
   providers: [
@@ -36,12 +38,14 @@ import { appConfig } from '@/config/app.config';
     GoogleAuthenticationService,
     AccessControlProvider,
     EmailProvider,
+    SessionsProvider,
   ],
   imports: [
     forwardRef(() => UsersModule),
     ConfigModule.forFeature(appConfig),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
+    RedisModule,
   ],
   exports: [AuthService, HashingProvider],
 })
