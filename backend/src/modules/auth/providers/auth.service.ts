@@ -12,6 +12,8 @@ import { RefreshTokenDto } from '@/modules/auth/dtos/refresh-token.dto';
 import { CreateUserDto } from '@/modules/users/dtos/create-user.dto';
 import { EMAIL_TEMPLATES } from '../constant/email.constant';
 import { EmailProvider } from './email-provider.provider';
+import { SessionsProvider } from './sessions.provider';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -26,6 +28,9 @@ export class AuthService {
 
     //inject email provider
     private readonly emailProvider: EmailProvider,
+
+    //inject sessions provider
+    private readonly sessionsProvider: SessionsProvider,
   ) {}
   private async generateVerificationToken(email: string): Promise<string> {
     //generate a random token (you can use any method you prefer)
@@ -78,9 +83,6 @@ export class AuthService {
   }
 
   public async refreshToken({ refreshToken }: RefreshTokenDto) {
-    //delegate to refresh tokens provider
-    //inject refresh tokens provider
-
     const tokens = await this.refreshTokensProvider.refreshToken(refreshToken);
     if (!tokens) {
       throw new BadRequestException('Failed to refresh the token');
@@ -88,9 +90,21 @@ export class AuthService {
     return tokens;
   }
 
+  public async signOut(refreshToken: string) {
+    try {
+      // Parse refreshToken format: "randomToken|sessionId"
+      const [, sessionId] = refreshToken.split('|');
+
+      if (sessionId) {
+        await this.sessionsProvider.destroySession(sessionId);
+      }
+    } catch {
+      // Silent fail - session might already be expired
+    }
+  }
+
   public async sendPasswordResetEmail(email: string) {
     //find user by email
-    console.log('email: ', email);
     const user = await this.userService.findOneByEmail(email).catch(() => null);
 
     if (!user || !user.isVerified) {

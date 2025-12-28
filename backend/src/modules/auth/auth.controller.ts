@@ -137,8 +137,19 @@ export class AuthController {
     return { accessToken };
   }
   @Post('signout')
-  signOut(@Res({ passthrough: true }) res: Response) {
-    //clear refresh token cookie
+  async signOut(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Get refresh token from cookie
+    const refreshToken = req.cookies[RT_COOKIE_NAME] as string | undefined;
+
+    if (refreshToken) {
+      // Destroy session in Redis
+      await this.authService.signOut(refreshToken);
+    }
+
+    // Clear refresh token cookie
     clearRefreshCookie(res);
     return { msg: 'Signout successful' };
   }

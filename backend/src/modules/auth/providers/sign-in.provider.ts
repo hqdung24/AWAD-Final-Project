@@ -9,6 +9,7 @@ import { SignInDto } from '../dtos/signin.dto';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { HashingProvider } from './hashing.provider';
 import { User } from '@/modules/users/entities/user.entity';
+import { SessionsProvider } from './sessions.provider';
 @Injectable()
 export class SignInProvider {
   constructor(
@@ -20,6 +21,9 @@ export class SignInProvider {
 
     //inject generate tokens provider
     private readonly generateTokensProvider: GenerateTokensProvider,
+
+    //inject sessions provider
+    private readonly sessionsProvider: SessionsProvider,
   ) {}
   public async signIn(signInDto: SignInDto) {
     const { emailOrUsername: identifier, password } = signInDto;
@@ -49,7 +53,7 @@ export class SignInProvider {
       throw new BadRequestException('Email is not verified');
     }
 
-    // Further sign-in logic goes here (e.g., password verification, token generation, etc.)
+    // Validate password
     const isPasswordValid = await this.hashingProvider.compare(
       password,
       user.password,
@@ -59,8 +63,20 @@ export class SignInProvider {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const { accessToken, refreshToken } =
+    //Session creation
+    const refreshToken = this.generateTokensProvider.generateRandomToken();
+    const { sessionId } = await this.sessionsProvider.createSession({
+      userId: user.id,
+      refreshToken,
+      device: 'Unknown',
+    });
+
+    // Attach sessionId to refreshToken for client use
+    const refreshTokenWithSession = `${refreshToken}|${sessionId}`;
+
+    //Token generation
+    const { accessToken } =
       await this.generateTokensProvider.generateTokens(user);
-    return { user, accessToken, refreshToken };
+    return { user, accessToken, refreshToken: refreshTokenWithSession };
   }
 }
