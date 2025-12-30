@@ -1,5 +1,5 @@
 import { SignInForm } from '@/components/auth/signin-form';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const SignInPage = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +14,9 @@ const SignInPage = () => {
           </div>
         )}
         <SignInForm />
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          Admin? <Link className="text-primary hover:underline" to="/admin/login">Go to admin sign in</Link>
+        </div>
       </div>
     </div>
   );

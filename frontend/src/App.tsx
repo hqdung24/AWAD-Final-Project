@@ -38,6 +38,7 @@ import TripDetails from './pages/search/TripDetails';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import { useAuthStore } from './stores/auth';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -222,14 +223,38 @@ function App() {
                       }
                     />
                   </Route>
-                  <Route
-                    path="/signin"
-                    element={
-                      <PublicRoute>
-                        <SignInPage />
-                      </PublicRoute>
-                    }
-                  />
+                <Route
+                  path="/signin"
+                  element={
+                    <PublicRoute>
+                      <SignInPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/customer/signin"
+                  element={
+                    <PublicRoute>
+                      <SignInPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/admin/login"
+                  element={
+                    <PublicRoute>
+                      <AdminLoginPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/admin/signin"
+                  element={
+                    <PublicRoute>
+                      <AdminLoginPage />
+                    </PublicRoute>
+                  }
+                />
                   <Route
                     path="/signup"
                     element={
