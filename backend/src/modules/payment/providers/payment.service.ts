@@ -271,6 +271,7 @@ export class PaymentService {
           payload: {
             bookingId: bookingDetail.id,
             tripId: bookingDetail.tripId,
+            bookingRef: bookingDetail.bookingReference,
             totalAmount: Number(updatedPayment?.amount || payment.amount),
             currency: 'VND',
             seats: this.buildSeats(bookingDetail),

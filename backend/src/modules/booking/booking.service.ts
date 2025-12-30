@@ -84,6 +84,7 @@ export class BookingService {
         payload: {
           bookingId: result.booking.id,
           tripId: result.booking.tripId,
+          bookingRef: result.booking.bookingReference,
           resumeUrl: resumeUrl,
           bookingStatus: result.booking.status,
           expiresAt: expiresAt.toISOString(),
@@ -156,6 +157,7 @@ export class BookingService {
           payload: {
             bookingId: result.id,
             tripId: result.tripId,
+            bookingRef: result.bookingReference,
             resumeUrl: `/bookings/${result.id}/resume`,
             bookingStatus: result.status,
             expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), //just for structure, won't be used
@@ -258,11 +260,31 @@ export class BookingService {
     let updatedCount = 0;
     for (const booking of pendingBookings) {
       // Update booking status to expired
+      if (booking.status !== 'pending') {
+        continue;
+      }
       await this.bookingRepository.update(booking.id, { status: 'expired' });
       updatedCount++;
 
       // Release seats associated with this expired booking
       await this.bookingRepository.releaseSeatsByBookingId(booking.id);
+
+      //Emit booking expired notification event
+      if (booking.userId) {
+        const notificationPayload: NotificationCreateEventPayload = {
+          userId: booking.userId,
+          type: NotificationType.BOOKING_INCOMPLETE,
+          payload: {
+            bookingId: booking.id,
+            tripId: booking.tripId,
+            bookingRef: booking.bookingReference,
+            resumeUrl: `/bookings/${booking.id}/resume`,
+            bookingStatus: 'expired',
+            expiresAt: new Date().toISOString(), //just for structure, won't be used
+          },
+        };
+        this.eventEmitter.emit('notification.create', notificationPayload);
+      }
     }
 
     return { updated: updatedCount };

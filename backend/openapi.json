@@ -2675,6 +2675,216 @@
         ]
       }
     },
+    "/notification": {
+      "get": {
+        "operationId": "NotificationController_getMyNotifications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by notification status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "sent",
+                "failed",
+                "read"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get current user notifications with pagination",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification/mark-as-read": {
+      "post": {
+        "operationId": "NotificationController_markAsRead",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkAsReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "affected": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark notifications as read",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification/mark-all-as-read": {
+      "post": {
+        "operationId": "NotificationController_markAllAsRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "affected": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark all notifications as read",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification/{id}": {
+      "delete": {
+        "operationId": "NotificationController_deleteNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a single notification",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification/delete-multiple": {
+      "post": {
+        "operationId": "NotificationController_deleteMultipleNotifications",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkAsReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "affected": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete multiple notifications",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
     "/reports/admin": {
       "get": {
         "operationId": "ReportController_getAdminReport",
@@ -4303,6 +4513,114 @@
             "example": false
           }
         }
+      },
+      "NotificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "in_app"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "trip_reminder_24h",
+              "trip_reminder_3h",
+              "trip_live_update",
+              "booking_confirmation",
+              "booking_incomplete"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed",
+              "read"
+            ]
+          },
+          "payload": {
+            "type": "object"
+          },
+          "sentAt": {
+            "type": "string"
+          },
+          "readAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "channel",
+          "type",
+          "status",
+          "payload"
+        ]
+      },
+      "NotificationListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "unreadCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "totalPages",
+          "unreadCount"
+        ]
+      },
+      "MarkAsReadDto": {
+        "type": "object",
+        "properties": {
+          "notificationIds": {
+            "description": "Array of notification IDs to mark as read",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "notificationIds"
+        ]
       }
     }
   }

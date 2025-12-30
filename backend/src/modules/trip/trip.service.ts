@@ -166,25 +166,22 @@ export class TripService {
       const bookings = trip ? trip.bookings : [];
       console.log('🚀 Updated bookings: ', bookings); // DEBUG
       // Emit event for each user with a booking on this trip
-      const userIds = new Set(
-        bookings
-          .map((b) => {
-            if (b.status !== 'cancelled' && b.status !== 'expired' && b.userId)
-              return b.userId;
-          })
-          .filter(Boolean),
+      const validBookings = bookings.filter(
+        (b) => b.userId && b.status !== 'cancelled' && b.status !== 'expired',
       );
-      userIds.forEach((userId) => {
+
+      for (const booking of validBookings) {
         this.eventEmitter.emit('notification.create', {
-          userId,
+          userId: booking.userId,
           type: NotificationType.TRIP_LIVE_UPDATE,
           payload: {
             tripId: id,
-            message: `Trip status updated to ${newStatus}`,
-            bookingId: bookings.find((b) => b.userId === userId)?.id,
+            bookingId: booking.id,
+            bookingRef: booking.bookingReference,
+            message: `Trip status for booking ${booking.bookingReference} has been updated to ${newStatus}`,
           },
         });
-      });
+      }
 
       // Emit trip status update event for realtime broadcast
       this.eventEmitter.emit('trip.status.updated', {

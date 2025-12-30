@@ -62,7 +62,7 @@ export class ScheduleService {
     }
   }
 
-  @Cron('0 */1 * * * *') // every 1 minute
+  @Cron('0 */5 * * * *') // every 1 minute
   async sendTripReminders() {
     this.logger.log('[CRON] sendTripReminders start');
     const start = Date.now();
