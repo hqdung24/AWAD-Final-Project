@@ -27,10 +27,10 @@ export class RoutePoint {
   address: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  latitude: number;
+  latitude: number | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  longitude: number;
+  longitude: number | null;
 
   @Column({ default: 0 })
   orderIndex: number;

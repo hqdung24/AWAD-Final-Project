@@ -1195,6 +1195,35 @@
         "tags": [
           "Admin - Route Points"
         ]
+      },
+      "get": {
+        "operationId": "RoutePointController_listRoutePoints",
+        "parameters": [
+          {
+            "name": "routeId",
+            "required": true,
+            "in": "path",
+            "description": "Route UUID",
+            "schema": {
+              "example": "550e8400-e29b-41d4-a716-446655440000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Route points retrieved successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List route points for a route",
+        "tags": [
+          "Admin - Route Points"
+        ]
       }
     },
     "/admin/route-points/{id}": {

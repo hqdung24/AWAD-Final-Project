@@ -66,6 +66,17 @@ interface RouteRow {
   operator_name: string;
 }
 
+interface RoutePointRow {
+  route_origin: string;
+  route_destination: string;
+  type: string;
+  name: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  order_index: string;
+}
+
 interface BusRow {
   plate_number: string;
   model: string;
@@ -166,7 +177,39 @@ async function seed() {
       console.log(`  ✓ Created route: ${row.origin} → ${row.destination}`);
     }
 
-    // 3. Seed Buses
+    // 3. Seed Route Points
+    console.log('📦 Seeding route points...');
+    const routePointRows = readCSV<RoutePointRow>('route_points.csv');
+    let routePointCount = 0;
+
+    for (const row of routePointRows) {
+      const route = routeMap.get(
+        `${row.route_origin}-${row.route_destination}`,
+      );
+      if (!route) {
+        console.warn(
+          `  ⚠️  Route not found for route point: ${row.route_origin} → ${row.route_destination}`,
+        );
+        continue;
+      }
+
+      const routePoint = new RoutePoint();
+      routePoint.routeId = route.id;
+      routePoint.type = row.type;
+      routePoint.name = row.name;
+      routePoint.address = row.address;
+      routePoint.orderIndex = parseInt(row.order_index, 10) || 0;
+      const latitude = row.latitude ? Number(row.latitude) : null;
+      const longitude = row.longitude ? Number(row.longitude) : null;
+      routePoint.latitude = Number.isFinite(latitude) ? latitude : null;
+      routePoint.longitude = Number.isFinite(longitude) ? longitude : null;
+
+      await AppDataSource.getRepository(RoutePoint).save(routePoint);
+      routePointCount++;
+    }
+    console.log(`  ✓ Created ${routePointCount} route points`);
+
+    // 4. Seed Buses
     console.log('📦 Seeding buses...');
     const busRows = readCSV<BusRow>('buses.csv');
     const busMap = new Map<string, Bus>();
@@ -194,7 +237,7 @@ async function seed() {
       );
     }
 
-    // 4. Seed Seats
+    // 5. Seed Seats
     console.log('📦 Seeding seats...');
     const seatRows = readCSV<SeatRow>('seats.csv');
     let seatCount = 0;
@@ -217,7 +260,7 @@ async function seed() {
     }
     console.log(`  ✓ Created ${seatCount} seats`);
 
-    // 5. Seed Trips
+    // 6. Seed Trips
     console.log('📦 Seeding trips...');
     const tripRows = readCSV<TripRow>('trips.csv');
     const createdTrips: Trip[] = [];
@@ -255,7 +298,7 @@ async function seed() {
       );
     }
 
-    // 6. Generate Seat Statuses for all Trips
+    // 7. Generate Seat Statuses for all Trips
     console.log('🪑 Generating seat statuses for trips...');
     let seatStatusCount = 0;
 
@@ -283,6 +326,7 @@ async function seed() {
     console.log(`📊 Summary:`);
     console.log(`   - Operators: ${operatorMap.size}`);
     console.log(`   - Routes: ${routeMap.size}`);
+    console.log(`   - Route Points: ${routePointCount}`);
     console.log(`   - Buses: ${busMap.size}`);
     console.log(`   - Seats: ${seatCount}`);
     console.log(`   - Trips: ${tripRows.length}`);

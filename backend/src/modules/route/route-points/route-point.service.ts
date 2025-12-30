@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { RoutePointRepository } from './route-point.repository';
 import { RouteService } from '../route.service';
 import { CreateRoutePointDto } from './dto/create-route-point.dto';
@@ -22,10 +22,23 @@ export class RoutePointService {
       throw new NotFoundException(`Route with ID ${routeId} not found`);
     }
 
-    // Create route point
+    const existingPoints = await this.routePointRepository.findByRouteId(routeId);
+    const orderIndex = createRoutePointDto.orderIndex ?? 0;
+    const hasDuplicateOrder = existingPoints.some(
+      (point) =>
+        point.type === createRoutePointDto.type &&
+        point.orderIndex === orderIndex,
+    );
+    if (hasDuplicateOrder) {
+      throw new BadRequestException(
+        `Route point order ${orderIndex} already exists for ${createRoutePointDto.type}`,
+      );
+    }
+
     return await this.routePointRepository.create({
       routeId,
       ...createRoutePointDto,
+      orderIndex,
     });
   }
 
@@ -37,6 +50,29 @@ export class RoutePointService {
     const existingPoint = await this.routePointRepository.findById(id);
     if (!existingPoint) {
       throw new NotFoundException(`Route point with ID ${id} not found`);
+    }
+
+    if (
+      updateRoutePointDto.orderIndex !== undefined ||
+      updateRoutePointDto.type !== undefined
+    ) {
+      const newType = updateRoutePointDto.type ?? existingPoint.type;
+      const newOrder =
+        updateRoutePointDto.orderIndex ?? existingPoint.orderIndex ?? 0;
+      const points = await this.routePointRepository.findByRouteId(
+        existingPoint.routeId,
+      );
+      const hasDuplicateOrder = points.some(
+        (point) =>
+          point.id !== existingPoint.id &&
+          point.type === newType &&
+          point.orderIndex === newOrder,
+      );
+      if (hasDuplicateOrder) {
+        throw new BadRequestException(
+          `Route point order ${newOrder} already exists for ${newType}`,
+        );
+      }
     }
 
     // Update route point

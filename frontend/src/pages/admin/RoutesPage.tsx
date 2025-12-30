@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -17,7 +17,16 @@ import {
   type AdminRoute,
 } from '@/services/adminRoutesService';
 import { listOperators, type Operator } from '@/services/operatorService';
-import { listRoutesWithStops, type RouteStop, type RouteWithStops } from '@/services/routeStops';
+import {
+  listRoutesWithStops,
+  listRoutePoints,
+  createRoutePoint,
+  updateRoutePoint,
+  deleteRoutePoint,
+  type RouteStop,
+  type RouteWithStops,
+  type RoutePointPayload,
+} from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/lib/notify';
 
@@ -33,12 +42,8 @@ const initialRouteForm: AdminRoute = {
 
 export default function RoutesPage() {
   const qc = useQueryClient();
-  const [createForm, setCreateForm] = useState<AdminRoute & { stops?: RouteStop[] }>(
-    initialRouteForm,
-  );
-  const [editForm, setEditForm] = useState<(AdminRoute & { stops?: RouteStop[] }) | null>(
-    null,
-  );
+  const [createForm, setCreateForm] = useState<AdminRoute>(initialRouteForm);
+  const [editForm, setEditForm] = useState<AdminRoute | null>(null);
   const [filters, setFilters] = useState<{
     operatorId?: string;
     origin?: string;
@@ -46,6 +51,20 @@ export default function RoutesPage() {
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [routePointRouteId, setRoutePointRouteId] = useState<string>('');
+  const [editingPointId, setEditingPointId] = useState<string | null>(null);
+  const [routePointForm, setRoutePointForm] = useState<RoutePointPayload>({
+    type: 'pickup',
+    name: '',
+    address: '',
+    orderIndex: 0,
+    latitude: null,
+    longitude: null,
+  });
+  const [routePointFilters, setRoutePointFilters] = useState<{
+    query?: string;
+    type?: 'pickup' | 'dropoff';
+  }>({});
 
   const { data: adminRoutesResult, isLoading: routesLoading } = useQuery<
     AdminRoute[] | RouteWithStops[]
@@ -60,16 +79,39 @@ export default function RoutesPage() {
       }
     },
   });
-  const adminRoutes: (AdminRoute & { stops?: RouteStop[] })[] =
-    (adminRoutesResult as { data?: (AdminRoute & { stops?: RouteStop[] })[] } | undefined)
-      ?.data ??
-    (adminRoutesResult as (AdminRoute & { stops?: RouteStop[] })[]) ??
+  const adminRoutes: AdminRoute[] =
+    (adminRoutesResult as { data?: AdminRoute[] } | undefined)?.data ??
+    (adminRoutesResult as AdminRoute[]) ??
     [];
 
   const { data: operators = [] } = useQuery<Operator[]>({
     queryKey: ['operators'],
     queryFn: listOperators,
   });
+
+  const { data: routePoints = [], isLoading: routePointsLoading } = useQuery<RouteStop[]>({
+    queryKey: ['route-points', routePointRouteId],
+    queryFn: () => listRoutePoints(routePointRouteId),
+    enabled: Boolean(routePointRouteId),
+  });
+
+  useEffect(() => {
+    if (!routePointRouteId && adminRoutes.length > 0) {
+      setRoutePointRouteId(adminRoutes[0].id);
+    }
+  }, [adminRoutes, routePointRouteId]);
+
+  useEffect(() => {
+    setEditingPointId(null);
+    setRoutePointForm({
+      type: 'pickup',
+      name: '',
+      address: '',
+      orderIndex: 0,
+      latitude: null,
+      longitude: null,
+    });
+  }, [routePointRouteId]);
 
   const createMutation = useMutation({
     mutationFn: createAdminRoute,
@@ -109,6 +151,77 @@ export default function RoutesPage() {
       notify.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
+
+  const createPointMutation = useMutation({
+    mutationFn: (payload: { routeId: string; data: RoutePointPayload }) =>
+      createRoutePoint(payload.routeId, payload.data),
+    onSuccess: () => {
+      setRoutePointForm({
+        type: 'pickup',
+        name: '',
+        address: '',
+        orderIndex: 0,
+        latitude: null,
+        longitude: null,
+      });
+      setEditingPointId(null);
+      void qc.invalidateQueries({ queryKey: ['route-points', routePointRouteId] });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to add route point';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
+  });
+
+  const updatePointMutation = useMutation({
+    mutationFn: (payload: { id: string; data: Partial<RoutePointPayload> }) =>
+      updateRoutePoint(payload.id, payload.data),
+    onSuccess: () => {
+      setEditingPointId(null);
+      setRoutePointForm({
+        type: 'pickup',
+        name: '',
+        address: '',
+        orderIndex: 0,
+        latitude: null,
+        longitude: null,
+      });
+      void qc.invalidateQueries({ queryKey: ['route-points', routePointRouteId] });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to update route point';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
+  });
+
+  const deletePointMutation = useMutation({
+    mutationFn: deleteRoutePoint,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['route-points', routePointRouteId] });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to delete route point';
+      notify.error(Array.isArray(message) ? message.join(', ') : message);
+    },
+  });
+
+  const routePointRows = routePoints
+    .filter((point) => {
+      if (routePointFilters.type && point.type !== routePointFilters.type) {
+        return false;
+      }
+      if (routePointFilters.query) {
+        const q = routePointFilters.query.toLowerCase();
+        const hay = `${point.name ?? ''} ${point.address ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    })
+    .slice()
+    .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -249,30 +362,6 @@ export default function RoutesPage() {
                 />
               </label>
             </div>
-            <div className="grid gap-2 md:grid-cols-3">
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Stops (CSV: name|type|order)
-                <textarea
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border min-h-[80px]"
-                  placeholder="HCM Station|pickup|1&#10;Da Nang|dropoff|2"
-                  onChange={(e) => {
-                    const lines = e.target.value
-                      .split('\n')
-                      .map((l) => l.trim())
-                      .filter(Boolean);
-                    const stops: RouteStop[] = lines
-                      .map((line) => {
-                        const [name, type, order] = line.split('|').map((s) => s.trim());
-                        if (!name || (type !== 'pickup' && type !== 'dropoff') || !order)
-                          return null;
-                        return { name, type: type as 'pickup' | 'dropoff', order: Number(order) };
-                      })
-                      .filter((s): s is RouteStop => Boolean(s));
-                    setCreateForm((prev) => ({ ...prev, stops }));
-                  }}
-                />
-              </label>
-            </div>
             <div className="grid gap-2 md:grid-cols-3 items-center">
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                 Distance (km)
@@ -333,7 +422,6 @@ export default function RoutesPage() {
                     notes: createForm.notes,
                     distanceKm: createForm.distanceKm,
                     estimatedMinutes: createForm.estimatedMinutes,
-                    stops: createForm.stops,
                   })
                 }
                 disabled={
@@ -361,7 +449,6 @@ export default function RoutesPage() {
                 <TableRow>
                   <TableHead>Origin</TableHead>
                   <TableHead>Destination</TableHead>
-                  <TableHead>Stops</TableHead>
                   <TableHead>Operator</TableHead>
                   <TableHead>Distance (km)</TableHead>
                   <TableHead>ETA (min)</TableHead>
@@ -422,22 +509,6 @@ export default function RoutesPage() {
                         />
                       ) : (
                         route.destination
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {route.stops && route.stops.length > 0 ? (
-                        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                          {route.stops
-                            .slice()
-                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                            .map((s) => (
-                              <span key={s.id ?? s.name}>
-                                {s.order}. {s.name} ({s.type})
-                              </span>
-                            ))}
-                        </div>
-                      ) : (
-                        '—'
                       )}
                     </TableCell>
                     <TableCell>
@@ -628,6 +699,271 @@ export default function RoutesPage() {
                 Next
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Route Points</span>
+            {routePointsLoading && (
+              <span className="text-muted-foreground text-xs">Loading…</span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Route
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointRouteId}
+                onChange={(e) => setRoutePointRouteId(e.target.value)}
+              >
+                {adminRoutes.map((route) => (
+                  <option key={route.id} value={route.id}>
+                    {route.origin} → {route.destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Filter type
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointFilters.type ?? ''}
+                onChange={(e) =>
+                  setRoutePointFilters((prev) => ({
+                    ...prev,
+                    type: e.target.value
+                      ? (e.target.value as 'pickup' | 'dropoff')
+                      : undefined,
+                  }))
+                }
+              >
+                <option value="">All types</option>
+                <option value="pickup">Pickup</option>
+                <option value="dropoff">Dropoff</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Search
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointFilters.query ?? ''}
+                onChange={(e) =>
+                  setRoutePointFilters((prev) => ({
+                    ...prev,
+                    query: e.target.value || undefined,
+                  }))
+                }
+                placeholder="Name or address"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-6">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Type
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointForm.type}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    type: e.target.value as RoutePointPayload['type'],
+                  }))
+                }
+              >
+                <option value="pickup">Pickup</option>
+                <option value="dropoff">Dropoff</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+              Name
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointForm.name}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Route point name"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+              Address
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointForm.address}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
+                placeholder="Full address"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Order
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                type="number"
+                min={0}
+                value={routePointForm.orderIndex ?? 0}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    orderIndex: Number(e.target.value),
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Latitude
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                type="number"
+                step="0.0000001"
+                value={routePointForm.latitude ?? ''}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    latitude: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Longitude
+              <input
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                type="number"
+                step="0.0000001"
+                value={routePointForm.longitude ?? ''}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    longitude: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!routePointRouteId) return;
+                if (editingPointId) {
+                  updatePointMutation.mutate({
+                    id: editingPointId,
+                    data: routePointForm,
+                  });
+                  return;
+                }
+                createPointMutation.mutate({
+                  routeId: routePointRouteId,
+                  data: routePointForm,
+                });
+              }}
+              disabled={
+                !routePointRouteId ||
+                !routePointForm.name ||
+                !routePointForm.address ||
+                createPointMutation.isPending ||
+                updatePointMutation.isPending
+              }
+            >
+              {editingPointId ? 'Update point' : 'Add point'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setEditingPointId(null);
+                setRoutePointForm({
+                  type: 'pickup',
+                  name: '',
+                  address: '',
+                  orderIndex: 0,
+                  latitude: null,
+                  longitude: null,
+                });
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Coords</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {routePointRows.map((point) => (
+                  <TableRow key={point.id ?? `${point.name}-${point.orderIndex}`}>
+                    <TableCell>{point.orderIndex ?? 0}</TableCell>
+                    <TableCell className="capitalize">{point.type}</TableCell>
+                    <TableCell>{point.name}</TableCell>
+                    <TableCell>{point.address ?? '—'}</TableCell>
+                    <TableCell>
+                      {point.latitude !== null &&
+                      point.latitude !== undefined &&
+                      point.longitude !== null &&
+                      point.longitude !== undefined
+                        ? `${point.latitude}, ${point.longitude}`
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (!point.id) return;
+                          setEditingPointId(point.id);
+                          setRoutePointForm({
+                            type: point.type,
+                            name: point.name,
+                            address: point.address ?? '',
+                            orderIndex: point.orderIndex ?? 0,
+                            latitude: point.latitude ?? null,
+                            longitude: point.longitude ?? null,
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => point.id && deletePointMutation.mutate(point.id)}
+                        disabled={deletePointMutation.isPending}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {routePointRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No route points found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
