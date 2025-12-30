@@ -5,6 +5,7 @@ import { MetricsService } from '../metrics/metrics.service';
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/providers/payment.service';
 import { SeatStatusService } from '../seat-status/seat-status.service';
+import { TripService } from '../trip/trip.service';
 @Injectable()
 export class ScheduleService {
   private readonly logger = new Logger(ScheduleService.name);
@@ -16,6 +17,7 @@ export class ScheduleService {
     private readonly paymentService: PaymentService,
     private readonly notificationService: NotificationService,
     private readonly metricsService: MetricsService,
+    private readonly tripService: TripService,
   ) {}
   // Add scheduling related methods here
 
@@ -110,6 +112,24 @@ export class ScheduleService {
       );
       this.logger.warn(
         `[CRON] sendTripReminders failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  @Cron('0 */1 * * * *') // every 1 minute
+  async autoUpdateTripStatuses() {
+    const now = new Date();
+    this.logger.log(
+      `[CRON] autoUpdateTripStatuses start at ${now.toISOString()}`,
+    );
+    try {
+      const result = await this.tripService.autoUpdateTripStatuses(now);
+      this.logger.log(
+        `[CRON] autoUpdateTripStatuses done - completed=${result.completed} archived=${result.archived}`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `[CRON] autoUpdateTripStatuses failed: ${(error as Error).message}`,
       );
     }
   }

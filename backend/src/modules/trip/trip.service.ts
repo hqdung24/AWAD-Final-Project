@@ -238,6 +238,15 @@ export class TripService {
     return updatedTrip!; // ensure exists
   }
 
+  async autoUpdateTripStatuses(now: Date): Promise<{
+    completed: number;
+    archived: number;
+  }> {
+    const completed = await this.tripRepository.markDeparted(now);
+    const archived = await this.tripRepository.markArrived(now);
+    return { completed, archived };
+  }
+
   async searchTrips(filters: {
     from?: string;
     to?: string;

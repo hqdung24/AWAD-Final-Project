@@ -204,4 +204,26 @@ export class TripRepository {
       .where('trip.id = :tripId', { tripId })
       .getOne();
   }
+
+  async markDeparted(now: Date): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Trip)
+      .set({ status: 'completed' })
+      .where('status = :status', { status: 'scheduled' })
+      .andWhere('departureTime <= :now', { now })
+      .execute();
+    return result.affected ?? 0;
+  }
+
+  async markArrived(now: Date): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Trip)
+      .set({ status: 'archived' })
+      .where('status = :status', { status: 'completed' })
+      .andWhere('arrivalTime <= :now', { now })
+      .execute();
+    return result.affected ?? 0;
+  }
 }
