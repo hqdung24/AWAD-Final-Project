@@ -28,7 +28,6 @@ import { NotificationModule } from '@/modules/notification/notification.module';
 import { FeedbackModule } from '@/modules/feedback/feedback.module';
 import { ReportModule } from '@/modules/report/report.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
-import { ScheduleModule } from '@nestjs/schedule';
 import { MyScheduleModule } from './modules/schedule/schedule.module';
 import { AppController } from './app.controller';
 import { MetricsModule } from './modules/metrics/metrics.module';
@@ -111,8 +110,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
     NotificationModule,
     FeedbackModule,
     ReportModule,
-    //Schedule module for cron jobs
-    ScheduleModule.forRoot(),
+    //Schedule module for cron jobs (forRoot is called inside MyScheduleModule)
     MyScheduleModule,
     MetricsModule,
     RealtimeModule,

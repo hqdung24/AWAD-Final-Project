@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,8 +20,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useBooking } from '@/hooks/useBooking';
-import { useUserStore } from '@/stores/user';
 import type { BookingListItem } from '@/schemas/booking/booking.response';
 import type {
   SeatChange,
@@ -32,19 +37,14 @@ import {
   getSeatStatusesByTrip,
   type SeatStatusItem,
 } from '@/services/seatStatusService';
-import { ArrowRight, Clock, MapPin, Pencil, Ticket } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useUserStore } from '@/stores/user';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { ArrowRight, Clock, MapPin, Pencil, Ticket } from 'lucide-react';
+import { useState } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
 
@@ -265,12 +265,12 @@ function UserDashboard() {
   const statusBadgeClass: Record<BookingStatus, string> = {
     all: 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))]',
     pending:
-      'bg-[hsl(var(--info))]/18  text-[hsl(var(--muted-foreground))]   border border-[hsl(var(--info))]/40',
-    paid: 'bg-[hsl(var(--primary))]/18 text-[hsl(var(--muted-foreground))]  border border-[hsl(var(--primary))]/40',
+      'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/40',
+    paid: 'bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/40',
     expired:
-      'bg-[hsl(var(--warning))]/15 border text-[hsl(var(--muted-foreground))]  border-[hsl(var(--warning))]/40',
+      'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-500/40',
     cancelled:
-      'bg-[hsl(var(--destructive))]/15 text-[hsl(var(--muted-foreground))]  border border-[hsl(var(--destructive))]/40',
+      'bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/40',
   };
 
   return (

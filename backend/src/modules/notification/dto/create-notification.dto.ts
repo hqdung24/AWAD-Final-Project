@@ -72,6 +72,11 @@ export class BookingConfirmationPayloadDto {
   @IsNotEmpty()
   tripId: string;
 
+  @ApiProperty({ description: 'Booking reference', example: 'booking_123' })
+  @IsString()
+  @IsNotEmpty()
+  bookingRef: string;
+
   @ApiProperty({ description: 'Total amount charged', example: 250000 })
   @IsNumber()
   totalAmount: number;
@@ -103,6 +108,11 @@ export class BookingIncompletePayloadDto {
   @IsString()
   @IsNotEmpty()
   tripId: string;
+
+  @ApiProperty({ description: 'Booking ref', example: 'booking_123' })
+  @IsString()
+  @IsNotEmpty()
+  bookingRef: string;
 
   @ApiProperty({
     description: 'Link to resume checkout',

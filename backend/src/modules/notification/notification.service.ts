@@ -13,7 +13,11 @@ import {
   TripLiveUpdatePayloadDto,
   TripReminderPayloadDto,
 } from './dto/create-notification.dto';
-import { NotificationChannel } from './enums/notification.enum';
+import {
+  NotificationChannel,
+  NotificationStatus,
+} from './enums/notification.enum';
+import type { Notification } from './entities/notification.entity';
 
 @Injectable()
 export class NotificationService {
@@ -208,5 +212,85 @@ export class NotificationService {
       skippedMissingContact,
       skippedDuplicate,
     };
+  }
+
+  // List notifications with pagination
+  async getNotifications(
+    userId: string,
+    options: {
+      status?: NotificationStatus;
+      page: number;
+      limit: number;
+    },
+  ): Promise<{
+    data: Notification[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    unreadCount: number;
+  }> {
+    const [notifications, total] =
+      await this.notificationRepository.findNotificationsByUserPaginated(
+        userId,
+        options,
+      );
+
+    const unreadCount =
+      await this.notificationRepository.countUnreadByUser(userId);
+
+    return {
+      data: notifications,
+      total,
+      page: options.page,
+      limit: options.limit,
+      totalPages: Math.ceil(total / options.limit),
+      unreadCount,
+    };
+  }
+
+  // Mark notifications as read
+  async markNotificationsAsRead(
+    userId: string,
+    notificationIds: string[],
+  ): Promise<{ affected: number }> {
+    const affected = await this.notificationRepository.markMultipleAsRead(
+      userId,
+      notificationIds,
+    );
+    return { affected };
+  }
+
+  // Mark all notifications as read for a user
+  async markAllNotificationsAsRead(
+    userId: string,
+  ): Promise<{ affected: number }> {
+    const affected = await this.notificationRepository.markAllAsRead(userId);
+    return { affected };
+  }
+
+  // Delete single notification
+  async deleteNotification(
+    notificationId: string,
+    userId: string,
+  ): Promise<{ success: boolean }> {
+    const result = await this.notificationRepository.deleteNotification(
+      notificationId,
+      userId,
+    );
+    return { success: result.affected > 0 };
+  }
+
+  // Delete multiple notifications
+  async deleteNotifications(
+    userId: string,
+    notificationIds: string[],
+  ): Promise<{ affected: number }> {
+    const affected =
+      await this.notificationRepository.deleteMultipleNotifications(
+        notificationIds,
+        userId,
+      );
+    return { affected };
   }
 }

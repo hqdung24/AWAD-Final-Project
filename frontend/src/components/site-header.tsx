@@ -43,7 +43,7 @@ export function SiteHeader({ showSidebarToggle = true }: Props) {
         )}
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
         <ThemeToggle className="hidden sm:inline-flex" />
-        <NotificationModal />
+        {!isGuest && <NotificationModal />}
         {isGuest && (
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>
