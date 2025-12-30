@@ -11,6 +11,9 @@ import { PaymentStatus } from '../entities/payment.entity';
 import type { Booking } from '@/modules/booking/entities/booking.entity';
 import type { Payment } from '../entities/payment.entity';
 import { PaymentEmailProvider } from './payment-email.provider';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '@/modules/notification/enums/notification.enum';
+import type { NotificationCreateEventPayload } from '@/modules/notification/dto/notification-event.dto';
 
 @Injectable()
 export class PaymentService {
@@ -21,6 +24,7 @@ export class PaymentService {
     private readonly bookingService: BookingService,
     private readonly paymentRepository: PaymentRepository,
     private readonly paymentEmailProvider: PaymentEmailProvider,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.payosClient = new PayOS({
       clientId: this.payosConfiguration.clientId,
@@ -211,7 +215,6 @@ export class PaymentService {
 
     const webhookData = await this.verifyWebhookSignature(webhook);
 
-    // TODO:
     // 1. Tìm payment record theo providerOrderCode = data.orderCode
     const payment = await this.paymentRepository.findOneByOrderCode(
       webhookData.orderCode,
@@ -259,6 +262,24 @@ export class PaymentService {
           ),
         );
       }
+
+      // Emit booking confirmation notification event
+      if (bookingDetail.userId) {
+        const notificationPayload: NotificationCreateEventPayload = {
+          userId: bookingDetail.userId,
+          type: NotificationType.BOOKING_CONFIRMATION,
+          payload: {
+            bookingId: bookingDetail.id,
+            tripId: bookingDetail.tripId,
+            totalAmount: Number(updatedPayment?.amount || payment.amount),
+            currency: 'VND',
+            seats: this.buildSeats(bookingDetail),
+            departureTime:
+              bookingDetail.trip?.departureTime?.toISOString?.() || '',
+          },
+        };
+        this.eventEmitter.emit('notification.create', notificationPayload);
+      }
     } else {
       const updatedPayment = await this.paymentRepository.updatePayment({
         orderCode: webhookData.orderCode,
@@ -284,6 +305,7 @@ export class PaymentService {
         );
       }
     }
+    // Emit event for create notification
 
     return { received: true }; // Acknowledge receipt of the webhook
   }

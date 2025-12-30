@@ -4,12 +4,10 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MediaDomain } from '../enums/media-domain.enum';
 import { MediaType } from '../enums/media-type.enum';
-import { User } from '@/modules/users/entities/user.entity';
 
 @Index(['domain', 'domainId'])
 @Entity('media')
@@ -43,7 +41,4 @@ export class Media {
 
   @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at' })
   deletedAt?: Date;
-
-  @OneToOne(() => User, (user) => user.avatarMedia, { nullable: true })
-  user?: User | null;
 }

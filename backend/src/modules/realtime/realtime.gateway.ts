@@ -18,14 +18,7 @@ import { AuthType } from '../auth/enums/auth-type.enum';
 import { TripRoomDto } from './dto/trip-room.dto';
 import { SeatSelectDto } from './dto/seat-select.dto';
 import { SeatReleaseDto } from './dto/seat-release.dto';
-import { JwtService } from '@nestjs/jwt';
-import { Inject } from '@nestjs/common';
-import { type ConfigType } from '@nestjs/config';
-import { jwtConfig } from '@/config/jwt.config';
 import { WsGlobalExceptionFilter } from '@/common/filters/ws-exceptions.filter';
-interface JwtPayload {
-  sub: string;
-}
 
 @UseFilters(WsGlobalExceptionFilter)
 @Auth(AuthType.None)
@@ -47,49 +40,28 @@ export class RealtimeGateway
   constructor(
     private readonly realtimeService: RealtimeService,
     private readonly seatSelectingProvider: SeatSelectingProvider,
-    //Inject jwt service
-    private readonly jwtService: JwtService,
-
-    //Inject jwt config
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
 
   afterInit() {
     this.logger.log('WebSocket Gateway Initialized');
+    // Attach the server instance to the service so other modules can emit
+    this.realtimeService.attachServer(this.server);
   }
 
   handleConnection(@ConnectedSocket() socket: Socket) {
-    const token = socket.handshake.auth?.token as string | undefined;
+    const userIdFromClient = socket.handshake.auth?.userId as
+      | string
+      | undefined;
     const guestId = socket.handshake.auth?.guestId as string | undefined;
 
     const socketId = socket.id;
     this.logger.log(` Handshake occurs for socket ${socketId}`);
-    let userIdFromToken: string | undefined;
-
-    //verify token
-    if (token) {
-      try {
-        const payload = this.jwtService.verify<JwtPayload>(token, {
-          secret: this.jwtConfiguration.secret,
-        });
-        userIdFromToken = payload.sub;
-      } catch {
-        this.logger.warn(
-          `Invalid token for socket ${socket.id}, token : ${token}`,
-        );
-        socket.disconnect(true);
-        return;
-      }
-    } else if (guestId) {
-      userIdFromToken = `guest:${guestId}`;
-    } else {
-      socket.disconnect();
+    const userId = userIdFromClient ?? (guestId ? `guest:${guestId}` : null);
+    if (!userId) {
+      this.logger.warn(`Client connected without userId/guestId: ${socketId}`);
+      socket.disconnect(true);
       return;
     }
-
-    // register mapping using userId from token only
-    const userId = userIdFromToken;
     if (userId) {
       this.realtimeService.registerUser(userId, socketId);
 

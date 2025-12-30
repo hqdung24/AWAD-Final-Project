@@ -20,7 +20,6 @@ import {
 import { notify } from '@/lib/notify';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
 import { getSocket } from '@/lib/socket';
 import { useRef } from 'react';
@@ -34,7 +33,6 @@ export default function SeatSelection() {
   const to = searchParams.get('to') || '';
   const date = searchParams.get('date') || '';
   const passengers = parseInt(searchParams.get('passengers') || '1');
-  const accessToken = useAuthStore((s) => s.accessToken);
   const currentUserId = useUserStore((s) => s.me?.id);
   const socketRef = useRef<Socket | null>(null);
 
@@ -94,27 +92,44 @@ export default function SeatSelection() {
     selectedSeatsRef.current = selectedSeats;
   }, [selectedSeats]);
 
+  // Setup socket connection and event handlers
   useEffect(() => {
     if (!id) return;
 
-    const socket = getSocket(accessToken);
+    // Use global socket instance initialized by SocketProvider
+    // Pass the current user id so we don't downgrade to a guest identity after login
+    const socket = getSocket(currentUserId ?? undefined);
     socketRef.current = socket;
 
-    socket.emit('trip:join', { tripId: id });
-    // ensure we get the latest snapshot when entering the room
-    void refetchSeats();
+    const doJoin = () => {
+      socket.emit('trip:join', { tripId: id });
+      // ensure we get the latest snapshot when entering the room
+      void refetchSeats();
+    };
+
+    if (socket.connected) {
+      doJoin();
+    } else {
+      socket.once('connect', doJoin);
+    }
 
     socket.on('seat:selected', ({ seatId, userId }) => {
-      console.log('receive broadcast message from socket: ', seatId);
-
-      if (userId && userId === currentUserId) return;
+      if (userId === currentUserId) {
+        // own selection fromt other tab
+        setSelectedSeats((prev) =>
+          prev.includes(seatId) ? prev : [...prev, seatId]
+        );
+        return;
+      }
       setSelectedByOthers((prev) => new Set([...prev, seatId]));
     });
 
     socket.on('seat:released', ({ seatId, userId }) => {
-      console.log('receive broadcast message from socket: ', seatId);
-
-      if (userId && userId === currentUserId) return;
+      if (userId && userId === currentUserId) {
+        // own release from other tab
+        setSelectedSeats((prev) => prev.filter((id) => id !== seatId));
+        return;
+      }
       setSelectedByOthers((prev) => {
         const next = new Set(prev);
         next.delete(seatId);
@@ -151,8 +166,9 @@ export default function SeatSelection() {
       socket.off('seat:released');
       socket.off('seat:locked');
       socket.off('error');
+      socket.off('connect', doJoin);
     };
-  }, [id, accessToken, currentUserId, refetchSeats]);
+  }, [id, currentUserId, refetchSeats]);
 
   // Release selections on page reload/navigation (best-effort)
   useEffect(() => {
@@ -246,6 +262,7 @@ export default function SeatSelection() {
 
       if (!response.success) {
         notify.error(response.message || 'Failed to lock seats');
+        emitSeatRelease(selectedSeats[0]); // release first seat to trigger update
         setSelectedSeats([]);
         refetchSeats();
         return;

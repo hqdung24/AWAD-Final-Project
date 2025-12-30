@@ -279,7 +279,6 @@ export class UsersService {
 
     // Bind avatar to user
     const result = await this.usersRepository.updateUser(userId, {
-      avatarMediaId: media.id,
       avatarUrl: media.url,
     });
 

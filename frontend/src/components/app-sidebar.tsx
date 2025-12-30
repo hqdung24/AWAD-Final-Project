@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: 'Your trips', url: '/upcoming-trip', icon: BusFront },
     { title: 'Profile', url: '/account', icon: Users },
     { title: 'Payments', url: '#payments', icon: ChartNoAxesCombined },
-    { title: 'Notifications', url: '#notifications', icon: Send },
+    { title: 'Notifications', url: '/notifications', icon: Send },
   ];
 
   const navItems = (role === 'ADMIN' ? adminNav : userNav).map((item) => ({

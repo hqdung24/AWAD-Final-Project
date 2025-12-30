@@ -4,16 +4,13 @@ import {
   DeleteDateColumn,
   Entity,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-  JoinColumn,
 } from 'typeorm';
 
-import { PaymentMethod } from '@/modules/payment-method/entities/payment-method.entity';
 import { Booking } from '@/modules/booking/entities/booking.entity';
 import { Feedback } from '@/modules/feedback/entities/feedback.entity';
-import { Media } from '@/modules/media/entities/media.entity';
+import { PaymentMethod } from '@/modules/payment-method/entities/payment-method.entity';
 
 @Entity('users')
 export class User {
@@ -61,10 +58,6 @@ export class User {
 
   @Column({ type: 'varchar', length: 200, nullable: true, default: null })
   verificationToken?: string | null;
-
-  @OneToOne(() => Media, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'avatar_media_id' })
-  avatarMedia?: Media | null;
 
   @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.user)
   paymentMethods: PaymentMethod[];

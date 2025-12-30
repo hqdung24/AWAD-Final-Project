@@ -17,7 +17,16 @@ export class BookingRepository {
   async findAllWithFilters(
     query: BookingListQueryDto,
   ): Promise<{ data: Booking[]; total: number }> {
-    const { page = 1, limit = 10, userId, email, phone, status, from, to } = query;
+    const {
+      page = 1,
+      limit = 10,
+      userId,
+      email,
+      phone,
+      status,
+      from,
+      to,
+    } = query;
 
     const qb = this.repository
       .createQueryBuilder('booking')
@@ -239,16 +248,22 @@ export class BookingRepository {
     return qb.getMany();
   }
 
+  reminderColumnMap = {
+    reminder24hSentAt: 'reminder24h_sent_at',
+    reminder3hSentAt: 'reminder3h_sent_at',
+  } as const;
+
   async markReminderSent(
     bookingId: string,
     reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
   ): Promise<boolean> {
+    const reminderColumn = this.reminderColumnMap[reminderField];
     const result = await this.repository
       .createQueryBuilder()
       .update(Booking)
       .set({ [reminderField]: () => 'CURRENT_TIMESTAMP' })
       .where('id = :bookingId', { bookingId })
-      .andWhere(`"${reminderField}" IS NULL`)
+      .andWhere(`"${reminderColumn}" IS NULL`)
       .execute();
 
     return (result.affected ?? 0) > 0;

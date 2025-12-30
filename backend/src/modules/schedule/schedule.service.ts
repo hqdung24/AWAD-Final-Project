@@ -1,12 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SeatStatusService } from '../seat-status/seat-status.service';
 import { Cron } from '@nestjs/schedule';
 import { BookingService } from '../booking/booking.service';
-import { PaymentService } from '../payment/providers/payment.service';
-import { BookingEmailProvider } from '../booking/providers/booking-email.provider';
-import { NotificationService } from '../notification/notification.service';
-import type { Booking } from '../booking/entities/booking.entity';
 import { MetricsService } from '../metrics/metrics.service';
+import { NotificationService } from '../notification/notification.service';
+import { PaymentService } from '../payment/providers/payment.service';
+import { SeatStatusService } from '../seat-status/seat-status.service';
 @Injectable()
 export class ScheduleService {
   private readonly logger = new Logger(ScheduleService.name);
@@ -16,14 +14,13 @@ export class ScheduleService {
     private readonly seatStatusService: SeatStatusService,
     private readonly bookingService: BookingService,
     private readonly paymentService: PaymentService,
-    private readonly bookingEmailProvider: BookingEmailProvider,
     private readonly notificationService: NotificationService,
     private readonly metricsService: MetricsService,
   ) {}
   // Add scheduling related methods here
 
-  @Cron('0 */5 * * * *') // chạy mỗi 5 phút
-  async releaseExpiredSeats() {
+  @Cron('0 */5 * * * *') // every 5 minutes
+  async releaseExpiredJobs() {
     const now = new Date();
     this.logger.log(`[CRON] releaseExpiredSeats start at ${now.toISOString()}`);
     const start = Date.now();
@@ -65,128 +62,40 @@ export class ScheduleService {
     }
   }
 
-  private buildReminderPayload(booking: Booking, reminderType: '24h' | '3h') {
-    const seats =
-      booking.seatStatuses?.map((s) => s.seat?.seatCode).filter(Boolean) ?? [];
-
-    const passengers =
-      booking.passengerDetails?.map((p) => ({
-        fullName: p.fullName,
-        seatCode: p.seatCode,
-        documentId: p.documentId,
-      })) ?? [];
-
-    const contact = {
-      name:
-        booking.name ||
-        [booking.user?.firstName, booking.user?.lastName]
-          .filter(Boolean)
-          .join(' ') ||
-        null,
-      email: booking.email || booking.user?.email || null,
-      phone: booking.phone || booking.user?.phone || null,
-    };
-
-    return {
-      bookingId: booking.id,
-      bookingReference: booking.bookingReference,
-      origin: booking.trip?.route?.origin || '—',
-      destination: booking.trip?.route?.destination || '—',
-      departureTime: booking.trip?.departureTime?.toISOString?.() || '',
-      arrivalTime: booking.trip?.arrivalTime?.toISOString?.(),
-      seats,
-      passengers,
-      contact,
-      reminderType,
-      manageBookingUrl: booking.id,
-    };
-  }
-
-  private async processReminderWindow(options: {
-    hoursFromNow: number;
-    bufferMinutes: number;
-    reminderField: 'reminder24hSentAt' | 'reminder3hSentAt';
-    reminderType: '24h' | '3h';
-  }) {
-    const now = Date.now();
-    const windowStart = new Date(
-      now + (options.hoursFromNow * 60 - options.bufferMinutes) * 60 * 1000,
-    );
-    const windowEnd = new Date(
-      now + (options.hoursFromNow * 60 + options.bufferMinutes) * 60 * 1000,
-    );
-
-    const bookings = await this.bookingService.findBookingsForReminder(
-      windowStart,
-      windowEnd,
-      options.reminderField,
-    );
-
-    let sent = 0;
-    let skippedPrefs = 0;
-    let skippedMissingContact = 0;
-    let skippedDuplicate = 0;
-
-    for (const booking of bookings) {
-      if (booking.userId) {
-        const prefs = await this.notificationService.getPreferencesForUser(
-          booking.userId,
-        );
-        if (!prefs.emailRemindersEnabled) {
-          skippedPrefs++;
-          continue;
-        }
-      }
-
-      const to = booking.email || booking.user?.email;
-      if (!to) {
-        skippedMissingContact++;
-        continue;
-      }
-
-      const marked = await this.bookingService.markReminderSent(
-        booking.id,
-        options.reminderField,
-      );
-      if (!marked) {
-        skippedDuplicate++;
-        continue;
-      }
-
-      await this.bookingEmailProvider.sendTripReminderEmail(
-        to,
-        this.buildReminderPayload(booking, options.reminderType),
-      );
-      sent++;
-    }
-
-    this.logger.log(
-      `[CRON] reminders ${options.reminderType}h window start=${
-        windowStart.toISOString().split('T')[0]
-      } end=${windowEnd.toISOString().split('T')[0]} found=${
-        bookings.length
-      } sent=${sent} skippedPrefs=${skippedPrefs} skippedMissingContact=${skippedMissingContact} skippedDuplicate=${skippedDuplicate}`,
-    );
-  }
-
-  @Cron('0 */15 * * * *') // every 15 minutes
+  @Cron('0 */1 * * * *') // every 1 minute
   async sendTripReminders() {
     this.logger.log('[CRON] sendTripReminders start');
     const start = Date.now();
     try {
-      await this.processReminderWindow({
+      const result24h = await this.notificationService.processReminderWindow({
         hoursFromNow: 24,
         bufferMinutes: 15,
         reminderField: 'reminder24hSentAt',
         reminderType: '24h',
       });
 
-      await this.processReminderWindow({
+      this.logger.log(
+        `[CRON] reminders 24h window start=${
+          result24h.windowStart.toISOString().split('T')[0]
+        } end=${result24h.windowEnd.toISOString().split('T')[0]} found=${
+          result24h.totalBookings
+        } sent=${result24h.sent} skippedPrefs=${result24h.skippedPrefs} skippedMissingContact=${result24h.skippedMissingContact} skippedDuplicate=${result24h.skippedDuplicate}`,
+      );
+
+      const result3h = await this.notificationService.processReminderWindow({
         hoursFromNow: 3,
         bufferMinutes: 10,
         reminderField: 'reminder3hSentAt',
         reminderType: '3h',
       });
+
+      this.logger.log(
+        `[CRON] reminders 3h window start=${
+          result3h.windowStart.toISOString().split('T')[0]
+        } end=${result3h.windowEnd.toISOString().split('T')[0]} found=${
+          result3h.totalBookings
+        } sent=${result3h.sent} skippedPrefs=${result3h.skippedPrefs} skippedMissingContact=${result3h.skippedMissingContact} skippedDuplicate=${result3h.skippedDuplicate}`,
+      );
 
       this.lastReminderRun = new Date();
       this.metricsService.markJobSuccess(

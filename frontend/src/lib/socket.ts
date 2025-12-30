@@ -2,29 +2,29 @@ import { io, Socket } from 'socket.io-client';
 import { getGuestId } from './utils';
 
 let socket: Socket | null = null;
-let currentToken: string | null = null;
+let currentUserId: string | null = null;
 
-export function getSocket(token?: string): Socket {
-  const nextToken = token ?? null;
+export function getSocket(userId?: string): Socket {
+  const nextUserId = userId ?? `guest:${getGuestId()}`;
 
-  // 🔁 Token changed → force reconnect
-  if (socket && currentToken !== nextToken) {
+  // 🔁 Identity changed → force reconnect
+  if (socket && currentUserId !== nextUserId) {
     socket.disconnect();
     socket = null;
-    currentToken = null;
+    currentUserId = null;
   }
 
   if (!socket) {
     socket = io('http://localhost:3000/realtime', {
       auth: {
-        token: nextToken ?? undefined,
-        guestId: nextToken ? undefined : getGuestId(),
+        userId: userId ?? undefined,
+        guestId: userId ? undefined : nextUserId.replace('guest:', ''),
       },
       transports: ['websocket'],
       autoConnect: true,
     });
 
-    currentToken = nextToken;
+    currentUserId = nextUserId;
   }
 
   return socket;
@@ -34,6 +34,6 @@ export function disconnectSocket() {
   if (socket) {
     socket.disconnect();
     socket = null;
-    currentToken = null;
+    currentUserId = null;
   }
 }

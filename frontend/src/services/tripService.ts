@@ -61,7 +61,9 @@ type TripListParams = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export async function listTrips(params?: TripListParams): Promise<TripListResponse> {
+export async function listTrips(
+  params?: TripListParams
+): Promise<TripListResponse> {
   const res = (await http.get('/trips/admin', { params })) as any;
   const payload = res?.data ?? res ?? {};
 
@@ -86,7 +88,10 @@ export async function createTrip(payload: Omit<Trip, 'id'>): Promise<Trip> {
   return (res as { data: Trip }).data;
 }
 
-export async function updateTrip(id: string, payload: Partial<Omit<Trip, 'id'>>): Promise<Trip> {
+export async function updateTrip(
+  id: string,
+  payload: Partial<Omit<Trip, 'id'>>
+): Promise<Trip> {
   const res = await http.patch(`/trips/admin/${id}`, payload);
   return (res as { data: Trip }).data;
 }

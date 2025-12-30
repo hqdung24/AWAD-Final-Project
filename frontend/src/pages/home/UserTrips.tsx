@@ -24,8 +24,14 @@ import { Input } from '@/components/ui/input';
 import { useBooking } from '@/hooks/useBooking';
 import { useUserStore } from '@/stores/user';
 import type { BookingListItem } from '@/schemas/booking/booking.response';
-import type { SeatChange, UpdateBookingRequest } from '@/services/bookingService';
-import { getSeatStatusesByTrip, type SeatStatusItem } from '@/services/seatStatusService';
+import type {
+  SeatChange,
+  UpdateBookingRequest,
+} from '@/services/bookingService';
+import {
+  getSeatStatusesByTrip,
+  type SeatStatusItem,
+} from '@/services/seatStatusService';
 import { ArrowRight, Clock, MapPin, Pencil, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -209,7 +215,12 @@ function UserDashboard() {
   };
 
   const canEditBooking = (b: BookingListItem) => {
-    if (b.status === 'expired' || b.status === 'cancelled') return false;
+    if (
+      b.status === 'expired' ||
+      b.status === 'cancelled' ||
+      b.status === 'paid'
+    )
+      return false;
     const dep = new Date(b.trip.departureTime).getTime();
     return dep - Date.now() > cutoffHours * 60 * 60 * 1000;
   };
@@ -333,7 +344,7 @@ function UserDashboard() {
                         onClick={() => openEditModal(trip.booking)}
                         aria-label="Edit booking"
                       >
-                        <Pencil className="h-4 w-4" />
+                        {trip.canEdit && <Pencil className="h-4 w-4" />}
                       </Button>
                     )}
                   </div>
@@ -557,9 +568,14 @@ function UserDashboard() {
                                 </FormControl>
                                 <SelectContent>
                                   {options.map((opt) => (
-                                    <SelectItem key={opt.seatId} value={opt.seatId}>
+                                    <SelectItem
+                                      key={opt.seatId}
+                                      value={opt.seatId}
+                                    >
                                       {opt.seatCode || opt.seatId}{' '}
-                                      {opt.state !== 'available' ? '(current)' : ''}
+                                      {opt.state !== 'available'
+                                        ? '(current)'
+                                        : ''}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
