@@ -28,6 +28,7 @@ export class NotificationCreateProvider {
       type: NotificationType.TRIP_REMINDER_24H,
       payload,
       bookingId: payload.bookingId,
+      sentAt: new Date(),
     });
   }
 
@@ -42,6 +43,7 @@ export class NotificationCreateProvider {
       type: NotificationType.TRIP_REMINDER_3H,
       payload,
       bookingId: payload.bookingId,
+      sentAt: new Date(),
     });
   }
 
@@ -56,6 +58,7 @@ export class NotificationCreateProvider {
       type: NotificationType.TRIP_LIVE_UPDATE,
       payload,
       bookingId: payload.bookingId,
+      sentAt: new Date(),
     });
   }
 
@@ -70,6 +73,7 @@ export class NotificationCreateProvider {
       type: NotificationType.BOOKING_CONFIRMATION,
       payload,
       bookingId: payload.bookingId,
+      sentAt: new Date(),
     });
   }
 
@@ -84,6 +88,7 @@ export class NotificationCreateProvider {
       type: NotificationType.BOOKING_INCOMPLETE,
       payload,
       bookingId: payload.bookingId,
+      sentAt: new Date(),
     });
   }
 }

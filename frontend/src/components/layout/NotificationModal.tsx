@@ -6,105 +6,26 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Bus, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Bell,
+  Bus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Trash2,
+} from 'lucide-react';
 import {
   type Notification,
   NotificationType,
   NotificationStatus,
-  NotificationChannel,
   type TripReminderPayload,
   type BookingConfirmationPayload,
   type TripLiveUpdatePayload,
   type BookingIncompletePayload,
 } from '@/schemas/notification/notification';
-
-const now = Date.now();
-
-//Mock notification data matching backend structure with richer copy
-const mockNotifications: Notification[] = [
-  {
-    id: 'notif_booking_confirmed',
-    userId: 'user_123',
-    channel: NotificationChannel.IN_APP,
-    type: NotificationType.BOOKING_CONFIRMATION,
-    status: NotificationStatus.SENT,
-    payload: {
-      bookingId: 'BK-2025-00045',
-      tripId: 'trip-hcm-hue-0105',
-      totalAmount: 1245000,
-      currency: 'VND',
-      seats: ['12A', '12B'],
-      departureTime: new Date(now + 48 * 60 * 60 * 1000).toISOString(),
-    },
-    sentAt: new Date(now - 15 * 60 * 1000).toISOString(),
-    readAt: null,
-  },
-  {
-    id: 'notif_reminder_24h',
-    userId: 'user_123',
-    channel: NotificationChannel.IN_APP,
-    type: NotificationType.TRIP_REMINDER_24H,
-    status: NotificationStatus.SENT,
-    payload: {
-      tripId: 'trip-hcm-dl-0102',
-      departureTime: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
-      from: 'Ho Chi Minh City',
-      to: 'Da Lat',
-      bookingId: 'BK-2025-00012',
-      seats: ['A3'],
-    },
-    sentAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
-    readAt: null,
-  },
-  {
-    id: 'notif_live_update',
-    userId: 'user_123',
-    channel: NotificationChannel.IN_APP,
-    type: NotificationType.TRIP_LIVE_UPDATE,
-    status: NotificationStatus.READ,
-    payload: {
-      tripId: 'trip-hanoi-danang-1229',
-      message:
-        'Your bus is departing 10 minutes late due to traffic near My Dinh.',
-      bookingId: 'BK-2024-00221',
-    },
-    sentAt: new Date(now - 45 * 60 * 1000).toISOString(),
-    readAt: new Date(now - 30 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'notif_booking_incomplete',
-    userId: 'user_123',
-    channel: NotificationChannel.IN_APP,
-    type: NotificationType.BOOKING_INCOMPLETE,
-    status: NotificationStatus.SENT,
-    payload: {
-      bookingId: 'BK-2025-00078',
-      tripId: 'trip-hue-quangngai-0103',
-      resumeUrl: '/bookings/BK-2025-00078/resume',
-      expiresAt: new Date(now + 35 * 60 * 1000).toISOString(),
-    },
-    sentAt: new Date(now - 10 * 60 * 1000).toISOString(),
-    readAt: null,
-  },
-  {
-    id: 'notif_reminder_3h',
-    userId: 'user_123',
-    channel: NotificationChannel.IN_APP,
-    type: NotificationType.TRIP_REMINDER_3H,
-    status: NotificationStatus.SENT,
-    payload: {
-      tripId: 'trip-nhatrang-hanoi-1228',
-      departureTime: new Date(now + 3 * 60 * 60 * 1000).toISOString(),
-      from: 'Nha Trang',
-      to: 'Hanoi',
-      bookingId: 'BK-2024-00991',
-      seats: ['B5', 'B6'],
-    },
-    sentAt: new Date(now - 20 * 60 * 1000).toISOString(),
-    readAt: new Date(now - 5 * 60 * 1000).toISOString(),
-  },
-];
-
+import { useNotification } from '@/hooks/useNotification';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
 const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
     case NotificationType.TRIP_REMINDER_24H:
@@ -133,7 +54,9 @@ const getNotificationMessage = (notification: Notification): string => {
     }
     case NotificationType.BOOKING_CONFIRMATION: {
       const payload = notification.payload as BookingConfirmationPayload;
-      return `Booking confirmed! Your seats ${payload.seats.join(
+      return `Booking ${
+        payload.bookingRef
+      } confirmed! Your seats ${payload.seats.join(
         ', '
       )} for ${new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -146,7 +69,14 @@ const getNotificationMessage = (notification: Notification): string => {
     }
     case NotificationType.BOOKING_INCOMPLETE: {
       const payload = notification.payload as BookingIncompletePayload;
-      return `Checkout for booking ${payload.bookingId} is not finished. Complete payment to keep your seats.`;
+      const status = payload.bookingStatus.toLowerCase();
+      if (status === 'pending') {
+        return `Checkout for booking ${payload.bookingRef} is not finished. Complete payment to keep your seats.`;
+      } else if (status === 'expired') {
+        return `Your booking ${payload.bookingRef} has expired. Seats are released.`;
+      } else {
+        return `Your booking ${payload.bookingRef} is ${status}.`;
+      }
     }
     default:
       return 'New notification';
@@ -156,32 +86,34 @@ const getNotificationMessage = (notification: Notification): string => {
 const getNotificationOnClickAction = (notification: Notification): string => {
   switch (notification.type) {
     case NotificationType.TRIP_REMINDER_24H: {
-      const link = `/trips/${
+      const link = `/upcoming-trip/${
         (notification.payload as TripReminderPayload).tripId
       }`;
       return link;
     }
     case NotificationType.TRIP_REMINDER_3H: {
-      const link = `/trips/${
+      const link = `/upcoming-trip/${
         (notification.payload as TripReminderPayload).tripId
       }`;
       return link;
     }
     case NotificationType.BOOKING_CONFIRMATION: {
-      const link = `/bookings/${
+      const link = `/upcoming-trip/${
         (notification.payload as BookingConfirmationPayload).bookingId
       }`;
       return link;
     }
     case NotificationType.TRIP_LIVE_UPDATE: {
-      const link = `/trips/${
-        (notification.payload as { tripId: string }).tripId
+      const link = `/upcoming-trip/${
+        (notification.payload as TripLiveUpdatePayload).bookingId
       }`;
       return link;
     }
     case NotificationType.BOOKING_INCOMPLETE: {
-      const { resumeUrl } = notification.payload as BookingIncompletePayload;
-      return resumeUrl || '/bookings/incomplete';
+      const link = `/upcoming-trip/${
+        (notification.payload as BookingIncompletePayload).bookingId
+      }`;
+      return link;
     }
     default:
       return 'New notification';
@@ -205,14 +137,59 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export const NotificationModal = () => {
-  const unreadNotifications = mockNotifications.filter((n) => !n.readAt);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const {
+    notificationList,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteNotifications,
+  } = useNotification({
+    page: 1,
+    limit: 20,
+  });
+  const navigate = useNavigate();
+
+  const notifications = notificationList.data?.data || [];
+  const unreadCount = notificationList.data?.unreadCount || 0;
+  const isLoading = notificationList.isLoading;
+
+  const handleMarkAsRead = (notificationId: string) => {
+    markAsRead.mutate(notificationId);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead.mutate();
+  };
+
+  const handleDelete = (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteNotification.mutate(notificationId);
+  };
+
+  const handleDeleteAll = () => {
+    const allIds = notifications.map((n) => n.id);
+    if (allIds.length > 0) {
+      deleteNotifications.mutate(allIds);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.status !== NotificationStatus.READ) {
+      handleMarkAsRead(notification.id);
+    }
+    const actionLink = getNotificationOnClickAction(notification);
+    console.log('Navigate to:', actionLink);
+
+    navigate(actionLink);
+  };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="lg" className="relative">
           <Bell className="h-5 w-5" />
-          {unreadNotifications.length > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
           )}
           <span className="sr-only">Notifications</span>
@@ -223,59 +200,93 @@ export const NotificationModal = () => {
         align="end"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h3 className="font-semibold text-sm">Notifications</h3>
-          {unreadNotifications.length > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs">
-              Mark all read
-            </Button>
-          )}
+          <h3 className="font-semibold text-sm">
+            Notifications {unreadCount > 0 && `(${unreadCount})`}
+          </h3>
+          <div className="flex gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleMarkAllAsRead}
+                disabled={markAllAsRead.isPending}
+              >
+                Mark all read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-destructive hover:text-destructive"
+                onClick={handleDeleteAll}
+                disabled={deleteNotifications.isPending}
+              >
+                Delete all
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="h-[400px]">
-          <div className="divide-y">
-            {mockNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`flex gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
-                  !notification.readAt ? 'bg-primary/5' : ''
-                }`}
-                onClick={() => {
-                  const actionLink = getNotificationOnClickAction(notification);
-                  console.log('Navigate to:', actionLink);
-                }}
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>
-                    {getNotificationIcon(notification.type)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm leading-tight">
-                    <span className="text-muted-foreground">
-                      {getNotificationMessage(notification)}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatTimeAgo(notification.sentAt!)}
-                  </p>
-                  {notification.type ===
-                    NotificationType.BOOKING_INCOMPLETE && (
-                    <div className="flex gap-2 pt-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <Bell className="h-12 w-12 text-muted-foreground/50 mb-2" />
+              <p className="text-sm text-muted-foreground">No notifications</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`relative flex gap-3 p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
+                    notification.status !== NotificationStatus.READ
+                      ? 'bg-primary/5'
+                      : ''
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                  onMouseEnter={() => setHoveredId(notification.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback>
+                      {getNotificationIcon(notification.type)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm leading-tight">
+                      <span className="text-muted-foreground">
+                        {getNotificationMessage(notification)}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatTimeAgo(notification.sentAt!)}
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    {notification.status !== NotificationStatus.READ && (
+                      <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                    )}
+                    {hoveredId === notification.id && (
                       <Button
+                        variant="ghost"
                         size="sm"
-                        variant="default"
-                        className="h-7 text-xs"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => handleDelete(notification.id, e)}
+                        disabled={deleteNotification.isPending}
                       >
-                        Complete Payment
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-                {!notification.readAt && (
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </ScrollArea>
         <div className="border-t p-2">
           <Button variant="ghost" className="w-full text-xs h-8">

@@ -58,6 +58,98 @@ export class NotificationRepository {
     });
   }
 
+  async findNotificationsByUserPaginated(
+    userId: string,
+    options: {
+      status?: NotificationStatus;
+      page: number;
+      limit: number;
+    },
+  ): Promise<[Notification[], number]> {
+    const skip = (options.page - 1) * options.limit;
+
+    return this.repository.findAndCount({
+      where: {
+        userId,
+        ...(options.status ? { status: options.status } : {}),
+      },
+      order: { sentAt: 'DESC', id: 'DESC' },
+      skip,
+      take: options.limit,
+    });
+  }
+
+  async countUnreadByUser(userId: string): Promise<number> {
+    return this.repository.count({
+      where: {
+        userId,
+        status: NotificationStatus.SENT,
+        channel: NotificationChannel.IN_APP,
+      },
+    });
+  }
+
+  async markMultipleAsRead(
+    userId: string,
+    notificationIds: string[],
+  ): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Notification)
+      .set({
+        status: NotificationStatus.READ,
+        readAt: new Date(),
+      })
+      .where('id IN (:...ids)', { ids: notificationIds })
+      .andWhere('userId = :userId', { userId })
+      .andWhere('status != :readStatus', {
+        readStatus: NotificationStatus.READ,
+      })
+      .execute();
+
+    return result.affected || 0;
+  }
+
+  async markAllAsRead(userId: string): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Notification)
+      .set({
+        status: NotificationStatus.READ,
+        readAt: new Date(),
+      })
+      .where('userId = :userId', { userId })
+      .andWhere('status != :readStatus', {
+        readStatus: NotificationStatus.READ,
+      })
+      .execute();
+
+    return result.affected || 0;
+  }
+
+  async deleteNotification(
+    id: string,
+    userId: string,
+  ): Promise<{ affected: number }> {
+    const result = await this.repository.delete({ id, userId });
+    return { affected: result.affected || 0 };
+  }
+
+  async deleteMultipleNotifications(
+    notificationIds: string[],
+    userId: string,
+  ): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .delete()
+      .from(Notification)
+      .where('id IN (:...ids)', { ids: notificationIds })
+      .andWhere('userId = :userId', { userId })
+      .execute();
+
+    return result.affected || 0;
+  }
+
   async markAsRead(id: string): Promise<Notification | null> {
     const existing = await this.repository.findOne({ where: { id } });
     if (!existing) return null;

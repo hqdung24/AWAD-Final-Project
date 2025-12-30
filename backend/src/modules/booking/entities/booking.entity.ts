@@ -61,8 +61,8 @@ export class Booking {
   @JoinColumn()
   user: User;
 
-  @Column({ type: 'varchar', nullable: true })
-  bookingReference: string | null; //user-friendly booking reference code
+  @Column({ type: 'varchar' })
+  bookingReference: string; //user-friendly booking reference code
 
   @ManyToOne(() => Trip, (trip) => trip.bookings, {
     onDelete: 'RESTRICT',
