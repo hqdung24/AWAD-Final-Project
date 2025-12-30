@@ -303,6 +303,21 @@ export default function BookingsPage() {
                         <p className="text-sm text-muted-foreground">{bookingDetailQuery.data.email}</p>
                         <p className="text-sm text-muted-foreground">{bookingDetailQuery.data.phone}</p>
                       </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Pickup / Dropoff</p>
+                        <p className="font-medium">
+                          {bookingDetailQuery.data.pickupPoint?.name ?? 'Not set'} →{' '}
+                          {bookingDetailQuery.data.dropoffPoint?.name ?? 'Not set'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {bookingDetailQuery.data.pickupPoint?.address ?? '—'}
+                          {bookingDetailQuery.data.pickupPoint?.address &&
+                          bookingDetailQuery.data.dropoffPoint?.address
+                            ? ' • '
+                            : ''}
+                          {bookingDetailQuery.data.dropoffPoint?.address ?? ''}
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-2">Seats</p>

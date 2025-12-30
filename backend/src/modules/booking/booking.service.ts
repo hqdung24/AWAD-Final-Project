@@ -60,6 +60,8 @@ export class BookingService {
     contactInfo: ContactInfoDto,
     paymentMethodId?: string,
     userId?: string,
+    pickupPointId?: string,
+    dropoffPointId?: string,
   ) {
     const result = await this.bookingProvider.createBooking(
       lockToken,
@@ -67,6 +69,8 @@ export class BookingService {
       contactInfo,
       paymentMethodId,
       userId,
+      pickupPointId,
+      dropoffPointId,
     );
 
     // Emit incomplete booking notification event

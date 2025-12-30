@@ -14,6 +14,7 @@ import { DataSource } from 'typeorm';
 import type { ContactInfoDto } from '../dto/contact-info.dto';
 import type { PassengerDto } from '../dto/passenger.dto';
 import { Booking } from '../entities/booking.entity';
+import { RoutePoint } from '@/modules/route/entities/route-point.entity';
 import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
 import { type ConfigType } from '@nestjs/config';
 import { appConfig } from '@/config/app.config';
@@ -163,6 +164,8 @@ export class BookingProvider {
     contactInfo: ContactInfoDto, // not used yet, maybe for guest bookings later
     paymentMethodId?: string, // not used yet
     userId?: string,
+    pickupPointId?: string,
+    dropoffPointId?: string,
   ): Promise<CreateBookingResult> {
     // 1. Verify lock token
     const tokenPayload = this.verifyLockToken(lockToken);
@@ -212,14 +215,40 @@ export class BookingProvider {
       // 7. Validate seat statuses
       this.validateSeatStatuses(seatStatuses);
 
-      // 8. Calculate total amount
+      // 8. Validate pickup/dropoff points
+      const routePoints = await queryRunner.manager.find(RoutePoint, {
+        where: { routeId: trip.routeId },
+      });
+      const pickupPoints = routePoints.filter((rp) => rp.type === 'pickup');
+      const dropoffPoints = routePoints.filter((rp) => rp.type === 'dropoff');
+
+      if (pickupPoints.length > 0 && !pickupPointId) {
+        throw new BadRequestException('Pickup point is required');
+      }
+      if (dropoffPoints.length > 0 && !dropoffPointId) {
+        throw new BadRequestException('Dropoff point is required');
+      }
+      if (
+        pickupPointId &&
+        !pickupPoints.some((rp) => rp.id === pickupPointId)
+      ) {
+        throw new BadRequestException('Invalid pickup point selected');
+      }
+      if (
+        dropoffPointId &&
+        !dropoffPoints.some((rp) => rp.id === dropoffPointId)
+      ) {
+        throw new BadRequestException('Invalid dropoff point selected');
+      }
+
+      // 9. Calculate total amount
       const totalAmount = this.calculateTotalAmount(
         trip,
         seatIds.length,
         20000, // e.g., booking fee
       );
 
-      // 9. Create booking
+      // 10. Create booking
       const bookingReference = this.generateBookingReference();
       const booking = queryRunner.manager.create(Booking, {
         userId: userId || null,
@@ -230,11 +259,13 @@ export class BookingProvider {
         email: contactInfo.email || null,
         phone: contactInfo.phone || null,
         bookingReference,
+        pickupPointId: pickupPointId || null,
+        dropoffPointId: dropoffPointId || null,
       });
 
       const savedBooking = await queryRunner.manager.save(Booking, booking);
 
-      // 10. Create passenger details
+      // 11. Create passenger details
       const passengerDetails: PassengerDetail[] = [];
       for (const passengerDto of passengers) {
         const passengerDetail = queryRunner.manager.create(PassengerDetail, {
@@ -253,7 +284,7 @@ export class BookingProvider {
         passengerDetails.push(savedPassenger);
       }
 
-      // 11. Update seat statuses to booked
+      // 12. Update seat statuses to booked
       await queryRunner.manager
         .createQueryBuilder()
         .update(SeatStatus)
@@ -266,10 +297,10 @@ export class BookingProvider {
         .andWhere('seatId IN (:...seatIds)', { seatIds })
         .execute();
 
-      // 12. Commit transaction
+      // 13. Commit transaction
       await queryRunner.commitTransaction();
 
-      // 13. Send booking confirmation email (non-blocking)
+      // 14. Send booking confirmation email (non-blocking)
       if (contactInfo.email) {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.bookingEmailProvider.sendBookingConfirmationEmail(
@@ -300,7 +331,7 @@ export class BookingProvider {
         );
       }
 
-      // 14. Return result
+      // 15. Return result
       return {
         booking: savedBooking,
         seats: seats.map((seat) => ({

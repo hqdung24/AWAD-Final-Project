@@ -34,6 +34,38 @@ export class PassengerInfoDto {
   seatCode: string;
 }
 
+export class RoutePointSelectionDto {
+  @ApiProperty({
+    description: 'Route point ID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Route point type',
+    example: 'pickup',
+  })
+  type: string;
+
+  @ApiProperty({
+    description: 'Route point name',
+    example: 'Bến xe Miền Đông',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Route point address',
+    example: '292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM',
+  })
+  address: string;
+
+  @ApiProperty({
+    description: 'Order index',
+    example: 1,
+  })
+  orderIndex: number;
+}
+
 export class CreateBookingSuccessResponseDto {
   @ApiProperty({
     description: 'UUID of the created booking',
@@ -98,6 +130,22 @@ export class CreateBookingSuccessResponseDto {
     example: '2025-12-06T12:30:00.000Z',
   })
   createdAt: string;
+
+  @ApiProperty({
+    description: 'Selected pickup point (if any)',
+    type: RoutePointSelectionDto,
+    required: false,
+    nullable: true,
+  })
+  pickupPoint?: RoutePointSelectionDto | null;
+
+  @ApiProperty({
+    description: 'Selected dropoff point (if any)',
+    type: RoutePointSelectionDto,
+    required: false,
+    nullable: true,
+  })
+  dropoffPoint?: RoutePointSelectionDto | null;
 }
 
 export class CreateBookingErrorResponseDto {

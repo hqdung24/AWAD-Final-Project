@@ -118,8 +118,22 @@ export interface TripDetails {
   distanceKm?: number;
   busPhotos?: string[];
   routePoints?: {
-    pickup: Array<{ name: string; address?: string; note?: string }>;
-    dropoff: Array<{ name: string; address?: string; note?: string }>;
+    pickup: Array<{
+      id: string;
+      type: 'pickup';
+      name: string;
+      address?: string;
+      note?: string;
+      orderIndex?: number;
+    }>;
+    dropoff: Array<{
+      id: string;
+      type: 'dropoff';
+      name: string;
+      address?: string;
+      note?: string;
+      orderIndex?: number;
+    }>;
   };
 }
 

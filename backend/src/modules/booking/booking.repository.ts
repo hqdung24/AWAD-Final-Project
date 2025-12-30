@@ -32,9 +32,11 @@ export class BookingRepository {
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.trip', 'trip')
       .leftJoinAndSelect('trip.route', 'route')
+      .leftJoinAndSelect('route.routePoints', 'routePoints')
       .leftJoinAndSelect('booking.seatStatuses', 'seatStatus')
       .leftJoinAndSelect('seatStatus.seat', 'seat')
       .leftJoinAndSelect('booking.passengerDetails', 'passengerDetails')
+      .distinct(true)
       .orderBy('booking.bookedAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -72,6 +74,7 @@ export class BookingRepository {
       relations: [
         'trip',
         'trip.route',
+        'trip.route.routePoints',
         'trip.bus',
         'user',
         'seatStatuses',
@@ -140,6 +143,7 @@ export class BookingRepository {
         relations: [
           'trip',
           'trip.route',
+          'trip.route.routePoints',
           'seatStatuses',
           'seatStatuses.seat',
           'passengerDetails',
@@ -193,6 +197,7 @@ export class BookingRepository {
         relations: [
           'trip',
           'trip.route',
+          'trip.route.routePoints',
           'seatStatuses',
           'seatStatuses.seat',
           'passengerDetails',
@@ -401,6 +406,7 @@ export class BookingRepository {
         relations: [
           'trip',
           'trip.route',
+          'trip.route.routePoints',
           'seatStatuses',
           'seatStatuses.seat',
           'passengerDetails',

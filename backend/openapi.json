@@ -3729,6 +3729,16 @@
             "type": "string",
             "description": "Optional user ID for authenticated users",
             "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "pickupPointId": {
+            "type": "string",
+            "description": "Pickup route point ID selected by the passenger",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "dropoffPointId": {
+            "type": "string",
+            "description": "Dropoff route point ID selected by the passenger",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
           }
         },
         "required": [
@@ -3779,6 +3789,43 @@
           "fullName",
           "documentId",
           "seatCode"
+        ]
+      },
+      "RoutePointSelectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Route point ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "type": {
+            "type": "string",
+            "description": "Route point type",
+            "example": "pickup"
+          },
+          "name": {
+            "type": "string",
+            "description": "Route point name",
+            "example": "Bến xe Miền Đông"
+          },
+          "address": {
+            "type": "string",
+            "description": "Route point address",
+            "example": "292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM"
+          },
+          "orderIndex": {
+            "type": "number",
+            "description": "Order index",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "address",
+          "orderIndex"
         ]
       },
       "CreateBookingSuccessResponseDto": {
@@ -3845,6 +3892,24 @@
             "type": "string",
             "description": "Timestamp when booking was created",
             "example": "2025-12-06T12:30:00.000Z"
+          },
+          "pickupPoint": {
+            "description": "Selected pickup point (if any)",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutePointSelectionDto"
+              }
+            ]
+          },
+          "dropoffPoint": {
+            "description": "Selected dropoff point (if any)",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutePointSelectionDto"
+              }
+            ]
           }
         },
         "required": [
@@ -4036,6 +4101,24 @@
             "items": {
               "$ref": "#/components/schemas/PassengerInfoDto"
             }
+          },
+          "pickupPoint": {
+            "description": "Selected pickup point (if any)",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutePointSelectionDto"
+              }
+            ]
+          },
+          "dropoffPoint": {
+            "description": "Selected dropoff point (if any)",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutePointSelectionDto"
+              }
+            ]
           }
         },
         "required": [

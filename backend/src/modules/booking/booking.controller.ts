@@ -40,6 +40,28 @@ import { RoleType } from '@/modules/auth/enums/roles-type.enum';
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
+  private mapRoutePointSelection(
+    routePoints: Array<{
+      id: string;
+      type: string;
+      name: string;
+      address: string;
+      orderIndex: number;
+    }> | undefined,
+    id: string | null,
+  ) {
+    if (!routePoints || !id) return null;
+    const match = routePoints.find((rp) => rp.id === id);
+    if (!match) return null;
+    return {
+      id: match.id,
+      type: match.type,
+      name: match.name,
+      address: match.address,
+      orderIndex: match.orderIndex,
+    };
+  }
+
   @Post()
   @Auth(AuthType.None) // Public access
   @HttpCode(HttpStatus.CREATED)
@@ -79,6 +101,8 @@ export class BookingController {
       createBookingDto.contactInfo,
       createBookingDto.paymentMethodId,
       createBookingDto.userId,
+      createBookingDto.pickupPointId,
+      createBookingDto.dropoffPointId,
     );
 
     return {
@@ -96,6 +120,8 @@ export class BookingController {
       totalAmount: Number(result.booking.totalAmount),
       paymentMethodId: createBookingDto.paymentMethodId, //not implemented yet, return from request for now
       createdAt: result.booking.bookedAt.toISOString(),
+      pickupPoint: null,
+      dropoffPoint: null,
     };
   }
 
@@ -137,6 +163,14 @@ export class BookingController {
     const { data, total } = await this.bookingService.listBookings(query);
 
     const items = data.map((booking) => ({
+      pickupPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.pickupPointId,
+      ),
+      dropoffPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.dropoffPointId,
+      ),
       id: booking.id,
       tripId: booking.tripId,
       userId: booking.userId,
@@ -193,6 +227,14 @@ export class BookingController {
     const booking = await this.bookingService.getBookingDetail(id);
 
     return {
+      pickupPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.pickupPointId,
+      ),
+      dropoffPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.dropoffPointId,
+      ),
       bookingId: booking.id,
       tripId: booking.tripId,
       userId: booking.userId,
@@ -243,6 +285,14 @@ export class BookingController {
     const booking = await this.bookingService.updateBooking(id, dto);
 
     return {
+      pickupPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.pickupPointId,
+      ),
+      dropoffPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.dropoffPointId,
+      ),
       bookingId: booking.id,
       tripId: booking.tripId,
       userId: booking.userId,
@@ -293,6 +343,14 @@ export class BookingController {
     const booking = await this.bookingService.changeSeats(id, dto);
 
     return {
+      pickupPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.pickupPointId,
+      ),
+      dropoffPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.dropoffPointId,
+      ),
       bookingId: booking.id,
       tripId: booking.tripId,
       userId: booking.userId,
@@ -341,6 +399,14 @@ export class BookingController {
     const booking = await this.bookingService.cancelBooking(id);
 
     return {
+      pickupPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.pickupPointId,
+      ),
+      dropoffPoint: this.mapRoutePointSelection(
+        booking.trip?.route?.routePoints,
+        booking.dropoffPointId,
+      ),
       bookingId: booking.id,
       tripId: booking.tripId,
       userId: booking.userId,

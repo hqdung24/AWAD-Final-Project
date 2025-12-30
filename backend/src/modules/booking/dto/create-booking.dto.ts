@@ -59,4 +59,22 @@ export class CreateBookingDto {
   })
   @IsOptional()
   userId?: string; // Optional user ID for authenticated users
+
+  @ApiProperty({
+    description: 'Pickup route point ID selected by the passenger',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  pickupPointId?: string;
+
+  @ApiProperty({
+    description: 'Dropoff route point ID selected by the passenger',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  dropoffPointId?: string;
 }

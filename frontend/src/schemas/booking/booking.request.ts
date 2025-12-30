@@ -39,6 +39,8 @@ export const createBookingRequestSchema = z.object({
   contactInfo: contactInfoSchema,
   paymentMethodId: z.string().uuid('Invalid payment method ID').optional(),
   userId: z.string().optional(), // Optional user ID for authenticated users
+  pickupPointId: z.string().uuid('Invalid pickup point ID').optional(),
+  dropoffPointId: z.string().uuid('Invalid dropoff point ID').optional(),
 });
 
 // Type inference
