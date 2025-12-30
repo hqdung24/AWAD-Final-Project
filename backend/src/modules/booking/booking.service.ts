@@ -15,6 +15,9 @@ import { bookingConfig } from '@/config/booking.config';
 import { Inject } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import type { UpdateSeatsDto } from './dto/update-seats.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '@/modules/notification/enums/notification.enum';
+import type { NotificationCreateEventPayload } from '@/modules/notification/dto/notification-event.dto';
 
 @Injectable()
 export class BookingService {
@@ -24,6 +27,7 @@ export class BookingService {
     private readonly bookingProvider: BookingProvider,
     @Inject(bookingConfig.KEY)
     private readonly bookingConfiguration: ConfigType<typeof bookingConfig>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private ensureEditable(booking: Booking) {
@@ -57,13 +61,36 @@ export class BookingService {
     paymentMethodId?: string,
     userId?: string,
   ) {
-    return await this.bookingProvider.createBooking(
+    const result = await this.bookingProvider.createBooking(
       lockToken,
       passengers,
       contactInfo,
       paymentMethodId,
       userId,
     );
+
+    // Emit incomplete booking notification event
+    if (userId) {
+      const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+      const resumeUrl = `/bookings/${result.booking.id}/resume`;
+
+      const notificationPayload: NotificationCreateEventPayload = {
+        userId: userId,
+        type: NotificationType.BOOKING_INCOMPLETE,
+        payload: {
+          bookingId: result.booking.id,
+          tripId: result.booking.tripId,
+          resumeUrl: resumeUrl,
+          bookingStatus: result.booking.status,
+          expiresAt: expiresAt.toISOString(),
+        },
+      };
+      this.eventEmitter.emit('notification.create', notificationPayload);
+
+      // Emit imcomplete booking notification realtime event
+    }
+
+    return result;
   }
 
   async listBookings(
@@ -116,7 +143,23 @@ export class BookingService {
 
   async cancelBooking(id: string): Promise<Booking> {
     try {
-      return await this.bookingRepository.cancelBooking(id);
+      const result = await this.bookingRepository.cancelBooking(id);
+      if (result) {
+        // Emit booking cancelled notification event
+        const notificationPayload: NotificationCreateEventPayload = {
+          userId: result.userId!,
+          type: NotificationType.BOOKING_INCOMPLETE,
+          payload: {
+            bookingId: result.id,
+            tripId: result.tripId,
+            resumeUrl: `/bookings/${result.id}/resume`,
+            bookingStatus: result.status,
+            expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), //just for structure, won't be used
+          },
+        };
+        this.eventEmitter.emit('notification.create', notificationPayload);
+      }
+      return result;
     } catch (error: unknown) {
       const err = error as Error;
 
@@ -184,11 +227,12 @@ export class BookingService {
     windowEnd: Date,
     reminderField: 'reminder24hSentAt' | 'reminder3hSentAt',
   ): Promise<Booking[]> {
-    return this.bookingRepository.findBookingsForReminder(
+    const bookings = await this.bookingRepository.findBookingsForReminder(
       windowStart,
       windowEnd,
       reminderField,
     );
+    return bookings;
   }
 
   async markReminderSent(

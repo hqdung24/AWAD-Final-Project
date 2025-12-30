@@ -11,7 +11,7 @@ import { BusModule } from '@/modules/bus/bus.module';
 import { SeatModule } from '@/modules/seat/seat.module';
 import { SeatStatusModule } from '@/modules/seat-status/seat-status.module';
 import { MediaModule } from '@/modules/media/media.module';
-
+import { BookingModule } from '@/modules/booking/booking.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Trip]),
@@ -20,6 +20,7 @@ import { MediaModule } from '@/modules/media/media.module';
     forwardRef(() => SeatModule),
     SeatStatusModule,
     MediaModule,
+    BookingModule,
   ],
   controllers: [TripController],
   providers: [

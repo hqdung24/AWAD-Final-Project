@@ -69,8 +69,6 @@ export async function lockSeats(
     console.log('Response does not have success=true, treating as error');
     return actualData as LockSeatsErrorResponse;
   } catch (error: any) {
-    console.error('Lock seats error:', error);
-
     // Check if error response has specific error details
     if (error?.response?.data) {
       const errorData = error.response.data;

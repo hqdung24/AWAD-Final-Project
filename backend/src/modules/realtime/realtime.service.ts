@@ -1,10 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ISocketUser } from './interfaces/socket-event.interface';
+import type { Server } from 'socket.io';
+import type { Notification } from '@/modules/notification/entities/notification.entity';
 
 @Injectable()
 export class RealtimeService {
   private readonly logger = new Logger(RealtimeService.name);
   private connectedUsers = new Map<string, ISocketUser>();
+  private server?: Server;
+
+  attachServer(server: Server): void {
+    this.server = server;
+    this.logger.log('Socket server attached to RealtimeService');
+  }
 
   registerUser(userId: string, socketId: string): void {
     this.connectedUsers.set(socketId, {
@@ -51,5 +59,37 @@ export class RealtimeService {
     return Array.from(this.connectedUsers.values())
       .filter((user) => user.userId === userId)
       .map((user) => user.socketId);
+  }
+
+  // ---------------------- Emit helpers ----------------------
+  emitToUser(userId: string, event: string, data: any): void {
+    if (!this.server) {
+      this.logger.warn(
+        `emitToUser skipped, server not attached. Event=${event} userId=${userId}`,
+      );
+      return;
+    }
+    const socketIds = this.getSocketIdsByUserId(userId);
+    socketIds.forEach((socketId) => {
+      this.server!.to(socketId).emit(event, data);
+    });
+  }
+
+  broadcast(event: string, data: any): void {
+    if (!this.server) {
+      this.logger.warn(
+        `broadcast skipped, server not attached. Event=${event}`,
+      );
+      return;
+    }
+    this.server.emit(event, data);
+  }
+
+  // Domain-specific emitter for notification creation
+  emitNotificationCreated(userId: string, notification: Notification): void {
+    this.emitToUser(userId, 'notification:created', {
+      notification,
+      timestamp: new Date(),
+    });
   }
 }

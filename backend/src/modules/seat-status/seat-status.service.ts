@@ -35,11 +35,6 @@ export class SeatStatusService {
         seatStatus.state = 'selected';
       }
     }
-    console.log(
-      seatStatuses.map((s) => {
-        return 'seatId: ' + s.seatId + ', status: ' + s.state;
-      }),
-    );
     return seatStatuses;
   }
 

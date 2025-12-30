@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/stores/auth';
-
+import { NotificationModal } from './layout/NotificationModal';
 type Props = {
   showSidebarToggle?: boolean;
 };
 
 export function SiteHeader({ showSidebarToggle = true }: Props) {
   const { toggleSidebar } = useSidebar();
+
   const accessToken = useAuthStore((s) => s.accessToken);
   const isGuest = !accessToken;
 
@@ -41,7 +42,8 @@ export function SiteHeader({ showSidebarToggle = true }: Props) {
           </>
         )}
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
-        <ThemeToggle />
+        <ThemeToggle className="hidden sm:inline-flex" />
+        <NotificationModal />
         {isGuest && (
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>

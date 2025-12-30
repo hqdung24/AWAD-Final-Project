@@ -33,7 +33,6 @@ export class MediaRepository {
   getMediaById(id: string) {
     return this.mediaRepo.findOne({
       where: { id },
-      relations: ['user'],
     });
   }
 
@@ -41,14 +40,12 @@ export class MediaRepository {
     if (!ids.length) return Promise.resolve([]);
     return this.mediaRepo.find({
       where: { id: In(ids) },
-      relations: ['user'],
     });
   }
 
   getMediaByOwner(domain: MediaDomain, domainId: string, type?: MediaType) {
     return this.mediaRepo.find({
       where: { domain, domainId, ...(type ? { type } : {}) },
-      relations: ['user'],
     });
   }
 

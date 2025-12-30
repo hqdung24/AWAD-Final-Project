@@ -37,6 +37,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import KeyvRedis from '@keyv/redis';
 import { Keyv } from 'keyv';
 import { CacheableMemory } from 'cacheable';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test') 'development' : 'production';
 
 @Module({
@@ -46,6 +47,12 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
       envFilePath: !ENV ? `.env` : `.env.${ENV}`,
       load: [appConfig, databaseConfig, redisConfig],
       validationSchema: environmentValidationSchema,
+    }),
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 20,
+      verboseMemoryLeak: true,
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -59,7 +66,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
         return {
           stores: [
             new Keyv<string>({
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               store: new CacheableMemory({ ttl: ttl, lruSize: 5000 }) as any,
             }),
             new KeyvRedis(url ?? `redis://${host}:${port}`),

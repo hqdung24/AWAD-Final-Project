@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TripRepository } from './trip.repository';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
@@ -10,6 +11,7 @@ import { SeatStatusService } from '@/modules/seat-status/seat-status.service';
 import { MediaService } from '@/modules/media/media.service';
 import { MediaDomain } from '@/modules/media/enums/media-domain.enum';
 import { MediaType } from '@/modules/media/enums/media-type.enum';
+import { NotificationType } from '../notification/enums/notification.enum';
 
 @Injectable()
 export class TripService {
@@ -19,6 +21,7 @@ export class TripService {
     private readonly seatStatusGenerator: SeatStatusGeneratorProvider,
     private readonly seatStatusService: SeatStatusService,
     private readonly mediaService: MediaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -96,7 +99,9 @@ export class TripService {
     // Check if trip exists
     const existingTrip = await this.getTripById(id);
 
-    const busChanged = Boolean(updateTripDto.busId) && updateTripDto.busId !== existingTrip.busId;
+    const busChanged =
+      Boolean(updateTripDto.busId) &&
+      updateTripDto.busId !== existingTrip.busId;
 
     // If updating bus or time, validate scheduling
     if (
@@ -146,6 +151,50 @@ export class TripService {
 
     // Update trip
     const updatedTrip = await this.tripRepository.update(id, updateData);
+    console.log('🚀 Updated trip: ', updatedTrip?.status); // DEBUG
+    // Event emitter to sync upcoming trips for old and new bus if bus changed -----
+
+    // Track status change for events
+    const oldStatus = existingTrip.status;
+    const newStatus = updateTripDto.status as string;
+    const statusChanged = newStatus && newStatus !== oldStatus;
+
+    // Emit events if status changed
+    if (statusChanged && updatedTrip) {
+      // Get all bookings for this trip to notify passengers
+      const trip = await this.tripRepository.findBookingsByTripId(id);
+      const bookings = trip ? trip.bookings : [];
+      console.log('🚀 Updated bookings: ', bookings); // DEBUG
+      // Emit event for each user with a booking on this trip
+      const userIds = new Set(
+        bookings
+          .map((b) => {
+            if (b.status !== 'cancelled' && b.status !== 'expired' && b.userId)
+              return b.userId;
+          })
+          .filter(Boolean),
+      );
+      userIds.forEach((userId) => {
+        this.eventEmitter.emit('notification.create', {
+          userId,
+          type: NotificationType.TRIP_LIVE_UPDATE,
+          payload: {
+            tripId: id,
+            message: `Trip status updated to ${newStatus}`,
+            bookingId: bookings.find((b) => b.userId === userId)?.id,
+          },
+        });
+      });
+
+      // Emit trip status update event for realtime broadcast
+      this.eventEmitter.emit('trip.status.updated', {
+        tripId: id,
+        oldStatus,
+        newStatus,
+        trip: updatedTrip,
+        timestamp: new Date(),
+      });
+    }
 
     // If bus changed, regenerate seat statuses for the new bus
     if (busChanged && updatedTrip) {
@@ -155,6 +204,9 @@ export class TripService {
         updatedTrip.busId,
       );
     }
+
+    //Emit event to sync upcoming trips for old and new bus
+
     return updatedTrip!; // already exists if updated
   }
 
@@ -274,7 +326,7 @@ export class TripService {
       busModel: trip.bus?.model,
       plateNumber: trip.bus?.plateNumber,
       distanceKm: trip.route?.distanceKm,
-      busPhotos: busPhotos.map((media) => media.url),
+      busPhotos: busPhotos ? busPhotos.map((media) => media.url) : [],
       routePoints,
     };
   }
@@ -297,5 +349,4 @@ export class TripService {
       return [];
     }
   }
-
 }

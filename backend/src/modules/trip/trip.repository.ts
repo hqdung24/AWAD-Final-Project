@@ -195,4 +195,13 @@ export class TripRepository {
 
     return trips;
   }
+
+  async findBookingsByTripId(tripId: string) {
+    return await this.repository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.bookings', 'booking')
+      .leftJoinAndSelect('booking.user', 'user')
+      .where('trip.id = :tripId', { tripId })
+      .getOne();
+  }
 }
