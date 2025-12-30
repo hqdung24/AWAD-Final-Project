@@ -2,6 +2,9 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -142,6 +145,10 @@ export default function PassengersPage() {
     });
   }, [passengersQuery.data, passengerFilter]);
 
+  const selectedTrip = trips.find((trip) => trip.id === tripId);
+  const checkedInCount = filteredPassengers.filter((p) => p.checkedInAt).length;
+  const pendingCount = filteredPassengers.length - checkedInCount;
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="space-y-1">
@@ -206,8 +213,7 @@ export default function PassengersPage() {
           <div className="grid gap-2 md:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               From
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 type="date"
                 value={fromFilter}
                 onChange={(e) => setFromFilter(e.target.value)}
@@ -215,8 +221,7 @@ export default function PassengersPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               To
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 type="date"
                 value={toFilter}
                 onChange={(e) => setToFilter(e.target.value)}
@@ -224,8 +229,7 @@ export default function PassengersPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Filter trips
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 placeholder="Search by route or date"
                 value={tripFilter}
                 onChange={(e) => setTripFilter(e.target.value)}
@@ -270,13 +274,34 @@ export default function PassengersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Passenger List</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Passenger List</span>
+            {tripId && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{filteredPassengers.length} passengers</Badge>
+                <Badge variant="outline">{checkedInCount} checked in</Badge>
+                <Badge variant="outline">{pendingCount} pending</Badge>
+              </div>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {selectedTrip && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="secondary">
+                {selectedTrip.route?.origin ?? 'Origin'} →{' '}
+                {selectedTrip.route?.destination ?? 'Destination'}
+              </Badge>
+              <Badge variant="outline">
+                {new Date(selectedTrip.departureTime).toLocaleString()}
+              </Badge>
+              <Badge variant="outline">{selectedTrip.status ?? 'scheduled'}</Badge>
+            </div>
+          )}
+          <Separator className={selectedTrip ? 'mb-3' : 'mb-4'} />
           <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 mb-3">
             Filter passengers
-            <input
-              className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+            <Input
               placeholder="Search by name, seat, document, or email"
               value={passengerFilter}
               onChange={(e) => setPassengerFilter(e.target.value)}
@@ -314,33 +339,38 @@ export default function PassengersPage() {
                         </div>
                       </TableCell>
                       <TableCell>{passenger.booking?.bookingReference ?? '—'}</TableCell>
-                    <TableCell>
-                      {passenger.checkedInAt
-                        ? `Checked in (${new Date(passenger.checkedInAt).toLocaleTimeString()})`
-                        : 'Not checked in'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {passenger.checkedInAt ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => resetMutation.mutate({ passengerId: passenger.id })}
-                          disabled={resetMutation.isPending}
-                        >
-                          Redo
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => checkInMutation.mutate({ passengerId: passenger.id })}
-                          disabled={checkInMutation.isPending}
-                        >
-                          Check-in
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      <TableCell>
+                        {passenger.checkedInAt ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-600">
+                            Checked in ·{' '}
+                            {new Date(passenger.checkedInAt).toLocaleTimeString()}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">Not checked in</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {passenger.checkedInAt ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resetMutation.mutate({ passengerId: passenger.id })}
+                            disabled={resetMutation.isPending}
+                          >
+                            Reset
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => checkInMutation.mutate({ passengerId: passenger.id })}
+                            disabled={checkInMutation.isPending}
+                          >
+                            Check-in
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                   {filteredPassengers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground">

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { Booking } from '@/modules/booking/entities/booking.entity';
+import { PassengerDetail } from '@/modules/passenger-detail/entities/passenger-detail.entity';
 import { Trip } from './entities/trip.entity';
 
 @Injectable()
@@ -213,6 +215,50 @@ export class TripRepository {
       .where('status = :status', { status: 'scheduled' })
       .andWhere('departureTime <= :now', { now })
       .execute();
+    return result.affected ?? 0;
+  }
+
+  async markCancelledIfNoSalesOrCheckins(now: Date): Promise<number> {
+    const paidBookingsSubquery = this.repository
+      .createQueryBuilder()
+      .subQuery()
+      .select('1')
+      .from(Booking, 'booking')
+      .where('booking.tripId = trips.id')
+      .andWhere('booking.status = :paidStatus')
+      .getQuery();
+
+    const checkedInSubquery = this.repository
+      .createQueryBuilder()
+      .subQuery()
+      .select('1')
+      .from(PassengerDetail, 'passenger')
+      .innerJoin(Booking, 'booking', 'booking.id = passenger.bookingId')
+      .where('booking.tripId = trips.id')
+      .andWhere('booking.status = :paidStatus')
+      .andWhere('passenger.checkedInAt IS NOT NULL')
+      .getQuery();
+
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Trip)
+      .set({ status: 'cancelled' })
+      .where('status = :status', { status: 'scheduled' })
+      .andWhere('departureTime <= :now', { now })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where(`NOT EXISTS ${paidBookingsSubquery}`).orWhere(
+            new Brackets((inner) => {
+              inner
+                .where(`EXISTS ${paidBookingsSubquery}`)
+                .andWhere(`NOT EXISTS ${checkedInSubquery}`);
+            }),
+          );
+        }),
+      )
+      .setParameters({ paidStatus: 'paid' })
+      .execute();
+
     return result.affected ?? 0;
   }
 

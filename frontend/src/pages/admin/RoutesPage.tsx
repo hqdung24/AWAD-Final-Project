@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -44,6 +55,8 @@ export default function RoutesPage() {
   const qc = useQueryClient();
   const [createForm, setCreateForm] = useState<AdminRoute>(initialRouteForm);
   const [editForm, setEditForm] = useState<AdminRoute | null>(null);
+  const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const [routeModalMode, setRouteModalMode] = useState<'create' | 'edit'>('create');
   const [filters, setFilters] = useState<{
     operatorId?: string;
     origin?: string;
@@ -51,7 +64,9 @@ export default function RoutesPage() {
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [routeOptionQuery, setRouteOptionQuery] = useState('');
   const [routePointRouteId, setRoutePointRouteId] = useState<string>('');
+  const [routePointModalOpen, setRoutePointModalOpen] = useState(false);
   const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [routePointForm, setRoutePointForm] = useState<RoutePointPayload>({
     type: 'pickup',
@@ -117,6 +132,7 @@ export default function RoutesPage() {
     mutationFn: createAdminRoute,
     onSuccess: () => {
       setCreateForm(initialRouteForm);
+      setRouteModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['admin-routes'] });
     },
     onError: (error: any) => {
@@ -131,6 +147,7 @@ export default function RoutesPage() {
       updateAdminRoute(payload.id, payload.data),
     onSuccess: () => {
       setEditForm(null);
+      setRouteModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['admin-routes'] });
     },
     onError: (error: any) => {
@@ -165,6 +182,7 @@ export default function RoutesPage() {
         longitude: null,
       });
       setEditingPointId(null);
+      setRoutePointModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['route-points', routePointRouteId] });
     },
     onError: (error: any) => {
@@ -187,6 +205,7 @@ export default function RoutesPage() {
         latitude: null,
         longitude: null,
       });
+      setRoutePointModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['route-points', routePointRouteId] });
     },
     onError: (error: any) => {
@@ -223,13 +242,83 @@ export default function RoutesPage() {
     .slice()
     .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
+  const filteredRoutes = adminRoutes.filter((route) => {
+    if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
+    if (filters.origin) {
+      const q = filters.origin.toLowerCase();
+      if (!route.origin.toLowerCase().includes(q)) return false;
+    }
+    if (filters.destination) {
+      const q = filters.destination.toLowerCase();
+      if (!route.destination.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const pagedRoutes = filteredRoutes.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(filteredRoutes.length / pageSize)) : 1;
+  const selectedRoute = adminRoutes.find((route) => route.id === routePointRouteId);
+  const pickupCount = routePoints.filter((point) => point.type === 'pickup').length;
+  const dropoffCount = routePoints.filter((point) => point.type === 'dropoff').length;
+  const routeOptionList = adminRoutes.filter((route) => {
+    if (!routeOptionQuery) return true;
+    const q = routeOptionQuery.toLowerCase();
+    const hay = `${route.origin} ${route.destination} ${route.operator?.name ?? ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+
+  const openCreateRoute = () => {
+    setRouteModalMode('create');
+    setCreateForm(initialRouteForm);
+    setEditForm(null);
+    setRouteModalOpen(true);
+  };
+
+  const openEditRoute = (route: AdminRoute) => {
+    setRouteModalMode('edit');
+    setEditForm(route);
+    setRouteModalOpen(true);
+  };
+
+  const openCreatePoint = () => {
+    setEditingPointId(null);
+    setRoutePointForm({
+      type: 'pickup',
+      name: '',
+      address: '',
+      orderIndex: 0,
+      latitude: null,
+      longitude: null,
+    });
+    setRoutePointModalOpen(true);
+  };
+
+  const openEditPoint = (point: RouteStop) => {
+    if (!point.id) return;
+    setEditingPointId(point.id);
+    setRoutePointForm({
+      type: point.type,
+      name: point.name,
+      address: point.address ?? '',
+      orderIndex: point.orderIndex ?? 0,
+      latitude: point.latitude ?? null,
+      longitude: point.longitude ?? null,
+    });
+    setRoutePointModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="space-y-1">
         <p className="text-sm font-semibold text-primary">Admin</p>
         <h1 className="text-3xl font-bold tracking-tight">Routes</h1>
         <p className="text-muted-foreground text-sm">
-          Manage routes, operators, and stops.
+          Manage routes, operators, and route points.
         </p>
       </header>
 
@@ -237,13 +326,24 @@ export default function RoutesPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Manage Routes</span>
-              {routesLoading && (
-                <span className="text-muted-foreground text-xs">Loading…</span>
-              )}
+              <div className="flex items-center gap-2">
+                {routesLoading && (
+                  <span className="text-muted-foreground text-xs">Loading…</span>
+                )}
+                <Button size="sm" onClick={openCreateRoute}>
+                  New route
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{filteredRoutes.length} routes</Badge>
+              <Badge variant="outline">{operators.length} operators</Badge>
+            </div>
+
+            <Separator />
+
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Filters</span>
@@ -282,8 +382,7 @@ export default function RoutesPage() {
                 </label>
                 <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                   Origin
-                  <input
-                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  <Input
                     placeholder="Search origin"
                     value={filters.origin ?? ''}
                     onChange={(e) => {
@@ -294,8 +393,7 @@ export default function RoutesPage() {
                 </label>
                 <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                   Destination
-                  <input
-                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  <Input
                     placeholder="Search destination"
                     value={filters.destination ?? ''}
                     onChange={(e) => {
@@ -310,140 +408,6 @@ export default function RoutesPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
-              <div className="flex items-center justify-between text-xs text-muted-foreground md:col-span-2">
-                <span>Route form</span>
-                {editForm && <span>Editing route: {editForm.id}</span>}
-              </div>
-              <div className="grid gap-3 md:grid-cols-3">
-                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                  Operator
-                <select
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  value={createForm.operatorId}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      operatorId: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Select operator</option>
-                  {operators.map((op) => (
-                    <option key={op.id} value={op.id}>
-                      {op.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Origin
-                <input
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  placeholder="Ho Chi Minh City"
-                  value={createForm.origin}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, origin: e.target.value }))
-                  }
-                />
-              </label>
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Destination
-                <input
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  placeholder="Hanoi"
-                  value={createForm.destination}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      destination: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <div className="grid gap-2 md:grid-cols-3 items-center">
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Distance (km)
-                <input
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  type="number"
-                  min={0}
-                  placeholder="1700"
-                  value={createForm.distanceKm}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      distanceKm: Number.isFinite(Number(e.target.value))
-                        ? Number(e.target.value)
-                        : 0,
-                    }))
-                  }
-                />
-              </label>
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                ETA (minutes)
-                <input
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  type="number"
-                  min={0}
-                  placeholder="1500"
-                  value={createForm.estimatedMinutes}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      estimatedMinutes: Number.isFinite(Number(e.target.value))
-                        ? Number(e.target.value)
-                        : 0,
-                    }))
-                  }
-                />
-              </label>
-              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Notes
-                <input
-                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                  placeholder="Notes"
-                  value={createForm.notes}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, notes: e.target.value }))
-                  }
-                />
-              </label>
-            </div>
-            <div className="flex flex-wrap gap-2 md:col-span-2">
-              <Button
-                size="sm"
-                onClick={() =>
-                  createMutation.mutate({
-                    operatorId: createForm.operatorId,
-                    origin: createForm.origin,
-                    destination: createForm.destination,
-                    notes: createForm.notes,
-                    distanceKm: createForm.distanceKm,
-                    estimatedMinutes: createForm.estimatedMinutes,
-                  })
-                }
-                disabled={
-                  createMutation.isPending ||
-                  !createForm.operatorId ||
-                  !createForm.origin ||
-                  !createForm.destination
-                }
-              >
-                {createMutation.isPending ? 'Saving…' : 'Save'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCreateForm(initialRouteForm)}
-                disabled={createMutation.isPending}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-
             <Table>
               <TableHeader>
                 <TableRow>
@@ -454,196 +418,49 @@ export default function RoutesPage() {
                   <TableHead>ETA (min)</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
+          </TableRow>
             </TableHeader>
           <TableBody>
-            {adminRoutes
-              .filter((route) => {
-                if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
-                if (filters.origin) {
-                  const q = filters.origin.toLowerCase();
-                  if (!route.origin.toLowerCase().includes(q)) return false;
-                }
-                if (filters.destination) {
-                  const q = filters.destination.toLowerCase();
-                  if (!route.destination.toLowerCase().includes(q)) return false;
-                }
-                return true;
-              })
-              .slice((page - 1) * pageSize, page * pageSize)
-              .map((route, idx) => {
-              const isEditing = editForm?.id === route.id;
+            {pagedRoutes.map((route, idx) => {
               const operatorLabel = route.operator?.name ?? route.operatorId;
               return (
                 <TableRow
                   key={route.id}
                   className={idx % 2 === 1 ? 'bg-muted/40' : undefined}
                 >
-                    <TableCell>
-                      {isEditing ? (
-                        <input
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          value={editForm?.origin ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev ? { ...prev, origin: e.target.value } : prev,
-                            )
-                          }
-                        />
-                      ) : (
-                        route.origin
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <input
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          value={editForm?.destination ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev
-                                ? { ...prev, destination: e.target.value }
-                                : prev,
-                            )
-                          }
-                        />
-                      ) : (
-                        route.destination
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <select
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          value={editForm?.operatorId ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev ? { ...prev, operatorId: e.target.value } : prev,
-                            )
-                          }
-                        >
-                          <option value="">Select operator</option>
-                          {operators.map((op) => (
-                            <option key={op.id} value={op.id}>
-                              {op.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        operatorLabel
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <input
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          type="number"
-                          min={0}
-                          value={editForm?.distanceKm ?? 0}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev
-                                ? { ...prev, distanceKm: Number(e.target.value) }
-                                : prev,
-                            )
-                          }
-                        />
-                      ) : (
-                        route.distanceKm
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <input
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          type="number"
-                          min={0}
-                          value={editForm?.estimatedMinutes ?? 0}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    estimatedMinutes: Number(e.target.value),
-                                  }
-                                : prev,
-                            )
-                          }
-                        />
-                      ) : (
-                        route.estimatedMinutes
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <input
-                          className="border-input bg-background text-sm px-2 py-1 rounded-md border w-full"
-                          value={editForm?.notes ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) =>
-                              prev ? { ...prev, notes: e.target.value } : prev,
-                            )
-                          }
-                        />
-                      ) : (
-                        route.notes ?? '—'
-                      )}
-                    </TableCell>
+                    <TableCell>{route.origin}</TableCell>
+                    <TableCell>{route.destination}</TableCell>
+                    <TableCell>{operatorLabel}</TableCell>
+                    <TableCell>{route.distanceKm}</TableCell>
+                    <TableCell>{route.estimatedMinutes}</TableCell>
+                    <TableCell>{route.notes ?? '—'}</TableCell>
                     <TableCell className="text-right space-x-2">
-                      {isEditing ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditForm(null)}
-                            disabled={updateMutation.isPending}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              editForm &&
-                              updateMutation.mutate({
-                                id: editForm.id,
-                                data: {
-                                  operatorId: editForm.operatorId,
-                                  origin: editForm.origin,
-                                  destination: editForm.destination,
-                                  distanceKm: editForm.distanceKm,
-                                  estimatedMinutes: editForm.estimatedMinutes,
-                                  notes: editForm.notes,
-                                },
-                              })
-                            }
-                            disabled={updateMutation.isPending}
-                          >
-                            {updateMutation.isPending ? 'Saving…' : 'Save'}
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditForm(route)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteMutation.mutate(route.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            Delete
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditRoute(route)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteMutation.mutate(route.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
               })}
+              {pagedRoutes.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    No routes found. Try adjusting your filters or add a new route.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
@@ -675,26 +492,13 @@ export default function RoutesPage() {
                 Previous
               </Button>
               <span>
-                Page {page}
+                Page {page} of {totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={
-                  adminRoutes.filter((route) => {
-                    if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
-                    if (filters.origin) {
-                      const q = filters.origin.toLowerCase();
-                      if (!route.origin.toLowerCase().includes(q)) return false;
-                    }
-                    if (filters.destination) {
-                      const q = filters.destination.toLowerCase();
-                      if (!route.destination.toLowerCase().includes(q)) return false;
-                    }
-                    return true;
-                  }).length <= page * pageSize
-                }
+                disabled={page >= totalPages}
               >
                 Next
               </Button>
@@ -707,196 +511,101 @@ export default function RoutesPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Route Points</span>
-            {routePointsLoading && (
-              <span className="text-muted-foreground text-xs">Loading…</span>
-            )}
+            <div className="flex items-center gap-2">
+              {routePointsLoading && (
+                <span className="text-muted-foreground text-xs">Loading…</span>
+              )}
+              <Button size="sm" onClick={openCreatePoint} disabled={!routePointRouteId}>
+                Add point
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Route
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointRouteId}
-                onChange={(e) => setRoutePointRouteId(e.target.value)}
-              >
-                {adminRoutes.map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {route.origin} → {route.destination}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Filter type
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointFilters.type ?? ''}
-                onChange={(e) =>
-                  setRoutePointFilters((prev) => ({
-                    ...prev,
-                    type: e.target.value
-                      ? (e.target.value as 'pickup' | 'dropoff')
-                      : undefined,
-                  }))
-                }
-              >
-                <option value="">All types</option>
-                <option value="pickup">Pickup</option>
-                <option value="dropoff">Dropoff</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Search
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointFilters.query ?? ''}
-                onChange={(e) =>
-                  setRoutePointFilters((prev) => ({
-                    ...prev,
-                    query: e.target.value || undefined,
-                  }))
-                }
-                placeholder="Name or address"
-              />
-            </label>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-6">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Type
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointForm.type}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({
-                    ...prev,
-                    type: e.target.value as RoutePointPayload['type'],
-                  }))
-                }
-              >
-                <option value="pickup">Pickup</option>
-                <option value="dropoff">Dropoff</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
-              Name
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointForm.name}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Route point name"
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
-              Address
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={routePointForm.address}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({
-                    ...prev,
-                    address: e.target.value,
-                  }))
-                }
-                placeholder="Full address"
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Order
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                type="number"
-                min={0}
-                value={routePointForm.orderIndex ?? 0}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({
-                    ...prev,
-                    orderIndex: Number(e.target.value),
-                  }))
-                }
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Latitude
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                type="number"
-                step="0.0000001"
-                value={routePointForm.latitude ?? ''}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({
-                    ...prev,
-                    latitude: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Longitude
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                type="number"
-                step="0.0000001"
-                value={routePointForm.longitude ?? ''}
-                onChange={(e) =>
-                  setRoutePointForm((prev) => ({
-                    ...prev,
-                    longitude: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-              />
-            </label>
-          </div>
-
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="secondary">
+                {selectedRoute
+                  ? `${selectedRoute.origin} → ${selectedRoute.destination}`
+                  : 'Select a route'}
+              </Badge>
+              <Badge variant="outline">{routePoints.length} total points</Badge>
+              <Badge variant="outline">{pickupCount} pickup</Badge>
+              <Badge variant="outline">{dropoffCount} dropoff</Badge>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+                Route
+                <Input
+                  placeholder="Search routes by name or operator"
+                  value={routeOptionQuery}
+                  onChange={(e) => setRouteOptionQuery(e.target.value)}
+                />
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={routePointRouteId}
+                  onChange={(e) => setRoutePointRouteId(e.target.value)}
+                >
+                  {routeOptionList.length === 0 && (
+                    <option value="" disabled>
+                      No routes match your search
+                    </option>
+                  )}
+                  {routeOptionList.map((route) => (
+                    <option key={route.id} value={route.id}>
+                      {route.origin} → {route.destination}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Filter type
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={routePointFilters.type ?? ''}
+                  onChange={(e) =>
+                    setRoutePointFilters((prev) => ({
+                      ...prev,
+                      type: e.target.value
+                        ? (e.target.value as 'pickup' | 'dropoff')
+                        : undefined,
+                    }))
+                  }
+                >
+                  <option value="">All types</option>
+                  <option value="pickup">Pickup</option>
+                  <option value="dropoff">Dropoff</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Search
+                <Input
+                  value={routePointFilters.query ?? ''}
+                  onChange={(e) =>
+                    setRoutePointFilters((prev) => ({
+                      ...prev,
+                      query: e.target.value || undefined,
+                    }))
+                  }
+                  placeholder="Name or address"
+                />
+              </label>
+            </div>
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={() => {
-                if (!routePointRouteId) return;
-                if (editingPointId) {
-                  updatePointMutation.mutate({
-                    id: editingPointId,
-                    data: routePointForm,
-                  });
-                  return;
-                }
-                createPointMutation.mutate({
-                  routeId: routePointRouteId,
-                  data: routePointForm,
-                });
-              }}
-              disabled={
-                !routePointRouteId ||
-                !routePointForm.name ||
-                !routePointForm.address ||
-                createPointMutation.isPending ||
-                updatePointMutation.isPending
+              variant="outline"
+              onClick={() =>
+                  setRoutePointFilters({
+                    query: undefined,
+                    type: undefined,
+                  })
               }
             >
-              {editingPointId ? 'Update point' : 'Add point'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setEditingPointId(null);
-                setRoutePointForm({
-                  type: 'pickup',
-                  name: '',
-                  address: '',
-                  orderIndex: 0,
-                  latitude: null,
-                  longitude: null,
-                });
-              }}
-            >
-              Clear
+              Clear filters
             </Button>
           </div>
+        </div>
 
           <div className="rounded-md border">
             <Table>
@@ -929,18 +638,7 @@ export default function RoutesPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          if (!point.id) return;
-                          setEditingPointId(point.id);
-                          setRoutePointForm({
-                            type: point.type,
-                            name: point.name,
-                            address: point.address ?? '',
-                            orderIndex: point.orderIndex ?? 0,
-                            latitude: point.latitude ?? null,
-                            longitude: point.longitude ?? null,
-                          });
-                        }}
+                        onClick={() => openEditPoint(point)}
                       >
                         Edit
                       </Button>
@@ -967,6 +665,347 @@ export default function RoutesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={routeModalOpen}
+        onOpenChange={(open) => {
+          setRouteModalOpen(open);
+          if (!open) {
+            setEditForm(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {routeModalMode === 'create' ? 'Create route' : 'Edit route'}
+            </DialogTitle>
+            <DialogDescription>
+              {routeModalMode === 'create'
+                ? 'Define the operator, origin, and destination to make a route available.'
+                : 'Update route details to keep schedules accurate.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Operator
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={
+                  routeModalMode === 'create'
+                    ? createForm.operatorId
+                    : editForm?.operatorId ?? ''
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, operatorId: value }));
+                  } else {
+                    setEditForm((prev) => (prev ? { ...prev, operatorId: value } : prev));
+                  }
+                }}
+              >
+                <option value="">Select operator</option>
+                {operators.map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Origin
+              <Input
+                placeholder="Ho Chi Minh City"
+                value={routeModalMode === 'create' ? createForm.origin : editForm?.origin ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, origin: value }));
+                  } else {
+                    setEditForm((prev) => (prev ? { ...prev, origin: value } : prev));
+                  }
+                }}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Destination
+              <Input
+                placeholder="Hanoi"
+                value={
+                  routeModalMode === 'create'
+                    ? createForm.destination
+                    : editForm?.destination ?? ''
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, destination: value }));
+                  } else {
+                    setEditForm((prev) => (prev ? { ...prev, destination: value } : prev));
+                  }
+                }}
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Distance (km)
+              <Input
+                type="number"
+                min={0}
+                placeholder="1700"
+                value={
+                  routeModalMode === 'create'
+                    ? createForm.distanceKm
+                    : editForm?.distanceKm ?? 0
+                }
+                onChange={(e) => {
+                  const value = Number.isFinite(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, distanceKm: value }));
+                  } else {
+                    setEditForm((prev) => (prev ? { ...prev, distanceKm: value } : prev));
+                  }
+                }}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              ETA (minutes)
+              <Input
+                type="number"
+                min={0}
+                placeholder="1500"
+                value={
+                  routeModalMode === 'create'
+                    ? createForm.estimatedMinutes
+                    : editForm?.estimatedMinutes ?? 0
+                }
+                onChange={(e) => {
+                  const value = Number.isFinite(Number(e.target.value))
+                    ? Number(e.target.value)
+                    : 0;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, estimatedMinutes: value }));
+                  } else {
+                    setEditForm((prev) =>
+                      prev ? { ...prev, estimatedMinutes: value } : prev,
+                    );
+                  }
+                }}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Notes
+              <Input
+                placeholder="Notes"
+                value={routeModalMode === 'create' ? createForm.notes : editForm?.notes ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (routeModalMode === 'create') {
+                    setCreateForm((prev) => ({ ...prev, notes: value }));
+                  } else {
+                    setEditForm((prev) => (prev ? { ...prev, notes: value } : prev));
+                  }
+                }}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRouteModalOpen(false)}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (routeModalMode === 'create') {
+                  createMutation.mutate({
+                    operatorId: createForm.operatorId,
+                    origin: createForm.origin,
+                    destination: createForm.destination,
+                    notes: createForm.notes,
+                    distanceKm: createForm.distanceKm,
+                    estimatedMinutes: createForm.estimatedMinutes,
+                  });
+                  return;
+                }
+                if (!editForm) return;
+                updateMutation.mutate({
+                  id: editForm.id,
+                  data: {
+                    operatorId: editForm.operatorId,
+                    origin: editForm.origin,
+                    destination: editForm.destination,
+                    distanceKm: editForm.distanceKm,
+                    estimatedMinutes: editForm.estimatedMinutes,
+                    notes: editForm.notes,
+                  },
+                });
+              }}
+              disabled={
+                createMutation.isPending ||
+                updateMutation.isPending ||
+                (routeModalMode === 'create'
+                  ? !createForm.operatorId || !createForm.origin || !createForm.destination
+                  : !editForm?.operatorId || !editForm?.origin || !editForm?.destination)
+              }
+            >
+              {createMutation.isPending || updateMutation.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={routePointModalOpen} onOpenChange={setRoutePointModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingPointId ? 'Edit route point' : 'Add route point'}</DialogTitle>
+            <DialogDescription>
+              Add pickup and dropoff points to guide passengers during booking and boarding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-6">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+              Route
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointRouteId}
+                onChange={(e) => setRoutePointRouteId(e.target.value)}
+              >
+                {adminRoutes.map((route) => (
+                  <option key={route.id} value={route.id}>
+                    {route.origin} → {route.destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Type
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={routePointForm.type}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    type: e.target.value as RoutePointPayload['type'],
+                  }))
+                }
+              >
+                <option value="pickup">Pickup</option>
+                <option value="dropoff">Dropoff</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+              Name
+              <Input
+                value={routePointForm.name}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Route point name"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-3">
+              Address
+              <Input
+                value={routePointForm.address}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
+                placeholder="Full address"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Order
+              <Input
+                type="number"
+                min={0}
+                value={routePointForm.orderIndex ?? 0}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    orderIndex: Number(e.target.value),
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Latitude
+              <Input
+                type="number"
+                step="0.0000001"
+                value={routePointForm.latitude ?? ''}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    latitude: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Longitude
+              <Input
+                type="number"
+                step="0.0000001"
+                value={routePointForm.longitude ?? ''}
+                onChange={(e) =>
+                  setRoutePointForm((prev) => ({
+                    ...prev,
+                    longitude: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRoutePointModalOpen(false)}
+              disabled={createPointMutation.isPending || updatePointMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!routePointRouteId) return;
+                if (editingPointId) {
+                  updatePointMutation.mutate({
+                    id: editingPointId,
+                    data: routePointForm,
+                  });
+                  return;
+                }
+                createPointMutation.mutate({
+                  routeId: routePointRouteId,
+                  data: routePointForm,
+                });
+              }}
+              disabled={
+                !routePointRouteId ||
+                !routePointForm.name ||
+                !routePointForm.address ||
+                createPointMutation.isPending ||
+                updatePointMutation.isPending
+              }
+            >
+              {createPointMutation.isPending || updatePointMutation.isPending
+                ? 'Saving…'
+                : editingPointId
+                  ? 'Update point'
+                  : 'Add point'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -125,7 +125,7 @@ export class ScheduleService {
     try {
       const result = await this.tripService.autoUpdateTripStatuses(now);
       this.logger.log(
-        `[CRON] autoUpdateTripStatuses done - completed=${result.completed} archived=${result.archived}`,
+        `[CRON] autoUpdateTripStatuses done - cancelled=${result.cancelled} completed=${result.completed} archived=${result.archived}`,
       );
     } catch (error) {
       this.logger.warn(

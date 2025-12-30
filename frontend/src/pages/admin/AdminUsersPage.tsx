@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -20,6 +22,14 @@ import {
   type AdminUser,
 } from '@/services/adminUsersService';
 import { notify } from '@/lib/notify';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const initialForm: {
   firstName: string;
@@ -41,6 +51,7 @@ export default function AdminUsersPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [filters, setFilters] = useState<{
     search?: string;
     role?: string;
@@ -143,6 +154,27 @@ export default function AdminUsersPage() {
 
   const admins = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
+  const activeCount = admins.filter((admin) => admin.isActive).length;
+  const inactiveCount = admins.length - activeCount;
+
+  const openCreateAdmin = () => {
+    setEditingId(null);
+    setForm(initialForm);
+    setModalOpen(true);
+  };
+
+  const openEditAdmin = (admin: AdminUser) => {
+    setEditingId(admin.id);
+    setForm({
+      firstName: admin.firstName,
+      lastName: admin.lastName ?? '',
+      email: admin.email,
+      password: '',
+      role: admin.role ?? 'ADMIN',
+      isActive: admin.isActive ?? true,
+    });
+    setModalOpen(true);
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -157,81 +189,20 @@ export default function AdminUsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{editingId ? 'Edit Admin' : 'Create Admin'}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-6">
-          <Input
-            placeholder="First name"
-            value={form.firstName}
-            onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
-          />
-          <Input
-            placeholder="Last name"
-            value={form.lastName}
-            onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
-          />
-          <Input
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-          />
-          <Input
-            placeholder={editingId ? 'New password (optional)' : 'Password'}
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-          />
-          <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-            Role
-            <select
-              className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-              value={form.role}
-              onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-            >
-              <option value="ADMIN">Admin</option>
-              <option value="MODERATOR">Moderator</option>
-            </select>
-          </label>
-          <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-            Status
-            <select
-              className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-              value={form.isActive ? 'active' : 'inactive'}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, isActive: e.target.value === 'active' }))
-              }
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </label>
-          <div className="flex gap-2 md:col-span-6">
-            <Button
-              onClick={onSubmit}
-              disabled={createMut.isPending || updateMut.isPending}
-            >
-              {editingId ? 'Update' : 'Create'}
+          <CardTitle className="flex items-center justify-between">
+            <span>Admin Directory</span>
+            <Button size="sm" onClick={openCreateAdmin}>
+              New admin
             </Button>
-            {editingId && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(initialForm);
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Directory</CardTitle>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{admins.length} admins</Badge>
+            <Badge variant="outline">{activeCount} active</Badge>
+            <Badge variant="outline">{inactiveCount} inactive</Badge>
+          </div>
+          <Separator />
           <div className="grid gap-2 md:grid-cols-4">
             <Input
               placeholder="Search name or email"
@@ -294,11 +265,11 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {admins.map((admin, idx) => (
-                  <TableRow key={admin.id} className={idx % 2 === 1 ? 'bg-muted/40' : undefined}>
-                    <TableCell className="font-medium">
-                      {admin.firstName} {admin.lastName ?? ''}
-                    </TableCell>
+              {admins.map((admin, idx) => (
+                <TableRow key={admin.id} className={idx % 2 === 1 ? 'bg-muted/40' : undefined}>
+                  <TableCell className="font-medium">
+                    {admin.firstName} {admin.lastName ?? ''}
+                  </TableCell>
                     <TableCell>{admin.email}</TableCell>
                     <TableCell>{admin.role}</TableCell>
                     <TableCell>{admin.isActive ? 'Active' : 'Inactive'}</TableCell>
@@ -309,17 +280,7 @@ export default function AdminUsersPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          setEditingId(admin.id);
-                          setForm({
-                            firstName: admin.firstName,
-                            lastName: admin.lastName ?? '',
-                            email: admin.email,
-                            password: '',
-                            role: admin.role ?? 'ADMIN',
-                            isActive: admin.isActive ?? true,
-                          });
-                        }}
+                        onClick={() => openEditAdmin(admin)}
                       >
                         Edit
                       </Button>
@@ -388,6 +349,100 @@ export default function AdminUsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) {
+            setEditingId(null);
+            setForm(initialForm);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit Admin' : 'Create Admin'}</DialogTitle>
+            <DialogDescription>
+              Assign roles and manage access for admin and moderator accounts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              First name
+              <Input
+                placeholder="First name"
+                value={form.firstName}
+                onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Last name
+              <Input
+                placeholder="Last name"
+                value={form.lastName}
+                onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Email
+              <Input
+                placeholder="Email"
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Password
+              <Input
+                placeholder={editingId ? 'New password (optional)' : 'Password'}
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Role
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={form.role}
+                onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
+              >
+                <option value="ADMIN">Admin</option>
+                <option value="MODERATOR">Moderator</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Status
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={form.isActive ? 'active' : 'inactive'}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, isActive: e.target.value === 'active' }))
+                }
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+              disabled={createMut.isPending || updateMut.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={onSubmit}
+              disabled={createMut.isPending || updateMut.isPending}
+            >
+              {editingId ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

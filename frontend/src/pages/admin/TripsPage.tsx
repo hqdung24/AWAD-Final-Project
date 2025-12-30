@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -26,6 +29,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { notify } from '@/lib/notify';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const initialTripForm: Partial<Trip> = {
   routeId: '',
@@ -40,6 +51,7 @@ export default function TripsPage() {
   const qc = useQueryClient();
   const [tripForm, setTripForm] = useState<Partial<Trip>>(initialTripForm);
   const [editingTripId, setEditingTripId] = useState<string | null>(null);
+  const [tripModalOpen, setTripModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<{
@@ -76,12 +88,14 @@ export default function TripsPage() {
   const totalPages =
     tripsResponse?.totalPages ??
     (pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1);
+  const scheduledCount = trips.filter((trip) => trip.status === 'scheduled').length;
 
   const tripCreateMutation = useMutation({
     mutationFn: createTrip,
     onSuccess: () => {
       setTripForm(initialTripForm);
       setEditingTripId(null);
+      setTripModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['trips'] });
     },
     onError: (error: any) => {
@@ -99,6 +113,7 @@ export default function TripsPage() {
       updateTrip(payload.id, payload.data),
     onSuccess: () => {
       setEditingTripId(null);
+      setTripModalOpen(false);
       void qc.invalidateQueries({ queryKey: ['trips'] });
     },
     onError: (error: any) => {
@@ -149,6 +164,25 @@ export default function TripsPage() {
     }
   };
 
+  const openCreateTrip = () => {
+    setEditingTripId(null);
+    setTripForm(initialTripForm);
+    setTripModalOpen(true);
+  };
+
+  const openEditTrip = (trip: Trip) => {
+    setEditingTripId(trip.id);
+    setTripForm({
+      routeId: trip.routeId,
+      busId: trip.busId,
+      departureTime: trip.departureTime.slice(0, 16),
+      arrivalTime: trip.arrivalTime.slice(0, 16),
+      status: trip.status,
+      basePrice: Number(trip.basePrice),
+    });
+    setTripModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="space-y-1">
@@ -163,12 +197,24 @@ export default function TripsPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Trip Scheduling</span>
-            <span className="text-muted-foreground text-xs">
-              Assign buses, set times, and manage trips
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">
+                Assign buses, set times, and manage trips
+              </span>
+              <Button size="sm" onClick={openCreateTrip}>
+                New trip
+              </Button>
+            </div>
           </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{total} trips</Badge>
+            <Badge variant="outline">{scheduledCount} scheduled</Badge>
+          </div>
+
+          <Separator />
+
           {/* Filters */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -279,143 +325,6 @@ export default function TripsPage() {
             </div>
           </div>
 
-          {/* Create/update form */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-            <span>Trip form</span>
-            {editingTripId && <span>Editing trip: {editingTripId}</span>}
-          </div>
-          <div className="grid gap-2 md:grid-cols-4">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Route
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.routeId ?? ''}
-                onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, routeId: e.target.value }))
-                }
-              >
-                <option value="">Select route</option>
-                {adminRoutes.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.origin} → {r.destination}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Bus
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.busId ?? ''}
-                onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, busId: e.target.value }))
-                }
-              >
-                <option value="">Select bus</option>
-                {buses.map((b) => {
-                  const seatCount = b.seatCount ?? 0;
-                  return (
-                    <option key={b.id} value={b.id} disabled={seatCount === 0}>
-                      {b.operator?.name ? `${b.operator.name} — ` : ''}
-                      {b.plateNumber} · {b.model} ({seatCount}/{b.seatCapacity})
-                      {seatCount === 0 ? ' · no seats' : ''}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Departure
-              <input
-                type="datetime-local"
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.departureTime ?? ''}
-                onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, departureTime: e.target.value }))
-                }
-              />
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Arrival
-              <input
-                type="datetime-local"
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.arrivalTime ?? ''}
-                onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, arrivalTime: e.target.value }))
-                }
-              />
-            </label>
-          </div>
-          <div className="grid gap-2 md:grid-cols-3">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Status
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.status ?? ''}
-                onChange={(e) =>
-                  setTripForm((prev) => ({ ...prev, status: e.target.value }))
-                }
-              >
-                {['scheduled', 'cancelled', 'completed', 'archived'].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Base price (VND)
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={tripForm.basePrice ?? 0}
-                type="number"
-                min={0}
-                onChange={(e) =>
-                  setTripForm((prev) => ({
-                    ...prev,
-                    basePrice: Number.isFinite(Number(e.target.value))
-                      ? Number(e.target.value)
-                      : 0,
-                  }))
-                }
-                placeholder="450000"
-              />
-            </label>
-            <div className="flex items-end gap-2">
-              <Button
-                size="sm"
-                onClick={handleSubmit}
-                disabled={
-                  tripCreateMutation.isPending ||
-                  tripUpdateMutation.isPending ||
-                  !tripForm.routeId ||
-                  !tripForm.busId ||
-                  !tripForm.departureTime ||
-                  !tripForm.arrivalTime
-                }
-              >
-                {editingTripId
-                  ? tripUpdateMutation.isPending
-                    ? 'Saving…'
-                    : 'Update Trip'
-                  : tripCreateMutation.isPending
-                  ? 'Saving…'
-                  : 'Create Trip'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setTripForm(initialTripForm);
-                  setEditingTripId(null);
-                }}
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -459,17 +368,7 @@ export default function TripsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                        onClick={() => {
-                          setEditingTripId(trip.id);
-                          setTripForm({
-                            routeId: trip.routeId,
-                            busId: trip.busId,
-                            departureTime: trip.departureTime.slice(0, 16),
-                            arrivalTime: trip.arrivalTime.slice(0, 16),
-                            status: trip.status,
-                            basePrice: Number(trip.basePrice),
-                          });
-                        }}
+                        onClick={() => openEditTrip(trip)}
                         >
                           Edit
                         </Button>
@@ -485,6 +384,13 @@ export default function TripsPage() {
                     </TableRow>
                   );
                 })}
+                {trips.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No trips found. Adjust filters or create a new trip.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -535,6 +441,150 @@ export default function TripsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={tripModalOpen}
+        onOpenChange={(open) => {
+          setTripModalOpen(open);
+          if (!open) {
+            setEditingTripId(null);
+            setTripForm(initialTripForm);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingTripId ? 'Edit trip' : 'Create trip'}</DialogTitle>
+            <DialogDescription>
+              Set the route, bus, and time window. Trips appear in search once scheduled.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-4">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Route
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={tripForm.routeId ?? ''}
+                onChange={(e) =>
+                  setTripForm((prev) => ({ ...prev, routeId: e.target.value }))
+                }
+              >
+                <option value="">Select route</option>
+                {adminRoutes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.origin} → {r.destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Bus
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={tripForm.busId ?? ''}
+                onChange={(e) =>
+                  setTripForm((prev) => ({ ...prev, busId: e.target.value }))
+                }
+              >
+                <option value="">Select bus</option>
+                {buses.map((b) => {
+                  const seatCount = b.seatCount ?? 0;
+                  return (
+                    <option key={b.id} value={b.id} disabled={seatCount === 0}>
+                      {b.operator?.name ? `${b.operator.name} — ` : ''}
+                      {b.plateNumber} · {b.model} ({seatCount}/{b.seatCapacity})
+                      {seatCount === 0 ? ' · no seats' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Departure
+              <Input
+                type="datetime-local"
+                value={tripForm.departureTime ?? ''}
+                onChange={(e) =>
+                  setTripForm((prev) => ({ ...prev, departureTime: e.target.value }))
+                }
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Arrival
+              <Input
+                type="datetime-local"
+                value={tripForm.arrivalTime ?? ''}
+                onChange={(e) =>
+                  setTripForm((prev) => ({ ...prev, arrivalTime: e.target.value }))
+                }
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Status
+              <select
+                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                value={tripForm.status ?? ''}
+                onChange={(e) =>
+                  setTripForm((prev) => ({ ...prev, status: e.target.value }))
+                }
+              >
+                {['scheduled', 'cancelled', 'completed', 'archived'].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Base price (VND)
+              <Input
+                value={tripForm.basePrice ?? 0}
+                type="number"
+                min={0}
+                onChange={(e) =>
+                  setTripForm((prev) => ({
+                    ...prev,
+                    basePrice: Number.isFinite(Number(e.target.value))
+                      ? Number(e.target.value)
+                      : 0,
+                  }))
+                }
+                placeholder="450000"
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTripModalOpen(false)}
+              disabled={tripCreateMutation.isPending || tripUpdateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                tripCreateMutation.isPending ||
+                tripUpdateMutation.isPending ||
+                !tripForm.routeId ||
+                !tripForm.busId ||
+                !tripForm.departureTime ||
+                !tripForm.arrivalTime
+              }
+            >
+              {editingTripId
+                ? tripUpdateMutation.isPending
+                  ? 'Saving…'
+                  : 'Update Trip'
+                : tripCreateMutation.isPending
+                ? 'Saving…'
+                : 'Create Trip'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
