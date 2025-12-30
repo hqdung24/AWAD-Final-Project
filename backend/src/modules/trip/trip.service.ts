@@ -285,8 +285,11 @@ export class TripService {
           ?.filter((rp) => rp.type === 'pickup')
           .sort((a, b) => a.orderIndex - b.orderIndex)
           .map((rp) => ({
+            id: rp.id,
+            type: rp.type,
             name: rp.name,
             address: rp.address,
+            orderIndex: rp.orderIndex,
             note: rp.address,
           })) || [],
       dropoff:
@@ -294,8 +297,11 @@ export class TripService {
           ?.filter((rp) => rp.type === 'dropoff')
           .sort((a, b) => a.orderIndex - b.orderIndex)
           .map((rp) => ({
+            id: rp.id,
+            type: rp.type,
             name: rp.name,
             address: rp.address,
+            orderIndex: rp.orderIndex,
             note: rp.address,
           })) || [],
     };

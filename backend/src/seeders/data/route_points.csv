@@ -1,0 +1,41 @@
+route_origin,route_destination,type,name,address,latitude,longitude,order_index
+TP.HCM,Đà Lạt,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Đà Lạt,dropoff,Đà Lạt Station,Đà Lạt Station,,,2
+TP.HCM,Vũng Tàu,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Vũng Tàu,dropoff,Vũng Tàu Station,Vũng Tàu Station,,,2
+TP.HCM,Nha Trang,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Nha Trang,dropoff,Nha Trang Station,Nha Trang Station,,,2
+TP.HCM,Phan Thiết,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Phan Thiết,dropoff,Phan Thiết Station,Phan Thiết Station,,,2
+TP.HCM,Mũi Né,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Mũi Né,dropoff,Mũi Né Station,Mũi Né Station,,,2
+Hà Nội,Hải Phòng,pickup,Hà Nội Central Station,Hà Nội Central Station,,,1
+Hà Nội,Hải Phòng,dropoff,Hải Phòng Station,Hải Phòng Station,,,2
+Hà Nội,Ninh Bình,pickup,Hà Nội Central Station,Hà Nội Central Station,,,1
+Hà Nội,Ninh Bình,dropoff,Ninh Bình Station,Ninh Bình Station,,,2
+Hà Nội,Hạ Long,pickup,Hà Nội Central Station,Hà Nội Central Station,,,1
+Hà Nội,Hạ Long,dropoff,Hạ Long Station,Hạ Long Station,,,2
+Hà Nội,Sapa,pickup,Hà Nội Central Station,Hà Nội Central Station,,,1
+Hà Nội,Sapa,dropoff,Sapa Station,Sapa Station,,,2
+Hà Nội,Thanh Hóa,pickup,Hà Nội Central Station,Hà Nội Central Station,,,1
+Hà Nội,Thanh Hóa,dropoff,Thanh Hóa Station,Thanh Hóa Station,,,2
+TP.HCM,Cần Thơ,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Cần Thơ,dropoff,Cần Thơ Station,Cần Thơ Station,,,2
+TP.HCM,Tây Ninh,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Tây Ninh,dropoff,Tây Ninh Station,Tây Ninh Station,,,2
+TP.HCM,Bến Tre,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Bến Tre,dropoff,Bến Tre Station,Bến Tre Station,,,2
+TP.HCM,Long Xuyên,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Long Xuyên,dropoff,Long Xuyên Station,Long Xuyên Station,,,2
+TP.HCM,Châu Đốc,pickup,TP.HCM Central Station,TP.HCM Central Station,,,1
+TP.HCM,Châu Đốc,dropoff,Châu Đốc Station,Châu Đốc Station,,,2
+Đà Nẵng,Hội An,pickup,Đà Nẵng Station,Đà Nẵng Station,,,1
+Đà Nẵng,Hội An,dropoff,Hội An Station,Hội An Station,,,2
+Đà Nẵng,Huế,pickup,Đà Nẵng Station,Đà Nẵng Station,,,1
+Đà Nẵng,Huế,dropoff,Huế Station,Huế Station,,,2
+Đà Nẵng,Quy Nhơn,pickup,Đà Nẵng Station,Đà Nẵng Station,,,1
+Đà Nẵng,Quy Nhơn,dropoff,Quy Nhơn Station,Quy Nhơn Station,,,2
+Cần Thơ,Cà Mau,pickup,Cần Thơ Station,Cần Thơ Station,,,1
+Cần Thơ,Cà Mau,dropoff,Cà Mau Station,Cà Mau Station,,,2
+Cần Thơ,Rạch Giá,pickup,Cần Thơ Station,Cần Thơ Station,,,1
+Cần Thơ,Rạch Giá,dropoff,Rạch Giá Station,Rạch Giá Station,,,2

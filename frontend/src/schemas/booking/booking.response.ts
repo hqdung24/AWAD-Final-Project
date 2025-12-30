@@ -26,6 +26,14 @@ export const tripBriefSchema = z.object({
   status: z.string(),
 });
 
+export const routePointSelectionSchema = z.object({
+  id: z.string().uuid(),
+  type: z.string(),
+  name: z.string(),
+  address: z.string(),
+  orderIndex: z.number(),
+});
+
 // Create booking success response schema
 export const createBookingResponseSchema = z.object({
   bookingId: z.string().uuid(),
@@ -38,6 +46,8 @@ export const createBookingResponseSchema = z.object({
   totalAmount: z.number(),
   paymentMethodId: z.string().uuid().optional(),
   createdAt: z.string().datetime(),
+  pickupPoint: routePointSelectionSchema.nullable().optional(),
+  dropoffPoint: routePointSelectionSchema.nullable().optional(),
 });
 
 export const bookingListItemSchema = z.object({
@@ -54,6 +64,8 @@ export const bookingListItemSchema = z.object({
   trip: tripBriefSchema,
   seats: z.array(seatInfoSchema),
   passengers: z.array(passengerInfoSchema),
+  pickupPoint: routePointSelectionSchema.nullable().optional(),
+  dropoffPoint: routePointSelectionSchema.nullable().optional(),
 });
 
 export const bookingListResponseSchema = z.object({
@@ -77,6 +89,8 @@ export const bookingDetailResponseSchema = z.object({
   email: z.email(),
   phone: z.string(),
   createdAt: z.string().datetime(),
+  pickupPoint: routePointSelectionSchema.nullable().optional(),
+  dropoffPoint: routePointSelectionSchema.nullable().optional(),
 });
 
 // Error response schema
@@ -94,6 +108,7 @@ export type CreateBookingErrorResponse = z.infer<
   typeof createBookingErrorResponseSchema
 >;
 export type TripBrief = z.infer<typeof tripBriefSchema>;
+export type RoutePointSelection = z.infer<typeof routePointSelectionSchema>;
 export type BookingListItem = z.infer<typeof bookingListItemSchema>;
 export type BookingListResponse = z.infer<typeof bookingListResponseSchema>;
 export type BookingDetailResponse = z.infer<typeof bookingDetailResponseSchema>;

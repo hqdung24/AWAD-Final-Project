@@ -48,6 +48,8 @@ export default function ConfirmBooking() {
   const [paymentMethod, setPaymentMethod] = useState<string>('vietqr');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const user = useUserStore((s) => s.me);
+  const [pickupPointId, setPickupPointId] = useState<string>('');
+  const [dropoffPointId, setDropoffPointId] = useState<string>('');
 
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -107,6 +109,18 @@ export default function ConfirmBooking() {
     }
   }, [seatStatuses, seatIds, isInitialized, setValue]);
 
+  useEffect(() => {
+    if (!trip?.routePoints) return;
+    const pickup = trip.routePoints.pickup ?? [];
+    const dropoff = trip.routePoints.dropoff ?? [];
+    if (!pickupPointId && pickup.length > 0) {
+      setPickupPointId(pickup[0].id);
+    }
+    if (!dropoffPointId && dropoff.length > 0) {
+      setDropoffPointId(dropoff[0].id);
+    }
+  }, [trip?.routePoints, pickupPointId, dropoffPointId]);
+
   // Redirect if no lock token or seat IDs
   useEffect(() => {
     if (!lockToken || seatIds.length === 0) {
@@ -152,12 +166,22 @@ export default function ConfirmBooking() {
       notify.error('Please agree to the Terms and Conditions');
       return;
     }
+    if (trip?.routePoints?.pickup?.length && !pickupPointId) {
+      notify.error('Please select a pickup point');
+      return;
+    }
+    if (trip?.routePoints?.dropoff?.length && !dropoffPointId) {
+      notify.error('Please select a dropoff point');
+      return;
+    }
 
     // Add a random UUID for paymentMethodId to prevent backend validation error
     const bookingData: CreateBookingRequest = {
       ...data,
       paymentMethodId: crypto.randomUUID(),
       userId: user?.id,
+      pickupPointId: pickupPointId || undefined,
+      dropoffPointId: dropoffPointId || undefined,
     };
 
     const result = await mutateAsync(bookingData);
@@ -295,6 +319,68 @@ export default function ConfirmBooking() {
                   </div>
                 </CardContent>
               </Card>
+
+              {trip?.routePoints && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>PICKUP & DROPOFF</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="pickupPoint">Pickup point</Label>
+                        <select
+                          id="pickupPoint"
+                          className="border-input bg-background text-sm px-3 py-2 rounded-md border w-full"
+                          value={pickupPointId}
+                          onChange={(e) => setPickupPointId(e.target.value)}
+                          disabled={!trip.routePoints.pickup.length}
+                        >
+                          {trip.routePoints.pickup.length === 0 && (
+                            <option value="">No pickup points</option>
+                          )}
+                          {trip.routePoints.pickup.map((point) => (
+                            <option key={point.id} value={point.id}>
+                              {point.orderIndex ?? 0}. {point.name}
+                            </option>
+                          ))}
+                        </select>
+                        {trip.routePoints.pickup.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {trip.routePoints.pickup.find((p) => p.id === pickupPointId)
+                              ?.address || ''}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dropoffPoint">Dropoff point</Label>
+                        <select
+                          id="dropoffPoint"
+                          className="border-input bg-background text-sm px-3 py-2 rounded-md border w-full"
+                          value={dropoffPointId}
+                          onChange={(e) => setDropoffPointId(e.target.value)}
+                          disabled={!trip.routePoints.dropoff.length}
+                        >
+                          {trip.routePoints.dropoff.length === 0 && (
+                            <option value="">No dropoff points</option>
+                          )}
+                          {trip.routePoints.dropoff.map((point) => (
+                            <option key={point.id} value={point.id}>
+                              {point.orderIndex ?? 0}. {point.name}
+                            </option>
+                          ))}
+                        </select>
+                        {trip.routePoints.dropoff.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {trip.routePoints.dropoff.find((p) => p.id === dropoffPointId)
+                              ?.address || ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Passenger Details */}
               <Card>

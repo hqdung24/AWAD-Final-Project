@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SeatInfoDto, PassengerInfoDto } from './booking-response.dto';
+import {
+  SeatInfoDto,
+  PassengerInfoDto,
+  RoutePointSelectionDto,
+} from './booking-response.dto';
 
 export class TripBriefDto {
   @ApiProperty({
@@ -109,6 +113,22 @@ export class BookingListItemDto {
     type: [PassengerInfoDto],
   })
   passengers: PassengerInfoDto[];
+
+  @ApiProperty({
+    description: 'Selected pickup point (if any)',
+    type: RoutePointSelectionDto,
+    required: false,
+    nullable: true,
+  })
+  pickupPoint?: RoutePointSelectionDto | null;
+
+  @ApiProperty({
+    description: 'Selected dropoff point (if any)',
+    type: RoutePointSelectionDto,
+    required: false,
+    nullable: true,
+  })
+  dropoffPoint?: RoutePointSelectionDto | null;
 }
 
 export class BookingListResponseDto {

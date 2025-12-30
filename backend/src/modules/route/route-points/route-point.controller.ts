@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Patch,
   Delete,
@@ -66,6 +67,23 @@ export class RoutePointController {
       params.routeId,
       createRoutePointDto,
     );
+  }
+
+  @Get('routes/:routeId/points')
+  @Roles(RoleType.ADMIN, RoleType.MODERATOR)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'List route points for a route' })
+  @ApiParam({
+    name: 'routeId',
+    description: 'Route UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Route points retrieved successfully',
+  })
+  async listRoutePoints(@Param() params: RouteIdParamDto) {
+    return await this.routePointService.getRoutePoints(params.routeId);
   }
 
   @Patch('route-points/:id')

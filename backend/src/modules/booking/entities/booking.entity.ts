@@ -55,6 +55,12 @@ export class Booking {
   @Column({ type: 'varchar', nullable: true })
   phone: string | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  pickupPointId: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  dropoffPointId: string | null;
+
   @ManyToOne(() => User, (user) => user.bookings, {
     onDelete: 'RESTRICT',
   })

@@ -76,6 +76,8 @@ export default function UpcomingTripDetail() {
   const trip = data.trip;
   const seatCodes = data.seats.map((s) => s.seatCode).join(', ');
   const isPending = data.status === 'pending';
+  const pickupPoint = data.pickupPoint;
+  const dropoffPoint = data.dropoffPoint;
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,6 +127,36 @@ export default function UpcomingTripDetail() {
             </div>
 
             <Separator />
+
+            {(pickupPoint || dropoffPoint) && (
+              <>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" /> Pickup point
+                    </div>
+                    <div className="text-sm font-semibold">
+                      {pickupPoint ? pickupPoint.name : '—'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {pickupPoint?.address ?? ''}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" /> Dropoff point
+                    </div>
+                    <div className="text-sm font-semibold">
+                      {dropoffPoint ? dropoffPoint.name : '—'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {dropoffPoint?.address ?? ''}
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">

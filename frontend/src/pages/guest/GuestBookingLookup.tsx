@@ -216,6 +216,24 @@ export default function GuestBookingLookup() {
                             {booking.totalAmount.toLocaleString('vi-VN')} VND
                           </p>
                         </div>
+                        {(booking.pickupPoint || booking.dropoffPoint) && (
+                          <div className="space-y-1 md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              Pickup / Dropoff
+                            </p>
+                            <p className="font-semibold">
+                              {booking.pickupPoint?.name ?? '—'} →{' '}
+                              {booking.dropoffPoint?.name ?? '—'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {booking.pickupPoint?.address ?? ''}
+                              {booking.pickupPoint?.address && booking.dropoffPoint?.address
+                                ? ' • '
+                                : ''}
+                              {booking.dropoffPoint?.address ?? ''}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <Separator />
                       <div className="space-y-2">
