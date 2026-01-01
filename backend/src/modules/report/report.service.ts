@@ -6,6 +6,7 @@ type ReportFilters = {
   to?: string;
   operatorId?: string;
   routeId?: string;
+  groupBy?: 'day' | 'week' | 'month';
 };
 
 @Injectable()
@@ -60,6 +61,19 @@ export class ReportService {
     };
 
     try {
+      const groupBy =
+        filters.groupBy === 'week'
+          ? 'week'
+          : filters.groupBy === 'month'
+          ? 'month'
+          : 'day';
+      const groupInterval =
+        groupBy === 'month'
+          ? "interval '1 month'"
+          : groupBy === 'week'
+          ? "interval '1 week'"
+          : "interval '1 day'";
+      const groupLabel = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
       const params = [
         filters.from ?? null,
         filters.to ?? null,
@@ -81,25 +95,25 @@ export class ReportService {
 
       const revenueSeries = await this.dataSource.query(
         `
-          with days as (
+          with buckets as (
             select generate_series(
-              coalesce($1::date, current_date - interval '29 days'),
-              coalesce($2::date, current_date),
-              interval '1 day'
-            )::date as day
+              date_trunc('${groupBy}', coalesce($1::date, current_date - interval '29 days')),
+              date_trunc('${groupBy}', coalesce($2::date, current_date)),
+              ${groupInterval}
+            ) as bucket
           )
           select
-            to_char(d.day, 'YYYY-MM-DD') as date,
-            coalesce(sum(case when lower(p.status::text) = 'paid' then p.amount end), 0)::numeric as revenue
-          from days d
-          left join payments p
-            on coalesce(p.paid_at, p.updated_at, p.created_at)::date = d.day
-          left join bookings b on b.id = p.booking_id
+            to_char(buckets.bucket, '${groupLabel}') as date,
+            coalesce(sum(case when lower(payments.status::text) = 'paid' then payments.amount end), 0)::numeric as revenue
+          from buckets
+          left join payments
+            on date_trunc('${groupBy}', coalesce(payments.paid_at, payments.updated_at, payments.created_at)) = buckets.bucket
+          left join bookings b on b.id = payments.booking_id
           left join trips t on t.id = b.trip_id
           left join routes r on r.id = t.route_id
           ${baseWhereWithoutDate}
-          group by d.day
-          order by d.day;
+          group by buckets.bucket
+          order by buckets.bucket;
         `,
         params,
       );
@@ -119,14 +133,14 @@ export class ReportService {
 
       const cancellations = await this.dataSource.query(
         `
-          select to_char(b.booked_at::date, 'YYYY-MM-DD') as date, count(*)::int as cancelled
+          select to_char(date_trunc('${groupBy}', b.booked_at), '${groupLabel}') as date, count(*)::int as cancelled
           from bookings b
           left join payments p on p.booking_id = b.id
           left join trips t on t.id = b.trip_id
           left join routes r on r.id = t.route_id
           ${baseWhere} and lower(b.status::text) = 'cancelled'
-          group by b.booked_at::date
-          order by b.booked_at::date;
+          group by date_trunc('${groupBy}', b.booked_at)
+          order by date_trunc('${groupBy}', b.booked_at);
         `,
         params,
       );

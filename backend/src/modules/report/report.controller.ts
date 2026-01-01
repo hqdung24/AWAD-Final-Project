@@ -15,12 +15,14 @@ export class ReportController {
     @Query('to') to?: string,
     @Query('operatorId') operatorId?: string,
     @Query('routeId') routeId?: string,
+    @Query('groupBy') groupBy?: 'day' | 'week' | 'month',
   ) {
     return this.reportService.getAdminReport({
       from,
       to,
       operatorId,
       routeId,
+      groupBy,
     });
   }
 
@@ -32,12 +34,14 @@ export class ReportController {
     @Query('to') to?: string,
     @Query('operatorId') operatorId?: string,
     @Query('routeId') routeId?: string,
+    @Query('groupBy') groupBy?: 'day' | 'week' | 'month',
   ) {
     const csv = await this.reportService.exportAdminReport({
       from,
       to,
       operatorId,
       routeId,
+      groupBy,
     });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(

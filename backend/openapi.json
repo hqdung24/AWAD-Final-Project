@@ -2928,6 +2928,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "groupBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2970,6 +2978,14 @@
           },
           {
             "name": "routeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupBy",
             "required": true,
             "in": "query",
             "schema": {
