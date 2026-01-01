@@ -7,7 +7,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class RouteQueryDto {
   @ApiPropertyOptional({ description: 'Filter by operator ID' })
@@ -15,10 +15,15 @@ export class RouteQueryDto {
   @IsString()
   operatorId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by active status', default: true })
+  @ApiPropertyOptional({ description: 'Filter by active status' })
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
   isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1, minimum: 1 })
@@ -66,6 +71,17 @@ export class CreateRouteDto {
 }
 
 export class UpdateRouteDto {
+  @ApiPropertyOptional({ description: 'Active status' })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  isActive?: boolean;
+
   @ApiPropertyOptional({ description: 'Operator ID' })
   @IsOptional()
   @IsString()

@@ -64,7 +64,7 @@ export default function TripsPage() {
 
   const { data: adminRoutes = [] } = useQuery<AdminRoute[]>({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: () => listAdminRoutes({ isActive: true }),
   });
   const { data: tripsResponse } = useQuery<TripListResponse>({
     queryKey: ['trips', page, pageSize, filters],
@@ -397,25 +397,21 @@ export default function TripsPage() {
           <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <span>Rows per page:</span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(val) => {
-                  const nextSize = Number(val) || 10;
+              <select
+                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                value={pageSize}
+                onChange={(e) => {
+                  const nextSize = Number(e.target.value) || 10;
                   setPageSize(nextSize);
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-8 w-[90px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 10, 20, 50].map((size) => (
-                    <SelectItem key={size} value={String(size)}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-2">
               <Button

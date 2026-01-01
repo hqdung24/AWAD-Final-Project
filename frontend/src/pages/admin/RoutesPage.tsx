@@ -24,18 +24,15 @@ import {
   listAdminRoutes,
   createAdminRoute,
   updateAdminRoute,
-  deleteAdminRoute,
   type AdminRoute,
 } from '@/services/adminRoutesService';
 import { listOperators, type Operator } from '@/services/operatorService';
 import {
-  listRoutesWithStops,
   listRoutePoints,
   createRoutePoint,
   updateRoutePoint,
   deleteRoutePoint,
   type RouteStop,
-  type RouteWithStops,
   type RoutePointPayload,
 } from '@/services/routeStops';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +58,7 @@ export default function RoutesPage() {
     operatorId?: string;
     origin?: string;
     destination?: string;
+    isActive?: 'active' | 'inactive' | 'all';
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -82,22 +80,25 @@ export default function RoutesPage() {
   }>({});
 
   const { data: adminRoutesResult, isLoading: routesLoading } = useQuery<
-    AdminRoute[] | RouteWithStops[]
+    AdminRoute[]
   >({
-    queryKey: ['admin-routes'],
+    queryKey: ['admin-routes', filters.isActive, filters.operatorId],
     queryFn: async () => {
-      // prefer full routes with stops; fall back to admin routes if needed
-      try {
-        return await listRoutesWithStops();
-      } catch (e) {
-        return await listAdminRoutes();
-      }
+      const isActive =
+        filters.isActive === 'all'
+          ? undefined
+          : filters.isActive === 'inactive'
+          ? false
+          : filters.isActive === 'active'
+          ? true
+          : true;
+      return await listAdminRoutes({
+        operatorId: filters.operatorId,
+        isActive,
+      });
     },
   });
-  const adminRoutes: AdminRoute[] =
-    (adminRoutesResult as { data?: AdminRoute[] } | undefined)?.data ??
-    (adminRoutesResult as AdminRoute[]) ??
-    [];
+  const adminRoutes: AdminRoute[] = adminRoutesResult ?? [];
 
   const { data: operators = [] } = useQuery<Operator[]>({
     queryKey: ['operators'],
@@ -153,18 +154,6 @@ export default function RoutesPage() {
     onError: (error: any) => {
       const message =
         error?.response?.data?.message || error?.message || 'Failed to update route';
-      notify.error(Array.isArray(message) ? message.join(', ') : message);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteAdminRoute,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['admin-routes'] });
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message || error?.message || 'Failed to delete route';
       notify.error(Array.isArray(message) ? message.join(', ') : message);
     },
   });
@@ -243,7 +232,6 @@ export default function RoutesPage() {
     .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
 
   const filteredRoutes = adminRoutes.filter((route) => {
-    if (filters.operatorId && route.operatorId !== filters.operatorId) return false;
     if (filters.origin) {
       const q = filters.origin.toLowerCase();
       if (!route.origin.toLowerCase().includes(q)) return false;
@@ -381,6 +369,24 @@ export default function RoutesPage() {
                   </select>
                 </label>
                 <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                  Status
+                  <select
+                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                    value={filters.isActive ?? 'active'}
+                    onChange={(e) => {
+                      setFilters((prev) => ({
+                        ...prev,
+                        isActive: (e.target.value as 'active' | 'inactive' | 'all') || 'active',
+                      }));
+                      setPage(1);
+                    }}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="all">All</option>
+                  </select>
+                </label>
+                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                   Origin
                   <Input
                     placeholder="Search origin"
@@ -414,11 +420,12 @@ export default function RoutesPage() {
                   <TableHead>Origin</TableHead>
                   <TableHead>Destination</TableHead>
                   <TableHead>Operator</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Distance (km)</TableHead>
                   <TableHead>ETA (min)</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
+              </TableRow>
             </TableHeader>
           <TableBody>
             {pagedRoutes.map((route, idx) => {
@@ -431,6 +438,9 @@ export default function RoutesPage() {
                     <TableCell>{route.origin}</TableCell>
                     <TableCell>{route.destination}</TableCell>
                     <TableCell>{operatorLabel}</TableCell>
+                    <TableCell>
+                      {route.isActive === false ? 'Inactive' : 'Active'}
+                    </TableCell>
                     <TableCell>{route.distanceKm}</TableCell>
                     <TableCell>{route.estimatedMinutes}</TableCell>
                     <TableCell>{route.notes ?? '—'}</TableCell>
@@ -444,11 +454,16 @@ export default function RoutesPage() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="destructive"
-                        onClick={() => deleteMutation.mutate(route.id)}
-                        disabled={deleteMutation.isPending}
+                        variant={route.isActive === false ? 'outline' : 'destructive'}
+                        onClick={() =>
+                          updateMutation.mutate({
+                            id: route.id,
+                            data: { isActive: route.isActive === false ? true : false },
+                          })
+                        }
+                        disabled={updateMutation.isPending}
                       >
-                        Delete
+                        {route.isActive === false ? 'Activate' : 'Deactivate'}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -456,7 +471,7 @@ export default function RoutesPage() {
               })}
               {pagedRoutes.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     No routes found. Try adjusting your filters or add a new route.
                   </TableCell>
                 </TableRow>

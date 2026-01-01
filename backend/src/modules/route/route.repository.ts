@@ -20,7 +20,7 @@ export class RouteRepository {
     page: number;
     limit: number;
   }): Promise<[Route[], number]> {
-    const { operatorId, isActive = true, page, limit } = filters;
+    const { operatorId, isActive, page, limit } = filters;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.repository
@@ -34,7 +34,9 @@ export class RouteRepository {
       queryBuilder.andWhere('route.operatorId = :operatorId', { operatorId });
     }
 
-    queryBuilder.andWhere('route.isActive = :isActive', { isActive });
+    if (isActive !== undefined) {
+      queryBuilder.andWhere('route.isActive = :isActive', { isActive });
+    }
 
     return await queryBuilder.getManyAndCount();
   }

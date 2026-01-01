@@ -97,17 +97,19 @@ function App() {
                       }
                     />
                     <Route
+                      path="/overview"
+                      element={
+                        <ProtectedRoute roles={['ADMIN']}>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/upcoming-trip"
                       element={
-                        role === 'ADMIN' ? (
-                          <ProtectedRoute roles={['ADMIN']}>
-                            <AdminDashboard />
-                          </ProtectedRoute>
-                        ) : (
-                          <ProtectedRoute>
-                            <UserDashboard />
-                          </ProtectedRoute>
-                        )
+                        <ProtectedRoute>
+                          <UserDashboard />
+                        </ProtectedRoute>
                       }
                     />
                     <Route

@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   ArrowUpRight,
+  BusFront,
   DollarSign,
   Download,
   Route,
@@ -48,7 +49,7 @@ const AdminDashboard = () => {
   }
 
   const summaryCards = data?.summaryCards.map((item, idx) => {
-    const icons = [Activity, Users, DollarSign];
+    const icons = [Activity, BusFront, Users, DollarSign];
     return {
       ...item,
       icon: icons[idx] ?? Activity,
@@ -64,6 +65,13 @@ const AdminDashboard = () => {
       delta: 0.12,
       display: '1,234',
       icon: Activity,
+    },
+    {
+      title: 'Upcoming Trips',
+      value: 48,
+      delta: 0.04,
+      display: '48',
+      icon: BusFront,
     },
     {
       title: 'Active Users',
@@ -167,11 +175,12 @@ const AdminDashboard = () => {
                       ? (card as { display: string }).display
                       : card.value}
                   </p>
-                  <div className="text-emerald-600 mt-1 flex items-center gap-1 text-xs font-medium">
-                    <ArrowUpRight className="h-4 w-4" />
-                    {card.delta ? `${Math.round(card.delta * 100)}%` : '+0%'} vs
-                    last period
-                  </div>
+                  {typeof card.delta === 'number' && card.delta !== 0 && (
+                    <div className="text-emerald-600 mt-1 flex items-center gap-1 text-xs font-medium">
+                      <ArrowUpRight className="h-4 w-4" />
+                      {`${Math.round(card.delta * 100)}%`} vs last period
+                    </div>
+                  )}
                 </div>
                 <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
                   <card.icon className="h-6 w-6" />

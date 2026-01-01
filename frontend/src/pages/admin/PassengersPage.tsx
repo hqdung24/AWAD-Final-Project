@@ -50,7 +50,7 @@ export default function PassengersPage() {
 
   const routesQuery = useQuery({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: () => listAdminRoutes({ isActive: true }),
   });
 
   const passengersQuery = useQuery({

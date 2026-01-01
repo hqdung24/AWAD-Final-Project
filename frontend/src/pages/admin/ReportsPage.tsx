@@ -61,7 +61,7 @@ const ReportsPage = () => {
 
   const { data: routes = [] } = useQuery<AdminRoute[]>({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: () => listAdminRoutes({ isActive: true }),
   });
 
   const { data, isLoading, error, refetch } = useQuery<AdminReport>({
