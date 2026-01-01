@@ -190,6 +190,8 @@ export default function PassengersPage() {
   const selectedTrip = trips.find((trip) => trip.id === tripId);
   const checkedInCount = filteredPassengers.filter((p) => p.checkedInAt).length;
   const pendingCount = filteredPassengers.length - checkedInCount;
+  const isTripLocked =
+    selectedTrip?.status === 'completed' || selectedTrip?.status === 'archived';
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -338,6 +340,10 @@ export default function PassengersPage() {
                 {new Date(selectedTrip.departureTime).toLocaleString()}
               </Badge>
               <Badge variant="outline">{getDisplayStatusLabel(selectedTrip)}</Badge>
+              <Badge variant="outline">Paid bookings only</Badge>
+              {isTripLocked && (
+                <Badge variant="outline">Check-in locked</Badge>
+              )}
             </div>
           )}
           <Separator className={selectedTrip ? 'mb-3' : 'mb-4'} />
@@ -397,7 +403,7 @@ export default function PassengersPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => resetMutation.mutate({ passengerId: passenger.id })}
-                            disabled={resetMutation.isPending}
+                            disabled={resetMutation.isPending || isTripLocked}
                           >
                             Reset
                           </Button>
@@ -405,7 +411,7 @@ export default function PassengersPage() {
                           <Button
                             size="sm"
                             onClick={() => checkInMutation.mutate({ passengerId: passenger.id })}
-                            disabled={checkInMutation.isPending}
+                            disabled={checkInMutation.isPending || isTripLocked}
                           >
                             Check-in
                           </Button>
