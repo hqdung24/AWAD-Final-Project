@@ -24,7 +24,6 @@ import {
   listBuses,
   createBus,
   updateBus,
-  deleteBus,
   listSeats,
   createSeat,
   updateSeat,
@@ -87,6 +86,7 @@ export default function BusesPage() {
   const [busFilters, setBusFilters] = useState<{
     operatorId?: string;
     query?: string;
+    isActive?: 'active' | 'inactive' | 'all';
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -117,10 +117,23 @@ export default function BusesPage() {
 
   const { data: buses = [] } = useQuery<Bus[]>({
     queryKey: ['buses', busFilters],
-    queryFn: () => listBuses({ operatorId: busFilters.operatorId, limit: 200 }),
+    queryFn: () => {
+      const isActive =
+        busFilters.isActive === 'all'
+          ? undefined
+          : busFilters.isActive === 'inactive'
+          ? false
+          : busFilters.isActive === 'active'
+          ? true
+          : true;
+      return listBuses({
+        operatorId: busFilters.operatorId,
+        isActive,
+        limit: 200,
+      });
+    },
   });
   const filteredBuses = buses.filter((bus) => {
-    if (busFilters.operatorId && bus.operatorId !== busFilters.operatorId) return false;
     if (busFilters.query) {
       const q = busFilters.query.toLowerCase();
       const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
@@ -196,17 +209,6 @@ export default function BusesPage() {
     },
   });
 
-  const deleteBusMutation = useMutation({
-    mutationFn: deleteBus,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['buses'] });
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message || error?.message || 'Failed to delete bus';
-      notify.error(Array.isArray(message) ? message.join(', ') : message);
-    },
-  });
 
   const createSeatMutation = useMutation({
     mutationFn: (payload: { busId: string; seatCode: string; seatType: string }) =>
@@ -419,6 +421,24 @@ export default function BusesPage() {
                 </select>
               </label>
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Status
+                <select
+                  className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={busFilters.isActive ?? 'active'}
+                  onChange={(e) => {
+                    setBusFilters((prev) => ({
+                      ...prev,
+                      isActive: (e.target.value as 'active' | 'inactive' | 'all') || 'active',
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                 Search (plate/name/model)
                 <Input
                   value={busFilters.query ?? ''}
@@ -444,6 +464,7 @@ export default function BusesPage() {
                   <TableHead>Model</TableHead>
                   <TableHead>Bus Type</TableHead>
                   <TableHead>Operator</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Capacity</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -459,6 +480,7 @@ export default function BusesPage() {
                     <TableCell>{bus.model ?? '—'}</TableCell>
                     <TableCell>{bus.busType ?? '—'}</TableCell>
                     <TableCell>{bus.operator?.name ?? bus.operatorId}</TableCell>
+                    <TableCell>{bus.isActive === false ? 'Inactive' : 'Active'}</TableCell>
                     <TableCell>{bus.seatCapacity}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
@@ -470,18 +492,23 @@ export default function BusesPage() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="destructive"
-                        onClick={() => deleteBusMutation.mutate(bus.id)}
-                        disabled={deleteBusMutation.isPending}
+                        variant={bus.isActive === false ? 'outline' : 'destructive'}
+                        onClick={() =>
+                          updateBusMutation.mutate({
+                            id: bus.id,
+                            data: { isActive: bus.isActive === false ? true : false },
+                          })
+                        }
+                        disabled={updateBusMutation.isPending}
                       >
-                        Delete
+                        {bus.isActive === false ? 'Activate' : 'Deactivate'}
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
                 {pagedBuses.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No buses found. Adjust filters or create a new bus.
                     </TableCell>
                   </TableRow>

@@ -207,6 +207,27 @@ export class TripRepository {
       .getOne();
   }
 
+  async findScheduledByRouteId(routeId: string, now: Date): Promise<Trip[]> {
+    return this.repository
+      .createQueryBuilder('trip')
+      .where('trip.routeId = :routeId', { routeId })
+      .andWhere('trip.status = :status', { status: 'scheduled' })
+      .andWhere('trip.departureTime > :now', { now })
+      .getMany();
+  }
+
+  async cancelScheduledByIds(tripIds: string[]): Promise<number> {
+    if (tripIds.length === 0) return 0;
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Trip)
+      .set({ status: 'cancelled' })
+      .where('id IN (:...tripIds)', { tripIds })
+      .andWhere('status = :status', { status: 'scheduled' })
+      .execute();
+    return result.affected ?? 0;
+  }
+
   async markDeparted(now: Date): Promise<number> {
     const result = await this.repository
       .createQueryBuilder()

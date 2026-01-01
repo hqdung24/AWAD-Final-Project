@@ -14,6 +14,7 @@ export type Bus = {
   seatCapacity: number;
   amenitiesJson?: string;
   seatCount?: number;
+  isActive?: boolean;
 };
 
 export type Seat = {
@@ -31,8 +32,18 @@ export type BusAssignment = {
   endTime: string;
 };
 
-export async function listBuses(params?: { page?: number; limit?: number; operatorId?: string }): Promise<Bus[]> {
-  const res = await http.get('/admin/buses', { params });
+export async function listBuses(params?: {
+  page?: number;
+  limit?: number;
+  operatorId?: string;
+  isActive?: boolean;
+}): Promise<Bus[]> {
+  const query: Record<string, string | number> = {};
+  if (params?.page) query.page = params.page;
+  if (params?.limit) query.limit = params.limit;
+  if (params?.operatorId) query.operatorId = params.operatorId;
+  if (params?.isActive !== undefined) query.isActive = String(params.isActive);
+  const res = await http.get('/admin/buses', { params: query });
   const payload = (res as any)?.data ?? res;
   return Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
 }

@@ -1309,7 +1309,16 @@
     "/admin/buses": {
       "get": {
         "operationId": "BusController_listBuses",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Buses retrieved successfully"
@@ -3585,6 +3594,10 @@
           "name": {
             "type": "string",
             "example": "VIP Sleeper 40"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Active status"
           }
         }
       },

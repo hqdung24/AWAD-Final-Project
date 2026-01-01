@@ -206,6 +206,55 @@ export class BookingRepository {
     });
   }
 
+  async cancelBookingsByTripIds(tripIds: string[]): Promise<Booking[]> {
+    if (tripIds.length === 0) return [];
+    return this.repository.manager.transaction(async (manager) => {
+      const bookings = await manager.find(Booking, {
+        where: {
+          tripId: In(tripIds),
+          status: In(['pending', 'paid']),
+        },
+        relations: [
+          'user',
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+
+      for (const booking of bookings) {
+        booking.status = 'cancelled';
+        await manager.save(booking);
+
+        await manager
+          .createQueryBuilder()
+          .update('seat_statuses')
+          .set({
+            state: 'available',
+            bookingId: null,
+            lockedUntil: null,
+          })
+          .where('bookingId = :bookingId', { bookingId: booking.id })
+          .execute();
+      }
+
+      if (bookings.length === 0) return [];
+      return manager.find(Booking, {
+        where: { id: In(bookings.map((b) => b.id)) },
+        relations: [
+          'user',
+          'trip',
+          'trip.route',
+          'seatStatuses',
+          'seatStatuses.seat',
+          'passengerDetails',
+        ],
+      });
+    });
+  }
+
   async findPendingBookingsBefore(date: Date): Promise<Booking[]> {
     return await this.repository
       .find({

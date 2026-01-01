@@ -1,11 +1,13 @@
 export const BOOKING_EMAIL_TEMPLATES = {
   BOOKING_CONFIRMATION: 'booking_confirmation',
   TRIP_REMINDER: 'trip_reminder',
+  BOOKING_CANCELLED: 'booking_cancelled',
 };
 
 export const BOOKING_EMAIL_SUBJECTS = {
   BOOKING_CONFIRMATION: 'Booking Created – Complete Your Payment',
   TRIP_REMINDER: 'Upcoming Trip Reminder',
+  BOOKING_CANCELLED: 'Trip Cancelled – We’re Sorry',
 };
 
 type PassengerInfo = {
@@ -48,6 +50,17 @@ export type TripReminderParams = {
   contact: ContactInfo;
   reminderType: '24h' | '3h';
   manageBookingUrl?: string;
+};
+
+export type BookingCancelledParams = {
+  bookingId: string;
+  bookingReference?: string | null;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  seats: string[];
+  contact: ContactInfo;
+  reason?: string;
 };
 
 const colors = {
@@ -368,6 +381,62 @@ export const getTripReminderTemplate = (params: TripReminderParams): string => {
                 : ''
             }
             <p class="muted" style="margin-top:12px;">Booking ID: ${params.bookingId}</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+export const getBookingCancelledTemplate = (
+  params: BookingCancelledParams,
+): string => {
+  const seatsLine = params.seats.length > 0 ? params.seats.join(', ') : '—';
+  const reason = params.reason ?? 'The route for your trip was deactivated.';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="vi">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: ${colors.surface}; color: ${colors.text}; }
+          .card { max-width: 680px; margin: 24px auto; background: #ffffff; border: 1px solid ${colors.border}; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px -24px rgba(0, 88, 186, 0.25); }
+          .header { background: linear-gradient(120deg, ${colors.primary}, ${colors.accent}); color: #fff; padding: 24px 28px 20px; }
+          .pill { display: inline-block; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-size: 12px; letter-spacing: 0.02em; }
+          .title { margin: 10px 0 4px; font-size: 22px; font-weight: 700; }
+          .section { padding: 24px 28px; border-top: 1px solid ${colors.border}; }
+          .item { padding: 10px 12px; background: ${colors.surface}; border: 1px solid ${colors.border}; border-radius: 10px; }
+          .label { font-size: 12px; color: ${colors.muted}; text-transform: uppercase; letter-spacing: 0.03em; }
+          .value { margin-top: 4px; font-size: 15px; font-weight: 700; color: ${colors.text}; }
+          .muted { color: ${colors.muted}; font-size: 13px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="header">
+            <span class="pill">Trip Cancelled</span>
+            <div class="title">${params.origin} → ${params.destination}</div>
+          </div>
+          <div class="section">
+            <div class="item">
+              <div class="label">Reason</div>
+              <div class="value">${reason}</div>
+            </div>
+            <div class="item" style="margin-top:12px;">
+              <div class="label">Departure</div>
+              <div class="value">${formatDateTime(params.departureTime)}</div>
+              <div class="muted">Seats: ${seatsLine}</div>
+              <div class="muted">Booking ref: ${params.bookingReference || params.bookingId}</div>
+            </div>
+            <div class="item" style="margin-top:12px;">
+              <div class="label">Contact</div>
+              <div class="value">${params.contact.name || '—'}</div>
+              <div class="muted">${params.contact.email || '—'}</div>
+              <div class="muted">${params.contact.phone || '—'}</div>
+            </div>
+            <p class="muted" style="margin-top:12px;">If you need help rebooking, please contact support.</p>
           </div>
         </div>
       </body>

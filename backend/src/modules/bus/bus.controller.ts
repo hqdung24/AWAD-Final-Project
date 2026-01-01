@@ -34,13 +34,22 @@ export class BusController {
   @ApiOperation({ summary: 'List buses' })
   @ApiResponse({ status: 200, description: 'Buses retrieved successfully' })
   async listBuses(
-    @Query() query: { operatorId?: string; page?: number; limit?: number },
+    @Query() query: { operatorId?: string; isActive?: boolean; page?: number; limit?: number },
+    @Query('isActive') isActiveRaw?: string,
   ) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 100;
+    const isActive =
+      isActiveRaw === undefined
+        ? query.isActive
+        : isActiveRaw.toLowerCase() === 'true'
+        ? true
+        : isActiveRaw.toLowerCase() === 'false'
+        ? false
+        : query.isActive;
     const [buses] = await this.busService.findAll({
       operatorId: query.operatorId,
-      isActive: true,
+      isActive,
       page,
       limit,
     });

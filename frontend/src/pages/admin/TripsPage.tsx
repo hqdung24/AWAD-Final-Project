@@ -64,7 +64,7 @@ export default function TripsPage() {
 
   const { data: adminRoutes = [] } = useQuery<AdminRoute[]>({
     queryKey: ['admin-routes'],
-    queryFn: () => listAdminRoutes({ isActive: true }),
+    queryFn: () => listAdminRoutes({ isActive: undefined }),
   });
   const { data: tripsResponse } = useQuery<TripListResponse>({
     queryKey: ['trips', page, pageSize, filters],
@@ -81,7 +81,7 @@ export default function TripsPage() {
   });
   const { data: buses = [] } = useQuery<Bus[]>({
     queryKey: ['buses'],
-    queryFn: listBuses,
+    queryFn: () => listBuses({ isActive: true }),
   });
   const trips = tripsResponse?.data ?? [];
   const total = tripsResponse?.total ?? 0;
@@ -89,6 +89,21 @@ export default function TripsPage() {
     tripsResponse?.totalPages ??
     (pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1);
   const scheduledCount = trips.filter((trip) => trip.status === 'scheduled').length;
+
+  const getDisplayStatus = (trip: Trip) => {
+    if (trip.status === 'scheduled') {
+      const now = new Date();
+      const departure = new Date(trip.departureTime);
+      const arrival = new Date(trip.arrivalTime);
+      if (now >= departure && now <= arrival) return 'In Progress';
+      return 'Scheduled';
+    }
+    if (trip.status === 'completed' || trip.status === 'archived') {
+      return 'Completed';
+    }
+    if (trip.status === 'cancelled') return 'Cancelled';
+    return trip.status;
+  };
 
   const tripCreateMutation = useMutation({
     mutationFn: createTrip,
@@ -358,7 +373,7 @@ export default function TripsPage() {
                       <TableCell>{new Date(trip.arrivalTime).toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{trip.status ?? '—'}</span>
+                          <span>{getDisplayStatus(trip) ?? '—'}</span>
                           <span className="text-xs text-muted-foreground">
                             {trip.basePrice.toLocaleString()} VND
                           </span>
