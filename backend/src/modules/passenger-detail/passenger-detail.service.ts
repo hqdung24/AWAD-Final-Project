@@ -22,10 +22,11 @@ export class PassengerDetailService {
 
     if (
       passenger.booking?.trip?.status === 'completed' ||
-      passenger.booking?.trip?.status === 'archived'
+      passenger.booking?.trip?.status === 'archived' ||
+      passenger.booking?.trip?.status === 'cancelled'
     ) {
       throw new BadRequestException(
-        'Cannot check in passengers for completed trips',
+        'Cannot check in passengers for completed or cancelled trips',
       );
     }
 
@@ -55,10 +56,11 @@ export class PassengerDetailService {
 
     if (
       passenger.booking?.trip?.status === 'completed' ||
-      passenger.booking?.trip?.status === 'archived'
+      passenger.booking?.trip?.status === 'archived' ||
+      passenger.booking?.trip?.status === 'cancelled'
     ) {
       throw new BadRequestException(
-        'Cannot reset check-in for completed trips',
+        'Cannot reset check-in for completed or cancelled trips',
       );
     }
 

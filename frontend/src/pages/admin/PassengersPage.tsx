@@ -191,7 +191,9 @@ export default function PassengersPage() {
   const checkedInCount = filteredPassengers.filter((p) => p.checkedInAt).length;
   const pendingCount = filteredPassengers.length - checkedInCount;
   const isTripLocked =
-    selectedTrip?.status === 'completed' || selectedTrip?.status === 'archived';
+    selectedTrip?.status === 'completed' ||
+    selectedTrip?.status === 'archived' ||
+    selectedTrip?.status === 'cancelled';
 
   return (
     <div className="flex flex-col gap-6 p-6">
