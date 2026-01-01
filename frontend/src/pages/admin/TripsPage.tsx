@@ -66,15 +66,26 @@ export default function TripsPage() {
     queryKey: ['admin-routes'],
     queryFn: () => listAdminRoutes({ isActive: undefined }),
   });
+  const isDerivedStatusFilter =
+    filters.status === 'in_progress' || filters.status === 'completed';
+  const backendStatus =
+    filters.status === 'in_progress'
+      ? 'scheduled'
+      : filters.status === 'completed'
+      ? undefined
+      : filters.status;
+  const effectivePage = isDerivedStatusFilter ? 1 : page;
+  const effectiveLimit = isDerivedStatusFilter ? 2000 : pageSize;
+
   const { data: tripsResponse } = useQuery<TripListResponse>({
-    queryKey: ['trips', page, pageSize, filters],
+    queryKey: ['trips', effectivePage, effectiveLimit, filters, backendStatus],
     queryFn: () =>
       listTrips({
-        page,
-        limit: pageSize,
+        page: effectivePage,
+        limit: effectiveLimit,
         routeId: filters.routeId,
         busId: filters.busId,
-        status: filters.status,
+        status: backendStatus,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       }),
@@ -84,26 +95,38 @@ export default function TripsPage() {
     queryFn: () => listBuses({ isActive: true }),
   });
   const trips = tripsResponse?.data ?? [];
-  const total = tripsResponse?.total ?? 0;
-  const totalPages =
-    tripsResponse?.totalPages ??
-    (pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1);
   const scheduledCount = trips.filter((trip) => trip.status === 'scheduled').length;
 
-  const getDisplayStatus = (trip: Trip) => {
+  const getDisplayStatusKey = (trip: Trip) => {
+    if (trip.status === 'cancelled') return 'cancelled';
+    if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
     if (trip.status === 'scheduled') {
       const now = new Date();
       const departure = new Date(trip.departureTime);
       const arrival = new Date(trip.arrivalTime);
-      if (now >= departure && now <= arrival) return 'In Progress';
-      return 'Scheduled';
+      if (now >= departure && now <= arrival) return 'in_progress';
+      return 'scheduled';
     }
-    if (trip.status === 'completed' || trip.status === 'archived') {
-      return 'Completed';
-    }
-    if (trip.status === 'cancelled') return 'Cancelled';
     return trip.status;
   };
+
+  const getDisplayStatusLabel = (trip: Trip) => {
+    const key = getDisplayStatusKey(trip);
+    if (key === 'in_progress') return 'In Progress';
+    if (key === 'completed') return 'Completed';
+    if (key === 'cancelled') return 'Cancelled';
+    return 'Scheduled';
+  };
+
+  const filteredTrips = filters.status
+    ? trips.filter((trip) => getDisplayStatusKey(trip) === filters.status)
+    : trips;
+  const total = isDerivedStatusFilter ? filteredTrips.length : tripsResponse?.total ?? 0;
+  const totalPages =
+    pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const visibleTrips = isDerivedStatusFilter
+    ? filteredTrips.slice((page - 1) * pageSize, page * pageSize)
+    : filteredTrips;
 
   const tripCreateMutation = useMutation({
     mutationFn: createTrip,
@@ -192,7 +215,7 @@ export default function TripsPage() {
       busId: trip.busId,
       departureTime: trip.departureTime.slice(0, 16),
       arrivalTime: trip.arrivalTime.slice(0, 16),
-      status: trip.status,
+      status: trip.status === 'archived' ? 'completed' : trip.status,
       basePrice: Number(trip.basePrice),
     });
     setTripModalOpen(true);
@@ -330,11 +353,10 @@ export default function TripsPage() {
                   }}
                 >
                   <option value="">All</option>
-                  {['scheduled', 'cancelled', 'completed', 'archived'].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </label>
             </div>
@@ -353,7 +375,7 @@ export default function TripsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {trips.map((trip, idx) => {
+                {visibleTrips.map((trip, idx) => {
                   const route = adminRoutes.find((r) => r.id === trip.routeId);
                   const bus = buses.find((b) => b.id === trip.busId);
                   return (
@@ -373,7 +395,7 @@ export default function TripsPage() {
                       <TableCell>{new Date(trip.arrivalTime).toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span>{getDisplayStatus(trip) ?? '—'}</span>
+                          <span>{getDisplayStatusLabel(trip) ?? '—'}</span>
                           <span className="text-xs text-muted-foreground">
                             {trip.basePrice.toLocaleString()} VND
                           </span>
@@ -399,7 +421,7 @@ export default function TripsPage() {
                     </TableRow>
                   );
                 })}
-                {trips.length === 0 && (
+                {visibleTrips.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground">
                       No trips found. Adjust filters or create a new trip.
@@ -541,11 +563,9 @@ export default function TripsPage() {
                   setTripForm((prev) => ({ ...prev, status: e.target.value }))
                 }
               >
-                {['scheduled', 'cancelled', 'completed', 'archived'].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                <option value="scheduled">Scheduled</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
               </select>
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">

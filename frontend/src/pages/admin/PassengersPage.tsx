@@ -32,13 +32,22 @@ export default function PassengersPage() {
   const [toFilter, setToFilter] = useState('');
   const [passengerFilter, setPassengerFilter] = useState('');
 
+  const backendTripStatus =
+    tripStatusFilter === 'in_progress'
+      ? 'scheduled'
+      : tripStatusFilter === 'completed'
+      ? undefined
+      : tripStatusFilter || undefined;
+  const tripLimit =
+    tripStatusFilter === 'in_progress' || tripStatusFilter === 'completed' ? 1000 : 200;
+
   const tripsQuery = useQuery({
     queryKey: ['admin-trip-options', tripStatusFilter, routeFilter],
     queryFn: () =>
       listTrips({
         page: 1,
-        limit: 200,
-        status: tripStatusFilter || undefined,
+        limit: tripLimit,
+        status: backendTripStatus,
         routeId: routeFilter || undefined,
       }),
   });
@@ -92,6 +101,27 @@ export default function PassengersPage() {
   }
 
   const trips = tripsQuery.data?.data ?? [];
+  const getDisplayStatusKey = (trip: (typeof trips)[number]) => {
+    if (trip.status === 'cancelled') return 'cancelled';
+    if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
+    if (trip.status === 'scheduled') {
+      const now = new Date();
+      const departure = new Date(trip.departureTime);
+      const arrival = new Date(trip.arrivalTime);
+      if (now >= departure && now <= arrival) return 'in_progress';
+      return 'scheduled';
+    }
+    return trip.status;
+  };
+
+  const getDisplayStatusLabel = (trip: (typeof trips)[number]) => {
+    const key = getDisplayStatusKey(trip);
+    if (key === 'in_progress') return 'In Progress';
+    if (key === 'completed') return 'Completed';
+    if (key === 'cancelled') return 'Cancelled';
+    return 'Scheduled';
+  };
+
   const filteredTrips = useMemo(() => {
     let result = trips;
 
@@ -124,8 +154,20 @@ export default function PassengersPage() {
       });
     }
 
+    if (tripStatusFilter) {
+      result = result.filter((trip) => getDisplayStatusKey(trip) === tripStatusFilter);
+    }
+
     return result;
-  }, [trips, tripFilter, operatorFilter, routeFilter, fromFilter, toFilter]);
+  }, [
+    trips,
+    tripFilter,
+    operatorFilter,
+    routeFilter,
+    fromFilter,
+    toFilter,
+    tripStatusFilter,
+  ]);
 
   const filteredPassengers = useMemo(() => {
     const passengers = passengersQuery.data ?? [];
@@ -204,9 +246,9 @@ export default function PassengersPage() {
               >
                 <option value="">All statuses</option>
                 <option value="scheduled">Scheduled</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </label>
           </div>
@@ -295,7 +337,7 @@ export default function PassengersPage() {
               <Badge variant="outline">
                 {new Date(selectedTrip.departureTime).toLocaleString()}
               </Badge>
-              <Badge variant="outline">{selectedTrip.status ?? 'scheduled'}</Badge>
+              <Badge variant="outline">{getDisplayStatusLabel(selectedTrip)}</Badge>
             </div>
           )}
           <Separator className={selectedTrip ? 'mb-3' : 'mb-4'} />
