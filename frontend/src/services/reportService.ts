@@ -5,6 +5,7 @@ export type ReportFilters = {
   to?: string;
   operatorId?: string;
   routeId?: string;
+  groupBy?: 'day' | 'week' | 'month';
 };
 
 export type AdminReport = {

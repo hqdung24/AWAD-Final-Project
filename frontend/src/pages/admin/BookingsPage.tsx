@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -14,6 +16,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { getBookingDetail, getBookings, updateBookingStatus } from '@/services/bookingService';
 import { notify } from '@/lib/notify';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function BookingsPage() {
   const navigate = useNavigate();
@@ -29,6 +39,7 @@ export default function BookingsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [statusDraft, setStatusDraft] = useState<string>('');
 
   const { data, isLoading, error } = useQuery({
@@ -81,6 +92,8 @@ export default function BookingsPage() {
   const bookings = data?.data ?? [];
   const total = data?.total ?? 0;
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const paidCount = bookings.filter((booking) => booking.status === 'paid').length;
+  const pendingCount = bookings.filter((booking) => booking.status === 'pending').length;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -100,6 +113,14 @@ export default function BookingsPage() {
           <CardTitle>Booking List</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{total} bookings</Badge>
+            <Badge variant="outline">{paidCount} paid</Badge>
+            <Badge variant="outline">{pendingCount} pending</Badge>
+          </div>
+
+          <Separator />
+
           <div className="grid gap-2 md:grid-cols-6">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Email
@@ -214,7 +235,10 @@ export default function BookingsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSelectedId(booking.id)}
+                        onClick={() => {
+                          setSelectedId(booking.id);
+                          setDetailOpen(true);
+                        }}
                       >
                         View
                       </Button>
@@ -231,127 +255,6 @@ export default function BookingsPage() {
               </TableBody>
             </Table>
           </div>
-
-          {selectedId && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Booking Details</CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setSelectedId(null)}>
-                  Close
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {bookingDetailQuery.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading details…</p>
-                ) : bookingDetailQuery.data ? (
-                  <>
-                    <div className="grid gap-2 md:grid-cols-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Reference</p>
-                        <p className="font-medium">
-                          {bookingDetailQuery.data.bookingReference ?? bookingDetailQuery.data.bookingId}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Status</p>
-                        <div className="flex items-center gap-2">
-                          <select
-                            className="border-input bg-background text-sm px-2 py-1 rounded-md border"
-                            value={statusDraft}
-                            onChange={(e) => setStatusDraft(e.target.value)}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="expired">Expired</option>
-                          </select>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (!selectedId) return;
-                              updateStatusMutation.mutate({
-                                id: selectedId,
-                                status: statusDraft as 'pending' | 'paid' | 'cancelled' | 'expired',
-                              });
-                            }}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Update
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Total</p>
-                        <p className="font-medium">
-                          {bookingDetailQuery.data.totalAmount.toLocaleString()} VND
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Trip</p>
-                        <p className="font-medium">
-                          {bookingDetailQuery.data.trip?.origin} → {bookingDetailQuery.data.trip?.destination}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {bookingDetailQuery.data.trip?.departureTime?.slice(0, 16).replace('T', ' ')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Customer</p>
-                        <p className="font-medium">{bookingDetailQuery.data.name}</p>
-                        <p className="text-sm text-muted-foreground">{bookingDetailQuery.data.email}</p>
-                        <p className="text-sm text-muted-foreground">{bookingDetailQuery.data.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Pickup / Dropoff</p>
-                        <p className="font-medium">
-                          {bookingDetailQuery.data.pickupPoint?.name ?? 'Not set'} →{' '}
-                          {bookingDetailQuery.data.dropoffPoint?.name ?? 'Not set'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {bookingDetailQuery.data.pickupPoint?.address ?? '—'}
-                          {bookingDetailQuery.data.pickupPoint?.address &&
-                          bookingDetailQuery.data.dropoffPoint?.address
-                            ? ' • '
-                            : ''}
-                          {bookingDetailQuery.data.dropoffPoint?.address ?? ''}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Seats</p>
-                      <div className="flex flex-wrap gap-2">
-                        {bookingDetailQuery.data.seats.map((seat) => (
-                          <span
-                            key={seat.seatId}
-                            className="text-xs rounded-full bg-muted px-2 py-1"
-                          >
-                            {seat.seatCode}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Passengers</p>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        {bookingDetailQuery.data.passengers.map((passenger) => (
-                          <div key={passenger.seatCode} className="rounded-md border p-2">
-                            <p className="font-medium">{passenger.fullName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Seat {passenger.seatCode} · {passenger.documentId}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No details available.</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -396,6 +299,147 @@ export default function BookingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) {
+            setSelectedId(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+            <DialogDescription>
+              Review booking info, update status, and check passenger details.
+            </DialogDescription>
+          </DialogHeader>
+          {bookingDetailQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading details…</p>
+          ) : bookingDetailQuery.data ? (
+            <div className="space-y-4">
+              <div className="grid gap-2 md:grid-cols-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Reference</p>
+                  <p className="font-medium">
+                    {bookingDetailQuery.data.bookingReference ??
+                      bookingDetailQuery.data.bookingId}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                      value={statusDraft}
+                      onChange={(e) => setStatusDraft(e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="expired">Expired</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (!selectedId) return;
+                        updateStatusMutation.mutate({
+                          id: selectedId,
+                          status: statusDraft as 'pending' | 'paid' | 'cancelled' | 'expired',
+                        });
+                      }}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="font-medium">
+                    {bookingDetailQuery.data.totalAmount.toLocaleString()} VND
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Trip</p>
+                  <p className="font-medium">
+                    {bookingDetailQuery.data.trip?.origin} →{' '}
+                    {bookingDetailQuery.data.trip?.destination}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {bookingDetailQuery.data.trip?.departureTime
+                      ?.slice(0, 16)
+                      .replace('T', ' ')}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid gap-2 md:grid-cols-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Customer</p>
+                  <p className="font-medium">{bookingDetailQuery.data.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {bookingDetailQuery.data.email}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {bookingDetailQuery.data.phone}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pickup / Dropoff</p>
+                  <p className="font-medium">
+                    {bookingDetailQuery.data.pickupPoint?.name ?? 'Not set'} →{' '}
+                    {bookingDetailQuery.data.dropoffPoint?.name ?? 'Not set'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {bookingDetailQuery.data.pickupPoint?.address ?? '—'}
+                    {bookingDetailQuery.data.pickupPoint?.address &&
+                    bookingDetailQuery.data.dropoffPoint?.address
+                      ? ' • '
+                      : ''}
+                    {bookingDetailQuery.data.dropoffPoint?.address ?? ''}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Seats</p>
+                <div className="flex flex-wrap gap-2">
+                  {bookingDetailQuery.data.seats.map((seat) => (
+                    <span
+                      key={seat.seatId}
+                      className="text-xs rounded-full bg-muted px-2 py-1"
+                    >
+                      {seat.seatCode}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Passengers</p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {bookingDetailQuery.data.passengers.map((passenger) => (
+                    <div key={passenger.seatCode} className="rounded-md border p-2">
+                      <p className="font-medium">{passenger.fullName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Seat {passenger.seatCode} · {passenger.documentId}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No details available.</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -54,7 +54,7 @@ const AdminLoginPage = () => {
       setRole(normalizedRole);
       setMe(result.user);
       notify.success('Signed in!');
-      navigate('/upcoming-trip');
+      navigate('/overview');
     } catch (err) {
       const { message } = extractApiError(err);
       notify.error(message || 'Failed to signin 😢');

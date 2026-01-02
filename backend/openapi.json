@@ -1012,7 +1012,6 @@
             "in": "query",
             "description": "Filter by active status",
             "schema": {
-              "default": true,
               "type": "boolean"
             }
           },
@@ -1310,7 +1309,16 @@
     "/admin/buses": {
       "get": {
         "operationId": "BusController_listBuses",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Buses retrieved successfully"
@@ -2920,6 +2928,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "groupBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2962,6 +2978,14 @@
           },
           {
             "name": "routeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupBy",
             "required": true,
             "in": "query",
             "schema": {
@@ -3399,6 +3423,10 @@
       "UpdateRouteDto": {
         "type": "object",
         "properties": {
+          "isActive": {
+            "type": "boolean",
+            "description": "Active status"
+          },
           "operatorId": {
             "type": "string",
             "description": "Operator ID"
@@ -3582,6 +3610,10 @@
           "name": {
             "type": "string",
             "example": "VIP Sleeper 40"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Active status"
           }
         }
       },

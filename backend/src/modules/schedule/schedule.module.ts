@@ -7,6 +7,7 @@ import { PaymentModule } from '../payment/payment.module';
 import { BookingModule } from '../booking/booking.module';
 import { NotificationModule } from '../notification/notification.module';
 import { MetricsModule } from '../metrics/metrics.module';
+import { TripModule } from '../trip/trip.module';
 
 @Module({
   controllers: [ScheduleController],
@@ -19,6 +20,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     BookingModule,
     NotificationModule,
     MetricsModule,
+    TripModule,
   ],
   exports: [ScheduleService],
 })

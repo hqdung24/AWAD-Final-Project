@@ -5,8 +5,10 @@ import { Resend } from 'resend';
 import {
   BOOKING_EMAIL_SUBJECTS,
   type BookingConfirmationParams,
+  type BookingCancelledParams,
   type TripReminderParams,
   getBookingConfirmationTemplate,
+  getBookingCancelledTemplate,
   getTripReminderTemplate,
 } from '../constant/email.constant';
 
@@ -67,6 +69,31 @@ export class BookingEmailProvider {
     } catch (error) {
       this.logger.error(
         `Failed to send trip reminder (${payload.reminderType}) to ${toAddress}: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  async sendBookingCancelledEmail(
+    toAddress: string,
+    payload: BookingCancelledParams,
+  ): Promise<void> {
+    try {
+      const resend = new Resend(this.appConfiguration.resendApiKey);
+      const emailContent = getBookingCancelledTemplate(payload);
+
+      await resend.emails.send({
+        from: `Bus Ticket <${this.appConfiguration.adminEmailAddress}>`,
+        to: toAddress,
+        subject: BOOKING_EMAIL_SUBJECTS.BOOKING_CANCELLED,
+        html: emailContent,
+      });
+
+      this.logger.log(
+        `Booking cancelled email sent to ${toAddress} for booking ${payload.bookingId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send booking cancelled email to ${toAddress}: ${(error as Error).message}`,
       );
     }
   }

@@ -58,6 +58,7 @@ export class DashboardService {
     return {
       summaryCards: [
         { title: 'Total Bookings', value: 1234, delta: 0.12 },
+        { title: 'Upcoming Trips', value: 48, delta: 0.04 },
         { title: 'Active Users', value: 856, delta: 0.05 },
         {
           title: 'Revenue Today',
@@ -150,6 +151,7 @@ export class DashboardService {
 
       let totalBookings = 0;
       let revenueToday = 0;
+      let upcomingTrips = 0;
       let trend: TrendPoint[] = fallback.trend;
       let topRoutes: TopRoute[] = fallback.topRoutes;
       let recentBookings: RecentBooking[] = fallback.recentBookings;
@@ -207,6 +209,23 @@ export class DashboardService {
         }
       }
 
+      if (hasTrips) {
+        const [upcomingAgg] = await this.dataSource.query(
+          `
+            select count(*)::int as upcoming_trips
+            from trips t
+            where t.status = 'scheduled'
+              and t.departure_time > now();
+          `,
+        );
+        upcomingTrips = Number(upcomingAgg?.upcoming_trips ?? 0);
+        cards.push({
+          title: 'Upcoming Trips',
+          value: upcomingTrips,
+          delta: 0,
+        });
+      }
+
       if (hasPayments && hasBookings) {
         const [revRow] = await this.dataSource.query(
           `
@@ -256,6 +275,8 @@ export class DashboardService {
       const summaryCards: SummaryCard[] = [];
       const bookingsCard = cards.find((c) => c.title === 'Total Bookings');
       if (bookingsCard) summaryCards.push(bookingsCard);
+      const upcomingCard = cards.find((c) => c.title === 'Upcoming Trips');
+      if (upcomingCard) summaryCards.push(upcomingCard);
       summaryCards.push(
         cards.find((c) => c.title === 'Active Users') ?? cards[0],
       );

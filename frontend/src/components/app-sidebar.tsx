@@ -36,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const role = useAuthStore((s) => s.role);
 
   const adminNav = [
-    { title: 'Overview', url: '/upcoming-trip', icon: PieChart },
+    { title: 'Overview', url: '/overview', icon: PieChart },
     { title: 'Routes', url: '/routes', icon: RouteIcon },
     { title: 'Trips', url: '/trips', icon: BusFront },
     { title: 'Bookings', url: '/bookings', icon: Receipt },

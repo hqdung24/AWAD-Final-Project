@@ -15,10 +15,17 @@ export type AdminRoute = {
   distanceKm: number;
   estimatedMinutes: number;
   notes?: string;
+  isActive?: boolean;
 };
 
-export async function listAdminRoutes(): Promise<AdminRoute[]> {
-  const res = await http.get('/admin/routes');
+export async function listAdminRoutes(params?: {
+  operatorId?: string;
+  isActive?: boolean;
+}): Promise<AdminRoute[]> {
+  const query: Record<string, string> = {};
+  if (params?.operatorId) query.operatorId = params.operatorId;
+  if (params?.isActive !== undefined) query.isActive = String(params.isActive);
+  const res = await http.get('/admin/routes', { params: query });
   return (res as { data: AdminRoute[] }).data;
 }
 

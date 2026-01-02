@@ -129,6 +129,23 @@ export class TripService {
       );
     }
 
+    // If reactivating a trip, revalidate bus scheduling for the existing time
+    if (
+      updateTripDto.status === 'scheduled' &&
+      existingTrip.status !== 'scheduled' &&
+      !updateTripDto.busId &&
+      !updateTripDto.departureTime &&
+      !updateTripDto.arrivalTime
+    ) {
+      await this.tripValidationProvider.validateBusExists(existingTrip.busId);
+      await this.tripValidationProvider.validateBusScheduling(
+        existingTrip.busId,
+        existingTrip.departureTime,
+        existingTrip.arrivalTime,
+        id,
+      );
+    }
+
     // If updating route, validate it exists
     if (updateTripDto.routeId) {
       await this.tripValidationProvider.validateRouteExists(
@@ -158,6 +175,10 @@ export class TripService {
     const oldStatus = existingTrip.status;
     const newStatus = updateTripDto.status as string;
     const statusChanged = newStatus && newStatus !== oldStatus;
+    const shouldRegenerateSeats =
+      statusChanged &&
+      newStatus === 'scheduled' &&
+      (oldStatus === 'archived' || oldStatus === 'cancelled');
 
     // Emit events if status changed
     if (statusChanged && updatedTrip) {
@@ -202,6 +223,14 @@ export class TripService {
       );
     }
 
+    if (!busChanged && shouldRegenerateSeats && updatedTrip) {
+      await this.seatStatusService.deleteByTripId(id);
+      await this.seatStatusGenerator.generateSeatStatusesForTrip(
+        id,
+        updatedTrip.busId,
+      );
+    }
+
     //Emit event to sync upcoming trips for old and new bus
 
     return updatedTrip!; // already exists if updated
@@ -233,6 +262,18 @@ export class TripService {
       status: 'cancelled',
     });
     return updatedTrip!; // ensure exists
+  }
+
+  async autoUpdateTripStatuses(now: Date): Promise<{
+    cancelled: number;
+    completed: number;
+    archived: number;
+  }> {
+    const cancelled =
+      await this.tripRepository.markCancelledIfNoSalesOrCheckins(now);
+    const completed = await this.tripRepository.markDeparted(now);
+    const archived = await this.tripRepository.markArrived(now);
+    return { cancelled, completed, archived };
   }
 
   async searchTrips(filters: {

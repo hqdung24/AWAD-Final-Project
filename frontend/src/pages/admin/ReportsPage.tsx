@@ -30,12 +30,14 @@ import { listOperators, type Operator } from '@/services/operatorService';
 import { Download, Filter, PieChart, TrendingUp, RotateCcw } from 'lucide-react';
 
 type RangeOption = '7d' | '30d' | '90d';
+type GroupByOption = 'day' | 'week' | 'month';
 
 const palette = ['#2563eb', '#22c55e', '#eab308', '#f97316', '#ef4444'];
 
 const ReportsPage = () => {
   const navigate = useNavigate();
   const [range, setRange] = useState<RangeOption>('30d');
+  const [groupBy, setGroupBy] = useState<GroupByOption>('day');
   const [operatorId, setOperatorId] = useState('__all__');
   const [routeId, setRouteId] = useState('__all__');
   const [dateFrom, setDateFrom] = useState('');
@@ -51,8 +53,9 @@ const ReportsPage = () => {
       to: (dateTo || today.toISOString().slice(0, 10)) ?? '',
       operatorId: operatorId && operatorId !== '__all__' ? operatorId : undefined,
       routeId: routeId && routeId !== '__all__' ? routeId : undefined,
+      groupBy,
     };
-  }, [range, operatorId, routeId, dateFrom, dateTo]);
+  }, [range, operatorId, routeId, dateFrom, dateTo, groupBy]);
 
   const { data: operators = [] } = useQuery<Operator[]>({
     queryKey: ['operators'],
@@ -61,7 +64,7 @@ const ReportsPage = () => {
 
   const { data: routes = [] } = useQuery<AdminRoute[]>({
     queryKey: ['admin-routes'],
-    queryFn: listAdminRoutes,
+    queryFn: () => listAdminRoutes({ isActive: true }),
   });
 
   const { data, isLoading, error, refetch } = useQuery<AdminReport>({
@@ -117,6 +120,16 @@ const ReportsPage = () => {
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
               <SelectItem value="90d">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={groupBy} onValueChange={(val: GroupByOption) => setGroupBy(val)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Group by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Daily</SelectItem>
+              <SelectItem value="week">Weekly</SelectItem>
+              <SelectItem value="month">Monthly</SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -227,7 +240,7 @@ const ReportsPage = () => {
             <CardTitle>Revenue</CardTitle>
             <Badge variant="secondary" className="gap-1">
               <TrendingUp className="h-4 w-4" />
-              {range.toUpperCase()}
+              {groupBy.toUpperCase()} · {range.toUpperCase()}
             </Badge>
           </CardHeader>
           <CardContent className="h-80 flex flex-col">

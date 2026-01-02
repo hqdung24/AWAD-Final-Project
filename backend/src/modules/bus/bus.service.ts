@@ -107,8 +107,17 @@ export class BusService {
 
   async update(id: string, updateData: Partial<Bus>): Promise<Bus | null> {
     const existing = await this.busRepository.findById(id);
-    if (!existing || !existing.isActive) {
+    if (!existing) {
       throw new NotFoundException(`Bus with ID ${id} not found`);
+    }
+
+    if (updateData.isActive === false && existing.isActive) {
+      const upcomingTrips = await this.tripRepository.findUpcomingByBusId(id);
+      if (upcomingTrips.length > 0) {
+        throw new ConflictException(
+          'Cannot deactivate bus with upcoming scheduled trips',
+        );
+      }
     }
 
     if (updateData.operatorId && updateData.operatorId !== existing.operatorId) {

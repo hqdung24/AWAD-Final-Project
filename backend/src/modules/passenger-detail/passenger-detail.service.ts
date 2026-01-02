@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PassengerDetailRepository } from './passenger-detail.repository';
 
 @Injectable()
@@ -18,6 +18,16 @@ export class PassengerDetailService {
     );
     if (!passenger) {
       throw new NotFoundException('Passenger not found for this trip');
+    }
+
+    if (
+      passenger.booking?.trip?.status === 'completed' ||
+      passenger.booking?.trip?.status === 'archived' ||
+      passenger.booking?.trip?.status === 'cancelled'
+    ) {
+      throw new BadRequestException(
+        'Cannot check in passengers for completed or cancelled trips',
+      );
     }
 
     if (passenger.checkedInAt) {
@@ -42,6 +52,16 @@ export class PassengerDetailService {
     );
     if (!passenger) {
       throw new NotFoundException('Passenger not found for this trip');
+    }
+
+    if (
+      passenger.booking?.trip?.status === 'completed' ||
+      passenger.booking?.trip?.status === 'archived' ||
+      passenger.booking?.trip?.status === 'cancelled'
+    ) {
+      throw new BadRequestException(
+        'Cannot reset check-in for completed or cancelled trips',
+      );
     }
 
     if (!passenger.checkedInAt) {

@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -13,7 +24,6 @@ import {
   listBuses,
   createBus,
   updateBus,
-  deleteBus,
   listSeats,
   createSeat,
   updateSeat,
@@ -53,6 +63,7 @@ export default function BusesPage() {
   const qc = useQueryClient();
   const [busForm, setBusForm] = useState<Omit<Bus, 'id'>>(initialBus);
   const [editingBusId, setEditingBusId] = useState<string | null>(null);
+  const [busModalOpen, setBusModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [seatBusId, setSeatBusId] = useState<string>('');
   const [seatTemplate, setSeatTemplate] = useState(seatTemplates[0].key);
@@ -75,6 +86,7 @@ export default function BusesPage() {
   const [busFilters, setBusFilters] = useState<{
     operatorId?: string;
     query?: string;
+    isActive?: 'active' | 'inactive' | 'all';
   }>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -105,13 +117,46 @@ export default function BusesPage() {
 
   const { data: buses = [] } = useQuery<Bus[]>({
     queryKey: ['buses', busFilters],
-    queryFn: () => listBuses({ operatorId: busFilters.operatorId, limit: 200 }),
+    queryFn: () => {
+      const isActive =
+        busFilters.isActive === 'all'
+          ? undefined
+          : busFilters.isActive === 'inactive'
+          ? false
+          : busFilters.isActive === 'active'
+          ? true
+          : true;
+      return listBuses({
+        operatorId: busFilters.operatorId,
+        isActive,
+        limit: 200,
+      });
+    },
   });
+  const filteredBuses = buses.filter((bus) => {
+    if (busFilters.query) {
+      const q = busFilters.query.toLowerCase();
+      const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
+        bus.busType ?? ''
+      }`.toLowerCase();
+      if (!text.includes(q)) return false;
+    }
+    return true;
+  });
+  const pagedBuses = filteredBuses.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(filteredBuses.length / pageSize)) : 1;
+  const activeBuses = filteredBuses.filter((bus) => bus.isActive).length;
   useEffect(() => {
     if (!seatBusId && buses.length > 0) {
       setSeatBusId(buses[0].id);
     }
   }, [buses, seatBusId]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const { data: operators = [] } = useQuery<Operator[]>({
     queryKey: ['operators'],
@@ -164,17 +209,6 @@ export default function BusesPage() {
     },
   });
 
-  const deleteBusMutation = useMutation({
-    mutationFn: deleteBus,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['buses'] });
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message || error?.message || 'Failed to delete bus';
-      notify.error(Array.isArray(message) ? message.join(', ') : message);
-    },
-  });
 
   const createSeatMutation = useMutation({
     mutationFn: (payload: { busId: string; seatCode: string; seatType: string }) =>
@@ -254,6 +288,26 @@ export default function BusesPage() {
     }
   };
 
+  const openCreateBus = () => {
+    setEditingBusId(null);
+    setBusForm(initialBus);
+    setBusModalOpen(true);
+  };
+
+  const openEditBus = (bus: Bus) => {
+    setEditingBusId(bus.id);
+    setBusForm({
+      operatorId: bus.operatorId,
+      name: bus.name ?? '',
+      plateNumber: bus.plateNumber,
+      model: bus.model,
+      busType: bus.busType,
+      seatCapacity: bus.seatCapacity,
+      amenitiesJson: bus.amenitiesJson,
+    });
+    setBusModalOpen(true);
+  };
+
   const handleCreateSeat = () => {
     if (!seatBusId || !seatForm.seatCode) return;
     createSeatMutation.mutate({
@@ -313,9 +367,22 @@ export default function BusesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Buses</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Buses</span>
+            <Button size="sm" onClick={openCreateBus}>
+              New bus
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{filteredBuses.length} buses</Badge>
+            <Badge variant="outline">{activeBuses} active</Badge>
+            <Badge variant="outline">{operators.length} operators</Badge>
+          </div>
+
+          <Separator />
+
           {/* Filters */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -354,9 +421,26 @@ export default function BusesPage() {
                 </select>
               </label>
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                Search (plate/name/model)
-                <input
+                Status
+                <select
                   className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                  value={busFilters.isActive ?? 'active'}
+                  onChange={(e) => {
+                    setBusFilters((prev) => ({
+                      ...prev,
+                      isActive: (e.target.value as 'active' | 'inactive' | 'all') || 'active',
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+                Search (plate/name/model)
+                <Input
                   value={busFilters.query ?? ''}
                   onChange={(e) => {
                     setBusFilters((prev) => ({
@@ -371,11 +455,128 @@ export default function BusesPage() {
             </div>
           </div>
 
-          {/* Form */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-            <span>Bus form</span>
-            {editingBusId && <span>Editing bus: {editingBusId}</span>}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Plate</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Bus Type</TableHead>
+                  <TableHead>Operator</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Capacity</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pagedBuses.map((bus, idx) => (
+                  <TableRow
+                    key={bus.id}
+                    className={idx % 2 === 1 ? 'bg-muted/40' : undefined}
+                  >
+                    <TableCell>{bus.plateNumber}</TableCell>
+                    <TableCell>{bus.name ?? '—'}</TableCell>
+                    <TableCell>{bus.model ?? '—'}</TableCell>
+                    <TableCell>{bus.busType ?? '—'}</TableCell>
+                    <TableCell>{bus.operator?.name ?? bus.operatorId}</TableCell>
+                    <TableCell>{bus.isActive === false ? 'Inactive' : 'Active'}</TableCell>
+                    <TableCell>{bus.seatCapacity}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditBus(bus)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={bus.isActive === false ? 'outline' : 'destructive'}
+                        onClick={() =>
+                          updateBusMutation.mutate({
+                            id: bus.id,
+                            data: { isActive: bus.isActive === false ? true : false },
+                          })
+                        }
+                        disabled={updateBusMutation.isPending}
+                      >
+                        {bus.isActive === false ? 'Activate' : 'Deactivate'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {pagedBuses.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                      No buses found. Adjust filters or create a new bus.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+          <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select
+                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                value={pageSize}
+                onChange={(e) => {
+                  const next = Number(e.target.value) || 10;
+                  setPageSize(next);
+                  setPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={busModalOpen}
+        onOpenChange={(open) => {
+          setBusModalOpen(open);
+          if (!open) {
+            setEditingBusId(null);
+            setBusForm(initialBus);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingBusId ? 'Edit bus' : 'Create bus'}</DialogTitle>
+            <DialogDescription>
+              Add or update bus details before assigning it to trips.
+            </DialogDescription>
+          </DialogHeader>
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Operator
@@ -396,8 +597,7 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Name
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 value={busForm.name}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, name: e.target.value }))
@@ -407,8 +607,7 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Plate
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 value={busForm.plateNumber}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, plateNumber: e.target.value }))
@@ -418,8 +617,7 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Model
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 value={busForm.model ?? ''}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, model: e.target.value }))
@@ -429,8 +627,7 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Bus Type
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 value={busForm.busType ?? ''}
                 onChange={(e) =>
                   setBusForm((prev) => ({ ...prev, busType: e.target.value }))
@@ -440,8 +637,7 @@ export default function BusesPage() {
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Seat Capacity
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 type="number"
                 min={1}
                 value={busForm.seatCapacity}
@@ -455,7 +651,7 @@ export default function BusesPage() {
                 }
               />
             </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-3">
               Amenities JSON
               <textarea
                 className="border-input bg-background text-sm px-3 py-2 rounded-md border min-h-[80px] font-mono"
@@ -469,10 +665,9 @@ export default function BusesPage() {
                 Example: {"{ \"wifi\": true, \"water\": true, \"charger\": true }"}
               </span>
             </label>
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-3">
               Bus Photos
-              <input
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+              <Input
                 type="file"
                 accept="image/*"
                 multiple
@@ -508,48 +703,67 @@ export default function BusesPage() {
               </span>
             </label>
             <div className="md:col-span-3">
-              {busPhotos.length > 0 ? (
-                <div className="flex flex-wrap gap-3">
-                  {busPhotos.map((media) => (
-                    <div key={media.id} className="relative">
-                      <img
-                        src={media.url}
-                        alt="Bus"
-                        className="h-24 w-36 rounded-md object-cover border"
-                      />
-                      <button
-                        type="button"
-                        className="absolute -right-2 -top-2 rounded-full bg-destructive text-destructive-foreground text-xs px-2 py-1"
-                        onClick={async () => {
-                          try {
-                            await deleteBusPhoto(media.id);
-                            void qc.invalidateQueries({ queryKey: ['bus-photos', editingBusId] });
-                          } catch (error: any) {
-                            const message =
-                              error?.response?.data?.message ||
-                              error?.message ||
-                              'Failed to delete photo';
-                            notify.error(Array.isArray(message) ? message.join(', ') : message);
-                          }
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              {editingBusId ? (
+                busPhotos.length > 0 ? (
+                  <div className="flex flex-wrap gap-3">
+                    {busPhotos.map((media) => (
+                      <div key={media.id} className="relative">
+                        <img
+                          src={media.url}
+                          alt="Bus"
+                          className="h-24 w-36 rounded-md object-cover border"
+                        />
+                        <button
+                          type="button"
+                          className="absolute -right-2 -top-2 rounded-full bg-destructive text-destructive-foreground text-xs px-2 py-1"
+                          onClick={async () => {
+                            try {
+                              await deleteBusPhoto(media.id);
+                              void qc.invalidateQueries({
+                                queryKey: ['bus-photos', editingBusId],
+                              });
+                            } catch (error: any) {
+                              const message =
+                                error?.response?.data?.message ||
+                                error?.message ||
+                                'Failed to delete photo';
+                              notify.error(
+                                Array.isArray(message) ? message.join(', ') : message,
+                              );
+                            }
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No photos uploaded yet.</p>
+                )
               ) : (
-                <p className="text-xs text-muted-foreground">No photos uploaded yet.</p>
+                <p className="text-xs text-muted-foreground">
+                  Create the bus first to upload photos.
+                </p>
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <DialogFooter>
             <Button
-              size="sm"
+              variant="outline"
+              onClick={() => setBusModalOpen(false)}
+              disabled={createBusMutation.isPending || updateBusMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
               onClick={handleSubmitBus}
               disabled={
-                createBusMutation.isPending || updateBusMutation.isPending ||
-                !busForm.operatorId || !busForm.plateNumber || !busForm.model
+                createBusMutation.isPending ||
+                updateBusMutation.isPending ||
+                !busForm.operatorId ||
+                !busForm.plateNumber ||
+                !busForm.model
               }
             >
               {editingBusId
@@ -560,146 +774,9 @@ export default function BusesPage() {
                 ? 'Saving…'
                 : 'Create Bus'}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setBusForm(initialBus);
-                setEditingBusId(null);
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plate</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Bus Type</TableHead>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {buses
-                  .filter((bus) => {
-                    if (busFilters.operatorId && bus.operatorId !== busFilters.operatorId)
-                      return false;
-                    if (busFilters.query) {
-                      const q = busFilters.query.toLowerCase();
-                      const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
-                        bus.busType ?? ''
-                      }`.toLowerCase();
-                      if (!text.includes(q)) return false;
-                    }
-                    return true;
-                  })
-                  .slice((page - 1) * pageSize, page * pageSize)
-                  .map((bus, idx) => (
-                  <TableRow
-                    key={bus.id}
-                    className={idx % 2 === 1 ? 'bg-muted/40' : undefined}
-                  >
-                    <TableCell>{bus.plateNumber}</TableCell>
-                    <TableCell>{bus.name ?? '—'}</TableCell>
-                    <TableCell>{bus.model ?? '—'}</TableCell>
-                    <TableCell>{bus.busType ?? '—'}</TableCell>
-                    <TableCell>{bus.operator?.name ?? bus.operatorId}</TableCell>
-                    <TableCell>{bus.seatCapacity}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingBusId(bus.id);
-                          setBusForm({
-                            operatorId: bus.operatorId,
-                            name: bus.name ?? '',
-                            plateNumber: bus.plateNumber,
-                            model: bus.model,
-                            busType: bus.busType,
-                            seatCapacity: bus.seatCapacity,
-                            amenitiesJson: bus.amenitiesJson,
-                          });
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteBusMutation.mutate(bus.id)}
-                        disabled={deleteBusMutation.isPending}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="flex items-center justify-between gap-3 pt-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span>Rows per page:</span>
-              <select
-                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
-                value={pageSize}
-                onChange={(e) => {
-                  const next = Number(e.target.value) || 10;
-                  setPageSize(next);
-                  setPage(1);
-                }}
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-              >
-                Previous
-              </Button>
-              <span>
-                Page {page}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={
-                  buses.filter((bus) => {
-                    if (busFilters.operatorId && bus.operatorId !== busFilters.operatorId)
-                      return false;
-                    if (busFilters.query) {
-                      const q = busFilters.query.toLowerCase();
-                      const text = `${bus.plateNumber} ${bus.name ?? ''} ${bus.model ?? ''} ${
-                        bus.busType ?? ''
-                      }`.toLowerCase();
-                      if (!text.includes(q)) return false;
-                    }
-                    return true;
-                  }).length <= page * pageSize
-                }
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -797,14 +874,13 @@ export default function BusesPage() {
                 </p>
               )}
               <div className="grid gap-3 md:grid-cols-4">
-                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                  Seat code
-                  <input
-                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                    value={seatForm.seatCode}
-                    onChange={(e) =>
-                      setSeatForm((prev) => ({ ...prev, seatCode: e.target.value }))
-                    }
+          <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+            Seat code
+            <Input
+              value={seatForm.seatCode}
+              onChange={(e) =>
+                setSeatForm((prev) => ({ ...prev, seatCode: e.target.value }))
+              }
                     placeholder="A1"
                   />
                 </label>
@@ -892,8 +968,7 @@ export default function BusesPage() {
                     <div className="grid gap-3 md:grid-cols-3">
                       <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                         Seat code
-                        <input
-                          className="border-input bg-background text-sm px-3 py-2 rounded-md border"
+                        <Input
                           value={editSeatForm.seatCode}
                           onChange={(e) =>
                             setEditSeatForm((prev) => ({

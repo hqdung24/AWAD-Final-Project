@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   listOperators,
@@ -14,6 +16,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { notify } from '@/lib/notify';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const OperatorsPage = () => {
   const navigate = useNavigate();
@@ -25,6 +35,8 @@ const OperatorsPage = () => {
     status: 'active',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const { data, error, isLoading } = useQuery<Operator[]>({
     queryKey: ['operators'],
     queryFn: listOperators,
@@ -81,6 +93,31 @@ const OperatorsPage = () => {
   };
 
   const operators = data ?? [];
+  const filteredOperators = operators.filter((op) => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    const hay = `${op.name ?? ''} ${op.contactEmail ?? ''} ${op.contactPhone ?? ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+  const activeCount = filteredOperators.filter((op) => op.status === 'active').length;
+  const pendingCount = filteredOperators.filter((op) => op.status === 'pending').length;
+
+  const openCreateOperator = () => {
+    setEditingId(null);
+    setForm({ name: '', contactEmail: '', contactPhone: '', status: 'active' });
+    setModalOpen(true);
+  };
+
+  const openEditOperator = (op: Operator) => {
+    setEditingId(op.id);
+    setForm({
+      name: op.name,
+      contactEmail: op.contactEmail,
+      contactPhone: op.contactPhone,
+      status: op.status ?? 'active',
+    });
+    setModalOpen(true);
+  };
 
   if (error) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,61 +140,36 @@ const OperatorsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{editingId ? 'Edit Operator' : 'Add Operator'}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-5">
-          <Input
-            placeholder="Name"
-            value={form.name ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
-          <Input
-            placeholder="Contact Email"
-            value={form.contactEmail ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
-          />
-          <Input
-            placeholder="Contact Phone"
-            value={form.contactPhone ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))}
-          />
-          <Select
-            value={form.status ?? 'active'}
-            onValueChange={(val) => setForm((f) => ({ ...f, status: val }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2">
-            <Button onClick={onSubmit} disabled={createMut.isPending || updateMut.isPending} className="flex-1">
-              {editingId ? 'Update' : 'Create'}
+          <CardTitle className="flex items-center justify-between">
+            <span>Operator Directory</span>
+            <Button size="sm" onClick={openCreateOperator}>
+              New operator
             </Button>
-            {editingId && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm({ name: '', contactEmail: '', contactPhone: '', status: 'active' });
-                }}
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Operator Directory</CardTitle>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{filteredOperators.length} operators</Badge>
+            <Badge variant="outline">{activeCount} active</Badge>
+            <Badge variant="outline">{pendingCount} pending</Badge>
+          </div>
+          <Separator />
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[220px]">
+              <Input
+                placeholder="Search by name, email, or phone"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setQuery('')}
+              disabled={!query}
+            >
+              Clear
+            </Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -169,7 +181,7 @@ const OperatorsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {operators.map((op) => (
+              {filteredOperators.map((op) => (
                 <TableRow key={op.id}>
                   <TableCell className="font-medium">{op.name}</TableCell>
                   <TableCell>{op.contactEmail ?? '—'}</TableCell>
@@ -179,15 +191,7 @@ const OperatorsPage = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setEditingId(op.id);
-                        setForm({
-                          name: op.name,
-                          contactEmail: op.contactEmail,
-                          contactPhone: op.contactPhone,
-                          status: op.status ?? 'active',
-                        });
-                      }}
+                      onClick={() => openEditOperator(op)}
                     >
                       Edit
                     </Button>
@@ -201,7 +205,7 @@ const OperatorsPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {!operators.length && !isLoading && (
+              {!filteredOperators.length && !isLoading && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
                     No operators found.
@@ -212,6 +216,83 @@ const OperatorsPage = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) {
+            setEditingId(null);
+            setForm({ name: '', contactEmail: '', contactPhone: '', status: 'active' });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit Operator' : 'Add Operator'}</DialogTitle>
+            <DialogDescription>
+              Set the operator contact details and status to keep the fleet organized.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Name
+              <Input
+                placeholder="Operator name"
+                value={form.name ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Status
+              <Select
+                value={form.status ?? 'active'}
+                onValueChange={(val) => setForm((f) => ({ ...f, status: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Contact Email
+              <Input
+                placeholder="email@operator.com"
+                value={form.contactEmail ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
+              Contact Phone
+              <Input
+                placeholder="090-000-0000"
+                value={form.contactPhone ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+              disabled={createMut.isPending || updateMut.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={onSubmit}
+              disabled={createMut.isPending || updateMut.isPending}
+            >
+              {editingId ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

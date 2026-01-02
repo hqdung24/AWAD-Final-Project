@@ -35,6 +35,9 @@ export class RefreshTokensProvider {
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
+      if (user.isActive === false) {
+        throw new UnauthorizedException('Account is deactivated');
+      }
 
       // Generate new random refresh token
       const newRefreshToken = this.generateTokensProvider.generateRandomToken();

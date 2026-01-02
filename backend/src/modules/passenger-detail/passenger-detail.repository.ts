@@ -17,6 +17,7 @@ export class PassengerDetailRepository {
       .leftJoinAndSelect('booking.trip', 'trip')
       .leftJoinAndSelect('trip.route', 'route')
       .where('booking.tripId = :tripId', { tripId })
+      .andWhere('booking.status = :status', { status: 'paid' })
       .orderBy('passenger.seatCode', 'ASC')
       .getMany();
   }
@@ -32,6 +33,7 @@ export class PassengerDetailRepository {
       .leftJoinAndSelect('trip.route', 'route')
       .where('passenger.id = :passengerId', { passengerId })
       .andWhere('booking.tripId = :tripId', { tripId })
+      .andWhere('booking.status = :status', { status: 'paid' })
       .getOne();
   }
 

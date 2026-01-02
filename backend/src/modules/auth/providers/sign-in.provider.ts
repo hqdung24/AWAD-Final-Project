@@ -43,6 +43,10 @@ export class SignInProvider {
       throw new BadRequestException('User not found');
     }
 
+    if (user.isActive === false) {
+      throw new BadRequestException('Account is deactivated');
+    }
+
     if (!user.password) {
       throw new BadRequestException(
         'User does not have a password set. Please use social login.',

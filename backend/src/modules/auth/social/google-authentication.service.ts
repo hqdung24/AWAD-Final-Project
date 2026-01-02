@@ -1,4 +1,10 @@
-import { Inject, Injectable, OnModuleInit, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  OnModuleInit,
+  forwardRef,
+} from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { jwtConfig } from '../../../config/jwt.config';
@@ -82,6 +88,10 @@ export class GoogleAuthenticationService implements OnModuleInit {
         lastName,
         googleId,
       });
+    }
+
+    if (user.isActive === false) {
+      throw new BadRequestException('Account is deactivated');
     }
 
     const { accessToken } =

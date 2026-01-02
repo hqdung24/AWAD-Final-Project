@@ -18,6 +18,8 @@ import type { UpdateSeatsDto } from './dto/update-seats.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from '@/modules/notification/enums/notification.enum';
 import type { NotificationCreateEventPayload } from '@/modules/notification/dto/notification-event.dto';
+import { BookingEmailProvider } from './providers/booking-email.provider';
+import { appConfig } from '@/config/app.config';
 
 @Injectable()
 export class BookingService {
@@ -28,6 +30,9 @@ export class BookingService {
     @Inject(bookingConfig.KEY)
     private readonly bookingConfiguration: ConfigType<typeof bookingConfig>,
     private readonly eventEmitter: EventEmitter2,
+    private readonly bookingEmailProvider: BookingEmailProvider,
+    @Inject(appConfig.KEY)
+    private readonly appConfiguration: ConfigType<typeof appConfig>,
   ) {}
 
   private ensureEditable(booking: Booking) {
@@ -183,7 +188,93 @@ export class BookingService {
     id: string,
     status: string,
   ): Promise<Booking | null> {
-    return await this.bookingRepository.update(id, { status: status });
+    const booking = await this.bookingRepository.findDetailById(id);
+    if (!booking) return null;
+
+    const previousStatus = booking.status;
+    if (
+      previousStatus === 'paid' ||
+      previousStatus === 'cancelled' ||
+      previousStatus === 'expired'
+    ) {
+      throw new BadRequestException(
+        'Paid, cancelled, or expired bookings cannot be updated',
+      );
+    }
+    if (previousStatus === status) return booking;
+
+    await this.bookingRepository.update(id, { status: status });
+    const updated = await this.bookingRepository.findDetailById(id);
+    const bookingDetail = updated ?? booking;
+
+    const contactEmail = bookingDetail.email || bookingDetail.user?.email;
+    const seatsFromStatuses = (bookingDetail.seatStatuses || [])
+      .map((seatStatus) => seatStatus.seat?.seatCode)
+      .filter((code): code is string => Boolean(code));
+    const seatsFromPassengers = (bookingDetail.passengerDetails || [])
+      .map((passenger) => passenger.seatCode)
+      .filter((code): code is string => Boolean(code));
+    const seats = seatsFromStatuses.length > 0 ? seatsFromStatuses : seatsFromPassengers;
+
+    if (status === 'cancelled') {
+      await this.bookingRepository.releaseSeatsByBookingId(id);
+      if (contactEmail) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.bookingEmailProvider.sendBookingCancelledEmail(contactEmail, {
+          bookingId: bookingDetail.id,
+          bookingReference: bookingDetail.bookingReference,
+          origin: bookingDetail.trip?.route?.origin || 'Unknown',
+          destination: bookingDetail.trip?.route?.destination || 'Unknown',
+          departureTime: bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
+          seats,
+          contact: {
+            name: bookingDetail.name,
+            email: bookingDetail.email,
+            phone: bookingDetail.phone,
+          },
+          reason: 'Cancelled by admin',
+        });
+      }
+    }
+
+    if (status === 'pending') {
+      if (contactEmail) {
+        const paymentDeadline = bookingDetail.bookedAt
+          ? new Date(
+              bookingDetail.bookedAt.getTime() + 12 * 60 * 60 * 1000,
+            ).toISOString()
+          : undefined;
+        const paymentUrl = `${this.appConfiguration.frontendUrl}/payment/${bookingDetail.id}`;
+        const manageBookingUrl = `${this.appConfiguration.frontendUrl}/upcoming-trip/${bookingDetail.id}`;
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.bookingEmailProvider.sendBookingConfirmationEmail(contactEmail, {
+          bookingId: bookingDetail.id,
+          bookingReference: bookingDetail.bookingReference,
+          origin: bookingDetail.trip?.route?.origin || 'Unknown',
+          destination: bookingDetail.trip?.route?.destination || 'Unknown',
+          departureTime: bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
+          arrivalTime: bookingDetail.trip?.arrivalTime?.toISOString?.(),
+          seats,
+          passengers: (bookingDetail.passengerDetails || []).map((p) => ({
+            fullName: p.fullName,
+            seatCode: p.seatCode,
+            documentId: p.documentId,
+          })),
+          contact: {
+            name: bookingDetail.name,
+            email: bookingDetail.email,
+            phone: bookingDetail.phone,
+          },
+          totalAmount: Number(bookingDetail.totalAmount),
+          paymentDeadline,
+          paymentUrl,
+          manageBookingUrl,
+        });
+      }
+    }
+
+    return bookingDetail;
   }
 
   async changeSeats(bookingId: string, dto: UpdateSeatsDto): Promise<Booking> {

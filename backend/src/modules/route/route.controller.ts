@@ -36,10 +36,20 @@ export class RouteController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List routes' })
   @ApiResponse({ status: 200, description: 'Routes retrieved successfully' })
-  async listRoutes(@Query() query: RouteQueryDto) {
+  async listRoutes(
+    @Query() query: RouteQueryDto,
+    @Query('isActive') isActiveRaw?: string,
+  ) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 100;
-    const isActive = query.isActive ?? true;
+    const isActive =
+      isActiveRaw === undefined
+        ? query.isActive
+        : isActiveRaw.toLowerCase() === 'true'
+        ? true
+        : isActiveRaw.toLowerCase() === 'false'
+        ? false
+        : query.isActive;
     const [routes] = await this.routeService.findAll({
       operatorId: query.operatorId,
       isActive,
