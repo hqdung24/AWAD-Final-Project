@@ -34,7 +34,7 @@ export default function PassengersPage() {
 
   const backendTripStatus =
     tripStatusFilter === 'in_progress'
-      ? 'scheduled'
+      ? undefined
       : tripStatusFilter === 'completed'
       ? undefined
       : tripStatusFilter || undefined;
@@ -103,14 +103,16 @@ export default function PassengersPage() {
   const trips = tripsQuery.data?.data ?? [];
   const getDisplayStatusKey = (trip: (typeof trips)[number]) => {
     if (trip.status === 'cancelled') return 'cancelled';
-    if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
-    if (trip.status === 'scheduled') {
-      const now = new Date();
-      const departure = new Date(trip.departureTime);
-      const arrival = new Date(trip.arrivalTime);
-      if (now >= departure && now <= arrival) return 'in_progress';
-      return 'scheduled';
+    const now = new Date();
+    const departure = new Date(trip.departureTime);
+    const arrival = new Date(trip.arrivalTime);
+    if (now >= departure && now <= arrival) {
+      if (trip.status === 'scheduled' || trip.status === 'completed') {
+        return 'in_progress';
+      }
     }
+    if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
+    if (trip.status === 'scheduled') return 'scheduled';
     return trip.status;
   };
 
