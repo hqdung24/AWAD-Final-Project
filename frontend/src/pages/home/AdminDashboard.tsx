@@ -39,6 +39,20 @@ const AdminDashboard = () => {
     queryFn: fetchAdminDashboard,
     retry: false,
   });
+  const statusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'pending':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'expired':
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   if (error) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -288,13 +302,8 @@ const AdminDashboard = () => {
                   <TableCell>{booking.route}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        booking.status === 'Paid'
-                          ? 'default'
-                          : booking.status === 'Pending'
-                          ? 'secondary'
-                          : 'destructive'
-                      }
+                      variant="outline"
+                      className={statusBadgeClass(booking.status)}
                     >
                       {booking.status}
                     </Badge>

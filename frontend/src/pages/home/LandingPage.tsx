@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuthStore } from '@/stores/auth';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const role = useAuthStore((s) => s.role);
   const [searchForm, setSearchForm] = useState({
     from: '',
     to: '',
@@ -54,6 +56,12 @@ export default function LandingPage() {
     'Cà Mau',
     'Rạch Giá',
   ];
+
+  useEffect(() => {
+    if (role === 'ADMIN') {
+      navigate('/overview', { replace: true });
+    }
+  }, [role, navigate]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

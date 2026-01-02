@@ -1,16 +1,16 @@
 # Final project Self-assessment report
 
-Team: \<StudentID1\>-\<StudentID2\>-\<StudentID3\>
+Team: 22127039 - 22127072 - 22127077
 
-GitHub repo URL: \<Your GitHub Repository URL\>
+GitHub repo URL: [https://github.com/hqdung24/AWAD-Final-Project](https://github.com/hqdung24/AWAD-Final-Project)
 
 # **TEAM INFORMATION**
 
 | Student ID | Full name | Git account | Contribution | Contribution percentage (100% total) | Expected total points | Final total points |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
-| \<StudentID1\> | \<Student 1 fullname\> | \<git_account_1\> | \<List of tasks done by student 1\> | 33% |  |  |
-| \<StudentID2\> | \<Student 2 fullname\> | \<git_account_2\> | \<List of tasks done by student 2\> | 33% |  |  |
-| \<StudentID3\> | \<Student 3 fullname\> | \<git_account_3\> | \<List of tasks done by student 3\> | 34% |  |  |
+| 22127039 | Trần Phan Thiên Bửu | [https://github.com/TonyTran2902](https://github.com/TonyTran2902) | \<List of tasks done by student 1\> | 33% |  |  |
+| 22127072 | Nguyễn Thiên Đức | [https://github.com/duccodon](https://github.com/duccodon) | \<List of tasks done by student 2\> | 33% |  |  |
+| 22127077 | Huỳnh Quốc Dũng | [https://github.com/hqdung24](https://github.com/hqdung24) | \<List of tasks done by student 3\> | 34% |  |  |
 
 # **FEATURE LIST**
 
@@ -116,7 +116,7 @@ Students must input minus points to every uncompleted feature in the SE column.
 |  | › Filter bookings by status, date | \-0.25 |  |  | Filter: Pending, Confirmed, Cancelled, Completed |
 |  | › View booking details | \-0.25 |  |  | Full booking details with passenger info, payment status |
 |  | › Update booking status | \-0.25 |  |  | Confirm or cancel bookings |
-|  | › Process refunds | \-0.25 |  |  | Handle refund requests |
+|  | › Process refunds | \-0.25 | -0.25 |  | Handle refund requests |
 |  | Reports |  |  |  |  |
 |  | › View revenue report in time range | \-0.25 |  |  | Daily, weekly, monthly revenue reports |
 |  | › View top routes by bookings | \-0.25 |  |  | Most popular routes report |
