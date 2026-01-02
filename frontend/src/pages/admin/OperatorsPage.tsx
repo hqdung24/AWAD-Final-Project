@@ -37,6 +37,9 @@ const OperatorsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { data, error, isLoading } = useQuery<Operator[]>({
     queryKey: ['operators'],
     queryFn: listOperators,
@@ -98,7 +101,16 @@ const OperatorsPage = () => {
     const q = query.toLowerCase();
     const hay = `${op.name ?? ''} ${op.contactEmail ?? ''} ${op.contactPhone ?? ''}`.toLowerCase();
     return hay.includes(q);
+  }).filter((op) => {
+    if (statusFilter === 'all') return true;
+    return (op.status ?? '').toLowerCase() === statusFilter;
   });
+  const totalPages =
+    pageSize > 0 ? Math.max(1, Math.ceil(filteredOperators.length / pageSize)) : 1;
+  const pagedOperators = filteredOperators.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
   const activeCount = filteredOperators.filter((op) => op.status === 'active').length;
   const pendingCount = filteredOperators.filter((op) => op.status === 'pending').length;
 
@@ -159,13 +171,39 @@ const OperatorsPage = () => {
               <Input
                 placeholder="Search by name, email, or phone"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(1);
+                }}
               />
+            </div>
+            <div className="min-w-[160px]">
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => {
+                  setStatusFilter(val);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button
               variant="outline"
-              onClick={() => setQuery('')}
-              disabled={!query}
+              onClick={() => {
+                setQuery('');
+                setStatusFilter('all');
+                setPage(1);
+              }}
+              disabled={!query && statusFilter === 'all'}
             >
               Clear
             </Button>
@@ -181,7 +219,7 @@ const OperatorsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOperators.map((op) => (
+              {pagedOperators.map((op) => (
                 <TableRow key={op.id}>
                   <TableCell className="font-medium">{op.name}</TableCell>
                   <TableCell>{op.contactEmail ?? '—'}</TableCell>
@@ -205,7 +243,7 @@ const OperatorsPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {!filteredOperators.length && !isLoading && (
+              {!pagedOperators.length && !isLoading && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
                     No operators found.
@@ -214,6 +252,47 @@ const OperatorsPage = () => {
               )}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select
+                className="border-input bg-background text-sm px-2 py-1 rounded-md border"
+                value={pageSize}
+                onChange={(e) => {
+                  const next = Number(e.target.value) || 10;
+                  setPageSize(next);
+                  setPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </Button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

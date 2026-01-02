@@ -293,6 +293,7 @@ export class BookingRepository {
       .leftJoinAndSelect('seatStatus.seat', 'seat')
       .leftJoinAndSelect('booking.user', 'user')
       .where('booking.status IN (:...statuses)', { statuses: ['paid'] })
+      .andWhere('trip.status = :tripStatus', { tripStatus: 'scheduled' })
       .andWhere('trip.departureTime BETWEEN :start AND :end', {
         start: windowStart,
         end: windowEnd,

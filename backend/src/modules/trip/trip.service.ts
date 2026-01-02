@@ -12,6 +12,8 @@ import { MediaService } from '@/modules/media/media.service';
 import { MediaDomain } from '@/modules/media/enums/media-domain.enum';
 import { MediaType } from '@/modules/media/enums/media-type.enum';
 import { NotificationType } from '../notification/enums/notification.enum';
+import { BookingRepository } from '@/modules/booking/booking.repository';
+import { BookingEmailProvider } from '@/modules/booking/providers/booking-email.provider';
 
 @Injectable()
 export class TripService {
@@ -22,6 +24,8 @@ export class TripService {
     private readonly seatStatusService: SeatStatusService,
     private readonly mediaService: MediaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly bookingRepository: BookingRepository,
+    private readonly bookingEmailProvider: BookingEmailProvider,
   ) {}
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -261,6 +265,44 @@ export class TripService {
     const updatedTrip = await this.tripRepository.update(id, {
       status: 'cancelled',
     });
+
+    const cancelledBookings =
+      await this.bookingRepository.cancelBookingsByTripIds([id]);
+
+    for (const booking of cancelledBookings) {
+      const email = booking.email || booking.user?.email;
+      if (!email) continue;
+
+      const seatsFromStatus =
+        booking.seatStatuses
+          ?.map((ss) => ss.seat?.seatCode)
+          .filter((seat): seat is string => Boolean(seat)) ?? [];
+      const seatsFromPassengers =
+        booking.passengerDetails
+          ?.map((passenger) => passenger.seatCode)
+          .filter((seat): seat is string => Boolean(seat)) ?? [];
+      const seats = seatsFromStatus.length > 0 ? seatsFromStatus : seatsFromPassengers;
+
+      const contactName =
+        booking.name ||
+        `${booking.user?.firstName ?? ''} ${booking.user?.lastName ?? ''}`.trim();
+
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.bookingEmailProvider.sendBookingCancelledEmail(email, {
+        bookingId: booking.id,
+        bookingReference: booking.bookingReference,
+        origin: booking.trip?.route?.origin || '—',
+        destination: booking.trip?.route?.destination || '—',
+        departureTime: booking.trip?.departureTime?.toISOString?.() || '',
+        seats,
+        contact: {
+          name: contactName || null,
+          email,
+          phone: booking.phone || null,
+        },
+        reason: 'Trip cancelled by admin.',
+      });
+    }
     return updatedTrip!; // ensure exists
   }
 
