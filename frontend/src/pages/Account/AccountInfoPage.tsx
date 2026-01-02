@@ -178,13 +178,13 @@ export default function AccountInfoPage() {
                   variant="secondary"
                   onClick={() => setShowPasswordForm((prev) => !prev)}
                 >
-                  {me?.isActive ? 'Change' : 'Set'}
+                  {me?.hasSetPassword ? 'Change' : 'Set'}
                 </Button>
               </div>
             </div>
             {showPasswordForm && (
               <div className="grid gap-3 rounded-md border p-3">
-                {me?.isActive && (
+                {me?.hasSetPassword && (
                   <div className="grid gap-2">
                     <Label htmlFor="currentPassword">Current password</Label>
                     <Input
@@ -242,7 +242,7 @@ export default function AccountInfoPage() {
                         toast.error('New password confirmation does not match');
                         return;
                       }
-                      if (me?.isActive) {
+                      if (me?.hasSetPassword) {
                         if (!passwordForm.currentPassword) {
                           toast.error('Please fill current password');
                           return;
@@ -285,7 +285,7 @@ export default function AccountInfoPage() {
                       updatePassword.isPending || setNewPassword.isPending
                     }
                   >
-                    {me?.isActive ? 'Update password' : 'Set password'}
+                    {me?.hasSetPassword ? 'Update password' : 'Set password'}
                   </Button>
                   <Button
                     variant="secondary"

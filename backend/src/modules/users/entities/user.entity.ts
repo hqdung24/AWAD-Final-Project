@@ -56,6 +56,9 @@ export class User {
   @Column({ type: 'boolean', default: true })
   isActive?: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  hasSetPassword?: boolean;
+
   @Column({ type: 'varchar', length: 200, nullable: true, default: null })
   verificationToken?: string | null;
 

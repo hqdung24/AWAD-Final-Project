@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { type Request, type Response } from 'express';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { SignInResponseDto } from './dtos/signin-response.dto';
+import { SignInResponseDto, AuthUserDto } from './dtos/signin-response.dto';
 import { SignInDto } from './dtos/signin.dto';
 import { AuthType } from './enums/auth-type.enum';
 import { AuthService } from './providers/auth.service';
@@ -58,7 +58,10 @@ export class AuthController {
 
     //set refresh token in http-only cookie
     setRefreshCookie(res, refreshToken);
-    return new SignInResponseDto({ accessToken, user });
+    return new SignInResponseDto({
+      accessToken,
+      user: new AuthUserDto(user),
+    });
   }
 
   @Auth(AuthType.None)
@@ -70,7 +73,10 @@ export class AuthController {
     const { accessToken, refreshToken, user } =
       await this.googleAuthService.authenticate({ token: body.token });
     setRefreshCookie(res, refreshToken);
-    return { accessToken, user };
+    return new SignInResponseDto({
+      accessToken,
+      user: new AuthUserDto(user),
+    });
   }
 
   @Auth(AuthType.None)

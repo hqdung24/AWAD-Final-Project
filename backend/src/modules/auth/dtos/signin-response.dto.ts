@@ -7,6 +7,12 @@ export class AuthUserDto {
   @Expose() firstName!: string;
   @Expose() lastName!: string;
   @Expose() role!: string;
+  @Expose() hasSetPassword!: boolean;
+  @Expose() isActive!: boolean;
+  @Expose() isVerified!: boolean;
+  @Expose() phone?: string;
+  @Expose() avatarUrl?: string;
+  @Expose() username?: string;
 
   constructor(partial: Partial<AuthUserDto>) {
     Object.assign(this, partial);

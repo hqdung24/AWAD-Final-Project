@@ -35,7 +35,8 @@ export class UsersRepository {
         role: 'USER',
         isVerified: true,
         verificationToken: null,
-        isActive: false, // Require password setup
+        isActive: true,
+        hasSetPassword: false, // User needs to set password on first login
         password: await this.hashingProvider.hash(
           Math.random().toString(36).slice(-8),
         ),
@@ -60,6 +61,8 @@ export class UsersRepository {
       ...userData,
       avatarUrl: DEFAULT_AVATAR_URL,
       email,
+      isActive: true,
+      hasSetPassword: true, // User already set password during signup
       password: await this.hashingProvider.hash(userData.password),
     });
 
