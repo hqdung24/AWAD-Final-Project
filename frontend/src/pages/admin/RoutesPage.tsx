@@ -26,7 +26,6 @@ import {
   updateAdminRoute,
   type AdminRoute,
 } from '@/services/adminRoutesService';
-import { listOperators, type Operator } from '@/services/operatorService';
 import {
   listRoutePoints,
   createRoutePoint,
@@ -40,7 +39,7 @@ import { notify } from '@/lib/notify';
 
 const initialRouteForm: AdminRoute = {
   id: '',
-  operatorId: '',
+  operatorId: undefined,
   origin: '',
   destination: '',
   distanceKm: 0,
@@ -55,7 +54,6 @@ export default function RoutesPage() {
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [routeModalMode, setRouteModalMode] = useState<'create' | 'edit'>('create');
   const [filters, setFilters] = useState<{
-    operatorId?: string;
     origin?: string;
     destination?: string;
     isActive?: 'active' | 'inactive' | 'all';
@@ -82,7 +80,7 @@ export default function RoutesPage() {
   const { data: adminRoutesResult, isLoading: routesLoading } = useQuery<
     AdminRoute[]
   >({
-    queryKey: ['admin-routes', filters.isActive, filters.operatorId],
+    queryKey: ['admin-routes', filters.isActive],
     queryFn: async () => {
       const isActive =
         filters.isActive === 'all'
@@ -93,17 +91,11 @@ export default function RoutesPage() {
           ? true
           : true;
       return await listAdminRoutes({
-        operatorId: filters.operatorId,
         isActive,
       });
     },
   });
   const adminRoutes: AdminRoute[] = adminRoutesResult ?? [];
-
-  const { data: operators = [] } = useQuery<Operator[]>({
-    queryKey: ['operators'],
-    queryFn: listOperators,
-  });
 
   const { data: routePoints = [], isLoading: routePointsLoading } = useQuery<RouteStop[]>({
     queryKey: ['route-points', routePointRouteId],
@@ -250,13 +242,15 @@ export default function RoutesPage() {
   const routeOptionList = adminRoutes.filter((route) => {
     if (!routeOptionQuery) return true;
     const q = routeOptionQuery.toLowerCase();
-    const hay = `${route.origin} ${route.destination} ${route.operator?.name ?? ''}`.toLowerCase();
+    const hay = `${route.origin} ${route.destination}`.toLowerCase();
     return hay.includes(q);
   });
 
   const openCreateRoute = () => {
     setRouteModalMode('create');
-    setCreateForm(initialRouteForm);
+    setCreateForm({
+      ...initialRouteForm,
+    });
     setEditForm(null);
     setRouteModalOpen(true);
   };
@@ -306,7 +300,7 @@ export default function RoutesPage() {
         <p className="text-sm font-semibold text-primary">Admin</p>
         <h1 className="text-3xl font-bold tracking-tight">Routes</h1>
         <p className="text-muted-foreground text-sm">
-          Manage routes, operators, and route points.
+          Manage routes and route points.
         </p>
       </header>
 
@@ -327,7 +321,6 @@ export default function RoutesPage() {
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{filteredRoutes.length} routes</Badge>
-              <Badge variant="outline">{operators.length} operators</Badge>
             </div>
 
             <Separator />
@@ -346,28 +339,7 @@ export default function RoutesPage() {
                   Reset filters
                 </Button>
               </div>
-              <div className="grid gap-2 md:grid-cols-4">
-                <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-                  Operator
-                  <select
-                    className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                    value={filters.operatorId ?? ''}
-                    onChange={(e) => {
-                      setFilters((prev) => ({
-                        ...prev,
-                        operatorId: e.target.value || undefined,
-                      }));
-                      setPage(1);
-                    }}
-                  >
-                    <option value="">All operators</option>
-                    {operators.map((op) => (
-                      <option key={op.id} value={op.id}>
-                        {op.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <div className="grid gap-2 md:grid-cols-3">
                 <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
                   Status
                   <select
@@ -419,7 +391,6 @@ export default function RoutesPage() {
                 <TableRow>
                   <TableHead>Origin</TableHead>
                   <TableHead>Destination</TableHead>
-                  <TableHead>Operator</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Distance (km)</TableHead>
                   <TableHead>ETA (min)</TableHead>
@@ -429,7 +400,6 @@ export default function RoutesPage() {
             </TableHeader>
           <TableBody>
             {pagedRoutes.map((route, idx) => {
-              const operatorLabel = route.operator?.name ?? route.operatorId;
               return (
                 <TableRow
                   key={route.id}
@@ -437,7 +407,6 @@ export default function RoutesPage() {
                 >
                     <TableCell>{route.origin}</TableCell>
                     <TableCell>{route.destination}</TableCell>
-                    <TableCell>{operatorLabel}</TableCell>
                     <TableCell>
                       {route.isActive === false ? 'Inactive' : 'Active'}
                     </TableCell>
@@ -471,7 +440,7 @@ export default function RoutesPage() {
               })}
               {pagedRoutes.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No routes found. Try adjusting your filters or add a new route.
                   </TableCell>
                 </TableRow>
@@ -552,7 +521,7 @@ export default function RoutesPage() {
               <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1 md:col-span-2">
                 Route
                 <Input
-                  placeholder="Search routes by name or operator"
+                  placeholder="Search routes by origin or destination"
                   value={routeOptionQuery}
                   onChange={(e) => setRouteOptionQuery(e.target.value)}
                 />
@@ -697,37 +666,11 @@ export default function RoutesPage() {
             </DialogTitle>
             <DialogDescription>
               {routeModalMode === 'create'
-                ? 'Define the operator, origin, and destination to make a route available.'
+                ? 'Define the origin and destination to make a route available.'
                 : 'Update route details to keep schedules accurate.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
-              Operator
-              <select
-                className="border-input bg-background text-sm px-3 py-2 rounded-md border"
-                value={
-                  routeModalMode === 'create'
-                    ? createForm.operatorId
-                    : editForm?.operatorId ?? ''
-                }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (routeModalMode === 'create') {
-                    setCreateForm((prev) => ({ ...prev, operatorId: value }));
-                  } else {
-                    setEditForm((prev) => (prev ? { ...prev, operatorId: value } : prev));
-                  }
-                }}
-              >
-                <option value="">Select operator</option>
-                {operators.map((op) => (
-                  <option key={op.id} value={op.id}>
-                    {op.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="grid gap-3 md:grid-cols-2">
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">
               Origin
               <Input
@@ -840,7 +783,6 @@ export default function RoutesPage() {
               onClick={() => {
                 if (routeModalMode === 'create') {
                   createMutation.mutate({
-                    operatorId: createForm.operatorId,
                     origin: createForm.origin,
                     destination: createForm.destination,
                     notes: createForm.notes,
@@ -853,7 +795,6 @@ export default function RoutesPage() {
                 updateMutation.mutate({
                   id: editForm.id,
                   data: {
-                    operatorId: editForm.operatorId,
                     origin: editForm.origin,
                     destination: editForm.destination,
                     distanceKm: editForm.distanceKm,
@@ -866,8 +807,8 @@ export default function RoutesPage() {
                 createMutation.isPending ||
                 updateMutation.isPending ||
                 (routeModalMode === 'create'
-                  ? !createForm.operatorId || !createForm.origin || !createForm.destination
-                  : !editForm?.operatorId || !editForm?.origin || !editForm?.destination)
+                  ? !createForm.origin || !createForm.destination
+                  : !editForm?.origin || !editForm?.destination)
               }
             >
               {createMutation.isPending || updateMutation.isPending ? 'Saving…' : 'Save'}

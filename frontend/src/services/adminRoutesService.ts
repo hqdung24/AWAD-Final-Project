@@ -2,7 +2,7 @@ import { http } from '@/lib/http';
 
 export type AdminRoute = {
   id: string;
-  operatorId: string;
+  operatorId?: string;
   operator?: {
     id: string;
     name: string;

@@ -16,9 +16,9 @@ export class Route {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Index()
-  operatorId: string;
+  operatorId?: string | null;
 
   @Column()
   origin: string;
@@ -42,10 +42,11 @@ export class Route {
   deletedAt: Date;
 
   @ManyToOne(() => Operator, (operator) => operator.routes, {
-    onDelete: 'RESTRICT',
+    onDelete: 'SET NULL',
+    nullable: true,
   })
   @JoinColumn()
-  operator: Operator;
+  operator?: Operator;
 
   @OneToMany(() => Trip, (trip) => trip.route)
   trips: Trip[];

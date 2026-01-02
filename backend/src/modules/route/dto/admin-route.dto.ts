@@ -42,9 +42,10 @@ export class RouteQueryDto {
 }
 
 export class CreateRouteDto {
-  @ApiProperty({ description: 'Operator ID' })
+  @ApiPropertyOptional({ description: 'Operator ID' })
+  @IsOptional()
   @IsString()
-  operatorId: string;
+  operatorId?: string;
 
   @ApiProperty({ description: 'Origin city' })
   @IsString()

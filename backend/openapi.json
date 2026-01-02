@@ -3413,7 +3413,6 @@
           }
         },
         "required": [
-          "operatorId",
           "origin",
           "destination",
           "distanceKm",
