@@ -145,6 +145,21 @@ export class ReportService {
         params,
       );
 
+      const bookingTrend = await this.dataSource.query(
+        `
+          select to_char(date_trunc('${groupBy}', b.booked_at), '${groupLabel}') as date,
+                 count(*)::int as bookings
+          from bookings b
+          left join payments p on p.booking_id = b.id
+          left join trips t on t.id = b.trip_id
+          left join routes r on r.id = t.route_id
+          ${baseWhere}
+          group by date_trunc('${groupBy}', b.booked_at)
+          order by date_trunc('${groupBy}', b.booked_at);
+        `,
+        params,
+      );
+
       const refundsRow = await this.dataSource.query(
         `
           select coalesce(sum(p.amount), 0)::numeric as refunded
@@ -213,6 +228,7 @@ export class ReportService {
       return {
         revenueSeries,
         bookingStatus,
+        bookingTrend,
         cancellations,
         refunds: Number(refundsRow?.[0]?.refunded ?? 0),
         topRoutes,
@@ -232,18 +248,79 @@ export class ReportService {
 
   async exportAdminReport(filters: ReportFilters): Promise<string> {
     const report = await this.getAdminReport(filters);
+    const groupBy =
+      filters.groupBy === 'week'
+        ? 'week'
+        : filters.groupBy === 'month'
+        ? 'month'
+        : 'day';
+    const groupLabel = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
+    const params = [
+      filters.from ?? null,
+      filters.to ?? null,
+      filters.operatorId ?? null,
+      filters.routeId ?? null,
+    ];
+    const dateExpr =
+      'coalesce(p.paid_at, p.updated_at, p.created_at, b.booked_at)::date';
+    const baseWhere = `
+      where (${dateExpr} >= coalesce($1::date, current_date - interval '29 days'))
+        and (${dateExpr} <= coalesce($2::date, current_date))
+        and ($3::uuid is null or r.operator_id = $3)
+        and ($4::uuid is null or r.id = $4)
+    `;
+
+    const bookingsSeries = await this.dataSource.query(
+      `
+        select to_char(date_trunc('${groupBy}', b.booked_at), '${groupLabel}') as date,
+               count(*)::int as bookings
+        from bookings b
+        left join payments p on p.booking_id = b.id
+        left join trips t on t.id = b.trip_id
+        left join routes r on r.id = t.route_id
+        ${baseWhere}
+        group by date_trunc('${groupBy}', b.booked_at)
+        order by date_trunc('${groupBy}', b.booked_at);
+      `,
+      params,
+    );
+
+    const refundsSeries = await this.dataSource.query(
+      `
+        select to_char(date_trunc('${groupBy}', coalesce(p.paid_at, p.updated_at, p.created_at)), '${groupLabel}') as date,
+               coalesce(sum(p.amount), 0)::numeric as refunded
+        from payments p
+        left join bookings b on b.id = p.booking_id
+        left join trips t on t.id = b.trip_id
+        left join routes r on r.id = t.route_id
+        ${baseWhere} and lower(p.status::text) = 'refunded'
+        group by date_trunc('${groupBy}', coalesce(p.paid_at, p.updated_at, p.created_at))
+        order by date_trunc('${groupBy}', coalesce(p.paid_at, p.updated_at, p.created_at));
+      `,
+      params,
+    );
+
+    const bookingsByDate = new Map(
+      bookingsSeries.map((row: any) => [row.date, row.bookings]),
+    );
+    const cancelledByDate = new Map(
+      report.cancellations.map((row: any) => [row.date, row.cancelled]),
+    );
+    const refundedByDate = new Map(
+      refundsSeries.map((row: any) => [row.date, row.refunded]),
+    );
+
     const lines = [
       ['Date', 'Revenue', 'Bookings', 'Cancelled', 'Refunded'],
       ...report.revenueSeries.map((row: any) => [
         row.date,
         row.revenue,
-        '',
-        '',
-        '',
+        bookingsByDate.get(row.date) ?? 0,
+        cancelledByDate.get(row.date) ?? 0,
+        refundedByDate.get(row.date) ?? 0,
       ]),
     ];
 
-    const csv = lines.map((l) => l.join(',')).join('\n');
-    return csv;
+    return lines.map((l) => l.join(',')).join('\n');
   }
 }

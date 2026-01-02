@@ -85,6 +85,7 @@ const ReportsPage = () => {
       count: item.count,
       color: palette[idx % palette.length],
     })) ?? [];
+  const bookingsTrend = data?.bookingTrend ?? [];
 
   const handleExport = async () => {
     const blob = await exportAdminReport(filters);
@@ -264,6 +265,37 @@ const ReportsPage = () => {
                   dot={{ r: 2 }}
                 />
               </LineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle>Bookings</CardTitle>
+            <Badge variant="secondary" className="gap-1">
+              <TrendingUp className="h-4 w-4" />
+              {groupBy.toUpperCase()} · {range.toUpperCase()}
+            </Badge>
+          </CardHeader>
+          <CardContent className="h-80 flex flex-col">
+            <ChartContainer
+              config={{
+                bookings: { label: 'Bookings', color: palette[0] },
+              }}
+              className="flex-1 overflow-hidden"
+              style={{ aspectRatio: 'auto' }}
+            >
+              <BarChart data={bookingsTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis allowDecimals={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="bookings"
+                  fill="var(--color-bookings)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>

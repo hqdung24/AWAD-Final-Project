@@ -9,6 +9,7 @@ export type ReportFilters = {
 };
 
 export type AdminReport = {
+  bookingTrend: Array<{ date: string; bookings: number }>;
   revenueSeries: Array<{ date: string; revenue: number }>;
   bookingStatus: Array<{ status: string; count: number }>;
   cancellations: Array<{ date: string; cancelled: number }>;
