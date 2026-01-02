@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TripRepository } from './trip.repository';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -102,6 +102,23 @@ export class TripService {
   async updateTrip(id: string, updateTripDto: UpdateTripDto): Promise<Trip> {
     // Check if trip exists
     const existingTrip = await this.getTripById(id);
+
+    const now = new Date();
+    const isDerivedInProgress =
+      existingTrip.status === 'scheduled' &&
+      now >= existingTrip.departureTime &&
+      now <= existingTrip.arrivalTime;
+
+    if (
+      updateTripDto.status &&
+      (existingTrip.status === 'cancelled' ||
+        existingTrip.status === 'completed' ||
+        isDerivedInProgress)
+    ) {
+      throw new BadRequestException(
+        'Trip status cannot be changed when cancelled, completed, or in progress',
+      );
+    }
 
     const busChanged =
       Boolean(updateTripDto.busId) &&

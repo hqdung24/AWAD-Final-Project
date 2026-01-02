@@ -96,10 +96,10 @@ export default function TripsPage() {
   });
   const trips = tripsResponse?.data ?? [];
   const scheduledCount = trips.filter((trip) => trip.status === 'scheduled').length;
+  const now = new Date();
 
   const getDisplayStatusKey = (trip: Trip) => {
     if (trip.status === 'cancelled') return 'cancelled';
-    const now = new Date();
     const departure = new Date(trip.departureTime);
     const arrival = new Date(trip.arrivalTime);
     if (now >= departure && now <= arrival) {
@@ -129,6 +129,18 @@ export default function TripsPage() {
   const visibleTrips = isDerivedStatusFilter
     ? filteredTrips.slice((page - 1) * pageSize, page * pageSize)
     : filteredTrips;
+
+  const isTripFormLocked =
+    editingTripId &&
+    (tripForm.status === 'cancelled' ||
+      tripForm.status === 'completed' ||
+      (tripForm.status === 'scheduled' &&
+        tripForm.departureTime &&
+        tripForm.arrivalTime &&
+        now >= new Date(tripForm.departureTime) &&
+        now <= new Date(tripForm.arrivalTime)));
+
+  const isTripRowLocked = (trip: Trip) => getDisplayStatusKey(trip) !== 'scheduled';
 
   const tripCreateMutation = useMutation({
     mutationFn: createTrip,
@@ -380,6 +392,7 @@ export default function TripsPage() {
                 {visibleTrips.map((trip, idx) => {
                   const route = adminRoutes.find((r) => r.id === trip.routeId);
                   const bus = buses.find((b) => b.id === trip.busId);
+                  const isLocked = isTripRowLocked(trip);
                   return (
                     <TableRow
                       key={trip.id}
@@ -407,7 +420,8 @@ export default function TripsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                        onClick={() => openEditTrip(trip)}
+                          onClick={() => openEditTrip(trip)}
+                          disabled={isLocked}
                         >
                           Edit
                         </Button>
@@ -415,9 +429,9 @@ export default function TripsPage() {
                           size="sm"
                           variant="destructive"
                           onClick={() => tripDeleteMutation.mutate(trip.id)}
-                          disabled={tripDeleteMutation.isPending}
+                          disabled={tripDeleteMutation.isPending || isLocked}
                         >
-                          Delete
+                          Cancel
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -564,6 +578,7 @@ export default function TripsPage() {
                 onChange={(e) =>
                   setTripForm((prev) => ({ ...prev, status: e.target.value }))
                 }
+                disabled={Boolean(isTripFormLocked)}
               >
                 <option value="scheduled">Scheduled</option>
                 <option value="cancelled">Cancelled</option>
