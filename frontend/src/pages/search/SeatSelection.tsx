@@ -124,18 +124,23 @@ export default function SeatSelection() {
       setSelectedByOthers((prev) => new Set([...prev, seatId]));
     });
 
-    socket.on('seat:released', ({ seatId, userId }) => {
-      if (userId && userId === currentUserId) {
-        // own release from other tab
-        setSelectedSeats((prev) => prev.filter((id) => id !== seatId));
-        return;
+    socket.on(
+      'seat:released',
+      ({ seatId, userId }: { seatId: string; userId?: string }) => {
+        // Handle both: user release (has userId) and cron release (no userId)
+        if (userId && userId === currentUserId) {
+          // own release from other tab or user action
+          setSelectedSeats((prev) => prev.filter((id) => id !== seatId));
+          return;
+        }
+        // Release from other user or from cron job cleanup
+        setSelectedByOthers((prev) => {
+          const next = new Set(prev);
+          next.delete(seatId);
+          return next;
+        });
       }
-      setSelectedByOthers((prev) => {
-        const next = new Set(prev);
-        next.delete(seatId);
-        return next;
-      });
-    });
+    );
 
     // when seats are locked by someone, remove from temp selected-by-others and refresh snapshot
     socket.on('seat:locked', ({ seatIds }) => {

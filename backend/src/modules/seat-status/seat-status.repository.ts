@@ -100,7 +100,20 @@ export class SeatStatusRepository {
       .execute();
   }
 
-  async releaseSeatLocks(timeCheck: Date): Promise<number> {
+  async releaseSeatLocks(timeCheck: Date): Promise<{
+    affected: number;
+    releasedSeats: Array<{ tripId: string; seatId: string }>;
+  }> {
+    // First, get the seats that will be released (for event emission)
+    const seatsToRelease = await this.repository
+      .createQueryBuilder('seatStatus')
+      .select(['seatStatus.tripId', 'seatStatus.seatId'])
+      .where('seatStatus.state = :state', { state: 'locked' })
+      .andWhere('seatStatus.state != :booked', { booked: 'booked' })
+      .andWhere('seatStatus.lockedUntil <= :now', { now: timeCheck })
+      .getMany();
+
+    // Then update them
     const result = await this.repository
       .createQueryBuilder()
       .update(SeatStatus)
@@ -109,10 +122,16 @@ export class SeatStatusRepository {
         lockedUntil: null,
       })
       .where('state = :state', { state: 'locked' })
-      .andWhere('state != :booked', { booked: 'booked' }) //not release lock of booked seats
+      .andWhere('state != :booked', { booked: 'booked' })
       .andWhere('lockedUntil <= :now', { now: timeCheck })
       .execute();
 
-    return result.affected ?? 0;
+    return {
+      affected: result.affected ?? 0,
+      releasedSeats: seatsToRelease.map((seat) => ({
+        tripId: seat.tripId,
+        seatId: seat.seatId,
+      })),
+    };
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
 import {
@@ -83,8 +83,7 @@ export class NotificationRepository {
     return this.repository.count({
       where: {
         userId,
-        status: NotificationStatus.SENT,
-        channel: NotificationChannel.IN_APP,
+        status: Not(NotificationStatus.READ),
       },
     });
   }

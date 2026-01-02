@@ -24,8 +24,16 @@ import {
   type BookingIncompletePayload,
 } from '@/schemas/notification/notification';
 import { useNotification } from '@/hooks/useNotification';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import type {
+  NotificationChannel,
+  NotificationListResponse,
+} from '@/schemas/notification/notification';
+import { useUserStore } from '@/stores/user';
+import { getSocket } from '@/lib/socket';
+import type { Socket } from 'socket.io-client';
 const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
     case NotificationType.TRIP_REMINDER_24H:
@@ -138,6 +146,10 @@ const formatTimeAgo = (dateString: string): string => {
 
 export const NotificationModal = () => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const currentUserId = useUserStore((s) => s.me?.id);
+  const socketRef = useRef<Socket | null>(null);
+
   const {
     notificationList,
     markAsRead,
@@ -146,13 +158,57 @@ export const NotificationModal = () => {
     deleteNotifications,
   } = useNotification({
     page: 1,
-    limit: 20,
+    limit: 10,
   });
   const navigate = useNavigate();
 
   const notifications = notificationList.data?.data || [];
   const unreadCount = notificationList.data?.unreadCount || 0;
   const isLoading = notificationList.isLoading;
+
+  // Listen for realtime notifications and update cache
+  useEffect(() => {
+    const socket = getSocket(currentUserId ?? undefined);
+    socketRef.current = socket;
+
+    const handleNotificationCreated = (data: {
+      type: string;
+      payload: unknown;
+      channel: NotificationChannel;
+      timestamp: string;
+    }) => {
+      const newNotification: Notification = {
+        id: `temp-${Date.now()}`,
+        type: data.type as NotificationType,
+        payload: data.payload,
+        channel: data.channel,
+        status: NotificationStatus.PENDING,
+        userId: '',
+        sentAt: data.timestamp,
+        readAt: null,
+      };
+      // Update cache with new notification
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: ['notifications'] },
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            data: [newNotification, ...old.data].slice(0, 10), // Keep only 10 items
+            total: old.total + 1,
+            unreadCount: old.unreadCount + 1,
+          };
+        }
+      );
+    };
+
+    socket.on('notification:created', handleNotificationCreated);
+
+    return () => {
+      socket.off('notification:created', handleNotificationCreated);
+    };
+  }, [queryClient, currentUserId]);
 
   const handleMarkAsRead = (notificationId: string) => {
     markAsRead.mutate(notificationId);
@@ -289,7 +345,11 @@ export const NotificationModal = () => {
           )}
         </ScrollArea>
         <div className="border-t p-2">
-          <Button variant="ghost" className="w-full text-xs h-8">
+          <Button
+            variant="ghost"
+            className="w-full text-xs h-8"
+            onClick={() => navigate('/notifications')}
+          >
             View all notifications
           </Button>
         </div>
