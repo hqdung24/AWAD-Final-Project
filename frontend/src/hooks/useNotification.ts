@@ -53,6 +53,10 @@ export function useNotification(params?: NotificationListQueryParams) {
   // Mutation: Mark all notifications as read
   const markAllAsReadMutation = useMutation({
     mutationFn: () => markAllNotificationsAsRead(),
+    onMutate: () => {
+      // Optimistic update before server response
+      optimisticMarkAllAsRead();
+    },
     onSuccess: (data) => {
       notify.success(`${data.affected} notification(s) marked as read`);
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -60,6 +64,8 @@ export function useNotification(params?: NotificationListQueryParams) {
     onError: (err) => {
       const { message } = extractApiError(err);
       notify.error(message || 'Failed to mark all notifications as read');
+      // Revert optimistic update on error
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 

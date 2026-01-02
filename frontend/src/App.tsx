@@ -10,7 +10,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { Toaster } from 'sonner';
 import MainLayout from './layouts/main-layout/MainLayout';
 import AccountInfoPage from './pages/Account/AccountInfoPage';
-import NotificationPreferencesPage from './pages/Account/NotificationPreferencesPage';
+import NotificationsPage from './pages/Account/NotificationsPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import BookingsPage from './pages/admin/BookingsPage';
@@ -212,7 +212,7 @@ function App() {
                       path="/notifications"
                       element={
                         <ProtectedRoute>
-                          <NotificationPreferencesPage />
+                          <NotificationsPage />
                         </ProtectedRoute>
                       }
                     />
@@ -225,38 +225,38 @@ function App() {
                       }
                     />
                   </Route>
-                <Route
-                  path="/signin"
-                  element={
-                    <PublicRoute>
-                      <SignInPage />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/customer/signin"
-                  element={
-                    <PublicRoute>
-                      <SignInPage />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/admin/login"
-                  element={
-                    <PublicRoute>
-                      <AdminLoginPage />
-                    </PublicRoute>
-                  }
-                />
-                <Route
-                  path="/admin/signin"
-                  element={
-                    <PublicRoute>
-                      <AdminLoginPage />
-                    </PublicRoute>
-                  }
-                />
+                  <Route
+                    path="/signin"
+                    element={
+                      <PublicRoute>
+                        <SignInPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/customer/signin"
+                    element={
+                      <PublicRoute>
+                        <SignInPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/login"
+                    element={
+                      <PublicRoute>
+                        <AdminLoginPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/signin"
+                    element={
+                      <PublicRoute>
+                        <AdminLoginPage />
+                      </PublicRoute>
+                    }
+                  />
                   <Route
                     path="/signup"
                     element={

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RealtimeGateway } from '@/modules/realtime/realtime.gateway';
 import { SeatStatusRepository } from './seat-status.repository';
 import { SeatStatus } from './entities/seat-status.entity';
@@ -12,6 +13,7 @@ export class SeatStatusService {
     private readonly seatLockProvider: SeatLockProvider,
     private readonly seatSelectingProvider: SeatSelectingProvider,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async save(seatStatus: SeatStatus): Promise<SeatStatus> {
@@ -113,7 +115,21 @@ export class SeatStatusService {
   }
 
   async releaseLockedSeats(timeCheck: Date): Promise<number> {
-    return await this.seatStatusRepository.releaseSeatLocks(timeCheck);
+    const { affected, releasedSeats } =
+      await this.seatStatusRepository.releaseSeatLocks(timeCheck);
+
+    // Emit event for realtime broadcast with seat details
+    if (releasedSeats.length > 0) {
+      for (const seat of releasedSeats) {
+        this.eventEmitter.emit('seat.released', {
+          tripId: seat.tripId,
+          seatId: seat.seatId,
+          timestamp: timeCheck,
+        });
+      }
+    }
+
+    return affected;
   }
 
   /**
