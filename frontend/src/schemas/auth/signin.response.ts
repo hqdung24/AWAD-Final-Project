@@ -8,6 +8,7 @@ export const MeSchema = z.object({
   role: z.string(),
   isActive: z.boolean(),
   isVerified: z.boolean(),
+  hasSetPassword: z.boolean(),
   phone: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   username: z.string().nullable(),

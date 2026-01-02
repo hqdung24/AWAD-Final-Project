@@ -258,6 +258,7 @@ export class UsersService {
     const result = await this.usersRepository.updateUser(id, {
       password: newPassword,
       isActive: true,
+      hasSetPassword: true,
     });
     if (result.affected && result.affected > 0) {
       return true;
