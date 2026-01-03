@@ -86,7 +86,7 @@ export class FeedbackController {
       dto,
       photosCount: photos?.length || 0,
     });
-    
+
     try {
       const result = await this.feedbackService.createFeedback(user.sub, dto, photos);
       console.log('[FeedbackController] Feedback created successfully');
@@ -111,5 +111,14 @@ export class FeedbackController {
   @ApiParam({ name: 'tripId', type: 'string', format: 'uuid' })
   async getFeedbackByTrip(@Param('tripId') tripId: string) {
     return this.feedbackService.getFeedbackByTrip(tripId);
+  }
+
+  @Get('user/:userId')
+  @Auth(AuthType.Bearer)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all feedback by user' })
+  @ApiParam({ name: 'userId', type: 'string', format: 'uuid' })
+  async getFeedbackByUser(@Param('userId') userId: string) {
+    return this.feedbackService.getFeedbackByUser(userId);
   }
 }

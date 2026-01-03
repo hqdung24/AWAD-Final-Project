@@ -3071,6 +3071,36 @@
         ]
       }
     },
+    "/feedback/user/{userId}": {
+      "get": {
+        "operationId": "FeedbackController_getFeedbackByUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all feedback by user",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
     "/reports/admin": {
       "get": {
         "operationId": "ReportController_getAdminReport",

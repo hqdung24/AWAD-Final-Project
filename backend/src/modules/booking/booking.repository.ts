@@ -161,6 +161,14 @@ export class BookingRepository {
     return this.repository.findOne({ where: { id } });
   }
 
+  async updateBookingStatus(
+    bookingId: string,
+    status: 'pending' | 'paid' | 'expired' | 'cancelled' | 'archived',
+  ): Promise<Booking | null> {
+    await this.repository.update(bookingId, { status });
+    return this.repository.findOne({ where: { id: bookingId } });
+  }
+
   async cancelBooking(bookingId: string): Promise<Booking> {
     return await this.repository.manager.transaction(async (manager) => {
       const booking = await manager.findOne(Booking, {

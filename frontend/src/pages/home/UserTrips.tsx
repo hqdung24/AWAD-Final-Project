@@ -51,7 +51,7 @@ import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/lib/socket';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
-type TripStatus = 'completed' | 'archived';
+type TripStatus = 'scheduled' | 'in-progress' | 'completed' | 'cancelled' | 'archived';
 
 // Simple schema for trip status update event from backend
 const tripStatusUpdateEventSchema = z.object({
@@ -132,7 +132,10 @@ function UserDashboard() {
   ];
 
   const tripStatusFilters: { key: string; label: string }[] = [
+    { key: 'scheduled', label: 'Scheduled' },
+    { key: 'in-progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
     { key: 'archived', label: 'Archived' },
   ];
 
@@ -310,7 +313,8 @@ function UserDashboard() {
     if (
       b.status === 'expired' ||
       b.status === 'cancelled' ||
-      b.status === 'paid'
+      b.status === 'paid' ||
+      b.trip.status === 'archived'
     )
       return false;
     const dep = new Date(b.trip.departureTime).getTime();
@@ -542,11 +546,32 @@ function UserDashboard() {
                 </button>
               ))}
 
-              {/* Trip status filters (completed/archived) */}
+              {/* Trip status filters */}
               <div className="pt-2 border-t">
-                <p className="text-xs font-medium text-muted-foreground mb-2 px-3">
-                  Trip Status
-                </p>
+                <div className="flex items-center justify-between mb-2 px-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Trip Status
+                  </p>
+                  {selectedTripStatus !== 'all' && (
+                    <button
+                      onClick={() => setSelectedTripStatus('all')}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSelectedTripStatus('all')}
+                  className={`flex items-center justify-between w-full rounded-lg px-3 py-2 font-medium transition-colors mb-1 ${
+                    selectedTripStatus === 'all'
+                      ? 'bg-muted/60 text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                  }`}
+                >
+                  All
+                  {selectedTripStatus === 'all' && <Badge variant="default">●</Badge>}
+                </button>
                 {tripStatusFilters.map((status) => (
                   <button
                     key={status.key}

@@ -43,4 +43,12 @@ export class FeedbackRepository {
       order: { submittedAt: 'DESC' },
     });
   }
+
+  async findByUserId(userId: string): Promise<Feedback[]> {
+    return this.repository.find({
+      where: { userId },
+      relations: ['trip', 'trip.route'],
+      order: { submittedAt: 'DESC' },
+    });
+  }
 }

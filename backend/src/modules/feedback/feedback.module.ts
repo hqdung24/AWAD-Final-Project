@@ -6,11 +6,15 @@ import { FeedbackService } from './feedback.service';
 import { FeedbackRepository } from './feedback.repository';
 import { MediaModule } from '../media/media.module';
 import { Booking } from '../booking/entities/booking.entity';
+import { BookingModule } from '../booking/booking.module';
+import { TripModule } from '../trip/trip.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Feedback, Booking]),
     MediaModule,
+    BookingModule,
+    TripModule,
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService, FeedbackRepository],

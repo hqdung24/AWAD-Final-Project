@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { createFeedback } from '@/services/feedbackService';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
@@ -41,6 +42,7 @@ function formatDateTime(iso?: string) {
 export default function TripFeedbackPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { bookingDetail } = useBooking(undefined, id);
@@ -68,6 +70,10 @@ export default function TripFeedbackPage() {
         comment: formData.comment,
         photos: formData.photos,
       });
+      
+      // Invalidate queries to force refetch
+      await queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      await queryClient.invalidateQueries({ queryKey: ['bookings'] });
       
       toast.success('Thank you for your feedback!');
       navigate(`/upcoming-trip/${id}`);

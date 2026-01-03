@@ -12,6 +12,7 @@ import {
   Settings2,
   UserCheck,
   Users,
+  MessageSquare,
 } from 'lucide-react';
 import { useLocation } from 'react-router';
 
@@ -52,6 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const userNav = [
     { title: 'Your trips', url: '/upcoming-trip', icon: BusFront },
+    { title: 'My Reviews', url: '/my-reviews', icon: MessageSquare },
     { title: 'Profile', url: '/account', icon: Users },
     { title: 'Payments', url: '#payments', icon: ChartNoAxesCombined },
     { title: 'Notifications', url: '/notifications', icon: Send },

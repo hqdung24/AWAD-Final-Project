@@ -31,6 +31,7 @@ import LandingPage from './pages/home/LandingPage';
 import UpcomingTripDetail from './pages/home/UpcomingTripDetail';
 import UserDashboard from './pages/home/UserTrips';
 import TripFeedbackPage from './pages/feedback/TripFeedbackPage';
+import MyReviews from './pages/reviews/MyReviews';
 import PaymentConfirmation from './pages/payment/PaymentConfirmation';
 import Checkout from './pages/search/ConfirmBooking';
 import SearchResults from './pages/search/SearchResults';
@@ -126,6 +127,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <TripFeedbackPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/my-reviews"
+                      element={
+                        <ProtectedRoute>
+                          <MyReviews />
                         </ProtectedRoute>
                       }
                     />

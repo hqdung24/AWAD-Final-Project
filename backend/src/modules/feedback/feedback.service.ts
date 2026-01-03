@@ -11,6 +11,8 @@ import { MediaType } from '../media/enums/media-type.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from '../booking/entities/booking.entity';
+import { BookingRepository } from '../booking/booking.repository';
+import { TripRepository } from '../trip/trip.repository';
 import type { Express } from 'express';
 
 @Injectable()
@@ -18,8 +20,10 @@ export class FeedbackService {
   constructor(
     private readonly feedbackRepository: FeedbackRepository,
     private readonly mediaService: MediaService,
+    private readonly bookingRepository: BookingRepository,
+    private readonly tripRepository: TripRepository,
     @InjectRepository(Booking)
-    private readonly bookingRepository: Repository<Booking>,
+    private readonly bookingRepositoryTypeOrm: Repository<Booking>,
   ) {}
 
   async createFeedback(
@@ -36,7 +40,7 @@ export class FeedbackService {
 
     // Validate booking exists and belongs to user
     console.log('[FeedbackService] Finding booking...');
-    const booking = await this.bookingRepository.findOne({
+    const booking = await this.bookingRepositoryTypeOrm.findOne({
       where: { id: dto.bookingId },
       relations: ['trip'],
     });
@@ -122,6 +126,11 @@ export class FeedbackService {
     );
     console.log('[FeedbackService] Feedback created:', feedback.id);
 
+    // Update trip status to archived
+    console.log('[FeedbackService] Updating trip status to archived...');
+    await this.tripRepository.update(booking.tripId, { status: 'archived' });
+    console.log('[FeedbackService] Trip status updated to archived');
+
     return {
       id: feedback.id,
       bookingId: feedback.bookingId,
@@ -139,5 +148,25 @@ export class FeedbackService {
 
   async getFeedbackByTrip(tripId: string) {
     return this.feedbackRepository.findByTripId(tripId);
+  }
+
+  async getFeedbackByUser(userId: string) {
+    const feedbacks = await this.feedbackRepository.findByUserId(userId);
+    return feedbacks.map((feedback) => ({
+      id: feedback.id,
+      bookingId: feedback.bookingId,
+      rating: feedback.rating,
+      recommendation: feedback.recommendation,
+      comment: feedback.comment,
+      photos: feedback.photos,
+      submittedAt: feedback.submittedAt,
+      trip: {
+        id: feedback.trip.id,
+        origin: feedback.trip.route.origin,
+        destination: feedback.trip.route.destination,
+        departureTime: feedback.trip.departureTime,
+        status: feedback.trip.status,
+      },
+    }));
   }
 }
