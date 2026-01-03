@@ -8,9 +8,9 @@ GitHub repo URL: [https://github.com/hqdung24/AWAD-Final-Project](https://github
 
 | Student ID | Full name | Git account | Contribution | Contribution percentage (100% total) | Expected total points | Final total points |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
-| 22127039 | Trần Phan Thiên Bửu | [https://github.com/TonyTran2902](https://github.com/TonyTran2902) | \<List of tasks done by student 1\> | 33% |  |  |
-| 22127072 | Nguyễn Thiên Đức | [https://github.com/duccodon](https://github.com/duccodon) | \<List of tasks done by student 2\> | 33% |  |  |
-| 22127077 | Huỳnh Quốc Dũng | [https://github.com/hqdung24](https://github.com/hqdung24) | \<List of tasks done by student 3\> | 34% |  |  |
+| 22127039 | Trần Phan Thiên Bửu | [https://github.com/TonyTran2902](https://github.com/TonyTran2902) | Admin dashboards, reporting improvements, trip/bus/route management UX, rules for cancellations and deactivation, and documentation updates | 33% |  |  |
+| 22127072 | Nguyễn Thiên Đức | [https://github.com/duccodon](https://github.com/duccodon) | Customer booking UI, trip search, trip detail, seat selection, feedback and checkout UX integration | 33% |  |  |
+| 22127077 | Huỳnh Quốc Dũng | [https://github.com/hqdung24](https://github.com/hqdung24) | Backend architecture, deploy, auth flows, booking/payment logic, realtime updates, notifications, and e-ticket enhancements | 34% |  |  |
 
 # **FEATURE LIST**
 
@@ -142,9 +142,9 @@ Students must input minus points to every uncompleted feature in the SE column.
 
 | Avatar | Username | Commits | Additions | Deletions |
 | :---- | :---- | :---- | :---- | :---- |
-|  | \<git_username_1\> |  |  |  |
-|  | \<git_username_2\> |  |  |  |
-|  | \<git_username_3\> |  |  |  |
+|  | TonyTran2902 | 65 | 28,494 | 6,135 |
+|  | hqdung24 | 39 | 76,251 | 24,111 |
+|  | duccodon | 13 | 5,988 | 1,010 |
 
 ## **Commits**
 
@@ -152,8 +152,10 @@ Students must input minus points to every uncompleted feature in the SE column.
 
 | Date | Author | Commit Message | Files Changed |
 | :---- | :---- | :---- | :---- |
-| YYYY-MM-DD | \<author\> | \<commit message\> | \<number\> |
-
+| 2026-01-03 | duccodon | feat: implement user feedback retrieval and reviews display | 11 |
+| 2026-01-03 | duccodon | fix: change the logic when create feedback | 13 |
+| 2026-01-03 | hqdung24 | feat:add QR code generation and e-ticket PDF download | 24 |
+| 2026-01-03 | hqdung24 | feat (admin): add bus deactivation | 24 |
 ---
 
 # **PROJECT SUMMARY**
