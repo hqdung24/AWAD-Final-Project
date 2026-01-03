@@ -18,19 +18,17 @@ export class RedisClientProvider implements OnModuleDestroy {
     @Inject(redisConfig.KEY)
     private readonly redisConfiguration: ConfigType<typeof redisConfig>,
   ) {
-    const username = this.redisConfiguration.username;
-    const password = this.redisConfiguration.password;
-    const host = this.redisConfiguration.host;
-    const port = this.redisConfiguration.port;
-
-    this.client = new Redis({
-      host,
-      port,
-      username,
-      password,
-      tls: this.redisConfiguration.tls,
-      maxRetriesPerRequest: 3,
-    });
+    if (this.redisConfiguration.url) {
+      this.client = new Redis(this.redisConfiguration.url);
+    } else {
+      this.client = new Redis({
+        host: this.redisConfiguration.host,
+        port: this.redisConfiguration.port,
+        username: this.redisConfiguration.username,
+        password: this.redisConfiguration.password,
+        tls: this.redisConfiguration.tls,
+      });
+    }
     this.client.on('error', (err) => {
       console.error('Redis connection error:', err);
     });
