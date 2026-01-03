@@ -331,7 +331,14 @@ export default function ConfirmBooking() {
                         <Label htmlFor="pickupPoint">Pickup point</Label>
                         <select
                           id="pickupPoint"
-                          className="border-input bg-background text-sm px-3 py-2 rounded-md border w-full"
+                          className="border-input bg-background text-sm pl-3 pr-10 py-2 rounded-md border w-full appearance-none cursor-pointer"
+                          style={{
+                            backgroundImage:
+                              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E\")",
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 0.75rem center',
+                            backgroundSize: '12px',
+                          }}
                           value={pickupPointId}
                           onChange={(e) => setPickupPointId(e.target.value)}
                           disabled={!trip.routePoints.pickup.length}
@@ -347,8 +354,9 @@ export default function ConfirmBooking() {
                         </select>
                         {trip.routePoints.pickup.length > 0 && (
                           <p className="text-xs text-muted-foreground">
-                            {trip.routePoints.pickup.find((p) => p.id === pickupPointId)
-                              ?.address || ''}
+                            {trip.routePoints.pickup.find(
+                              (p) => p.id === pickupPointId
+                            )?.address || ''}
                           </p>
                         )}
                       </div>
@@ -356,7 +364,14 @@ export default function ConfirmBooking() {
                         <Label htmlFor="dropoffPoint">Dropoff point</Label>
                         <select
                           id="dropoffPoint"
-                          className="border-input bg-background text-sm px-3 py-2 rounded-md border w-full"
+                          className="border-input bg-background text-sm pl-3 pr-10 py-2 rounded-md border w-full appearance-none cursor-pointer"
+                          style={{
+                            backgroundImage:
+                              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E\")",
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 0.75rem center',
+                            backgroundSize: '12px',
+                          }}
                           value={dropoffPointId}
                           onChange={(e) => setDropoffPointId(e.target.value)}
                           disabled={!trip.routePoints.dropoff.length}
@@ -372,8 +387,9 @@ export default function ConfirmBooking() {
                         </select>
                         {trip.routePoints.dropoff.length > 0 && (
                           <p className="text-xs text-muted-foreground">
-                            {trip.routePoints.dropoff.find((p) => p.id === dropoffPointId)
-                              ?.address || ''}
+                            {trip.routePoints.dropoff.find(
+                              (p) => p.id === dropoffPointId
+                            )?.address || ''}
                           </p>
                         )}
                       </div>

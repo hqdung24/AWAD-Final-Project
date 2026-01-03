@@ -14,7 +14,10 @@ import type {
   CreateBookingRequest,
   BookingDetailResponse,
 } from '@/schemas/booking';
-import type { SeatChange, UpdateBookingRequest } from '@/services/bookingService';
+import type {
+  SeatChange,
+  UpdateBookingRequest,
+} from '@/services/bookingService';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useBooking(params?: BookingListQuery, bookingId?: string) {
@@ -24,7 +27,7 @@ export function useBooking(params?: BookingListQuery, bookingId?: string) {
     mutationFn: (payload: CreateBookingRequest) => createBooking(payload),
     onSuccess: (data) => {
       notify.success(
-        `Booking created successfully! Navigating to payment for booking ID: ${data.bookingId}`
+        `Booking created successfully! Navigating to payment for booking reference: ${data.bookingReference}`
       );
     },
     onError: (err) => {

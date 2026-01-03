@@ -464,4 +464,18 @@ export class BookingRepository {
       });
     });
   }
+
+  async updateTicketToken(
+    bookingId: string,
+    rawToken: string,
+    issuedAt: Date,
+  ): Promise<void> {
+    await this.repository.update(
+      { id: bookingId },
+      {
+        ticketToken: rawToken,
+        ticketTokenIssuedAt: issuedAt,
+      },
+    );
+  }
 }

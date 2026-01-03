@@ -37,7 +37,11 @@ export default function TripDetails() {
   const date = searchParams.get('date') || '';
   const passengers = searchParams.get('passengers') || '1';
 
-  const { data: trip, isLoading, error } = useQuery({
+  const {
+    data: trip,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['trip-details', id],
     queryFn: () => getTripDetails(id!),
     enabled: !!id,
@@ -51,33 +55,50 @@ export default function TripDetails() {
 
   const formatTime = (timeString: string) => {
     const date = new Date(timeString);
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   };
 
   const formatDate = (timeString: string) => {
     const date = new Date(timeString);
-    return date.toLocaleDateString('vi-VN', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
   };
 
   const amenitiesMap = {
     wifi: { icon: Wifi, label: 'WiFi', description: 'Free WiFi on board' },
-    air_conditioning: { icon: Snowflake, label: 'Air Conditioning', description: 'Climate controlled cabin' },
+    air_conditioning: {
+      icon: Snowflake,
+      label: 'Air Conditioning',
+      description: 'Climate controlled cabin',
+    },
     water: { icon: Coffee, label: 'Water', description: 'Complimentary water' },
-    blanket: { icon: Armchair, label: 'Blanket', description: 'Blanket and pillow provided' },
+    blanket: {
+      icon: Armchair,
+      label: 'Blanket',
+      description: 'Blanket and pillow provided',
+    },
   };
 
   const handleBookNow = () => {
     // Navigate to seat selection page
-    navigate(`/search/${id}/seats?from=${from}&to=${to}&date=${date}&passengers=${passengers}`);
+    navigate(
+      `/search/${id}/seats?from=${from}&to=${to}&date=${date}&passengers=${passengers}`
+    );
   };
 
   if (isLoading) {
@@ -87,7 +108,9 @@ export default function TripDetails() {
           <Card>
             <CardContent className="p-12 text-center">
               <Bus className="h-16 w-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
-              <h3 className="text-lg font-semibold mb-2">Loading trip details...</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Loading trip details...
+              </h3>
               <p className="text-muted-foreground">Please wait</p>
             </CardContent>
           </Card>
@@ -104,7 +127,9 @@ export default function TripDetails() {
             <CardContent className="p-12 text-center">
               <AlertCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
               <h3 className="text-lg font-semibold mb-2">Trip not found</h3>
-              <p className="text-muted-foreground mb-4">The trip you're looking for doesn't exist</p>
+              <p className="text-muted-foreground mb-4">
+                The trip you're looking for doesn't exist
+              </p>
               <Button onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
@@ -125,7 +150,11 @@ export default function TripDetails() {
         <Button
           variant="ghost"
           className="mb-4"
-          onClick={() => navigate(`/search?from=${from}&to=${to}&date=${date}&passengers=${passengers}`)}
+          onClick={() =>
+            navigate(
+              `/search?from=${from}&to=${to}&date=${date}&passengers=${passengers}`
+            )
+          }
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Search Results
@@ -145,7 +174,9 @@ export default function TripDetails() {
                 </p>
               </div>
               <div className="text-left md:text-right">
-                <p className="text-3xl font-bold text-primary mb-1">{formatPrice(trip.price)}</p>
+                <p className="text-3xl font-bold text-primary mb-1">
+                  {formatPrice(trip.price)}
+                </p>
                 <p className="text-sm text-muted-foreground">per passenger</p>
               </div>
             </div>
@@ -166,7 +197,10 @@ export default function TripDetails() {
                 <CardContent>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {busPhotos.map((photo, index) => (
-                      <div key={`${photo}-${index}`} className="overflow-hidden rounded-lg border">
+                      <div
+                        key={`${photo}-${index}`}
+                        className="overflow-hidden rounded-lg border"
+                      >
                         <img
                           src={photo}
                           alt={`Bus photo ${index + 1}`}
@@ -198,25 +232,37 @@ export default function TripDetails() {
                     <div className="flex-1 pb-6">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline">Departure</Badge>
-                        <span className="text-2xl font-bold">{formatTime(trip.departureTime)}</span>
+                        <span className="text-2xl font-bold">
+                          {formatTime(trip.departureTime)}
+                        </span>
                       </div>
                       <p className="text-lg font-semibold flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         {trip.from}
                       </p>
-                      {trip.routePoints && trip.routePoints.pickup && trip.routePoints.pickup.length > 0 && (
-                        <div className="mt-3 ml-6">
-                          <p className="text-sm font-medium text-muted-foreground mb-2">Pickup Points:</p>
-                          <ul className="space-y-1">
-                            {trip.routePoints.pickup.map((point, idx) => (
-                              <li key={idx} className="text-sm flex items-start gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                                <span>{point.name} {point.note && `(${point.note})`}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {trip.routePoints &&
+                        trip.routePoints.pickup &&
+                        trip.routePoints.pickup.length > 0 && (
+                          <div className="mt-3 ml-6">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">
+                              Pickup Points:
+                            </p>
+                            <ul className="space-y-1">
+                              {trip.routePoints.pickup.map((point, idx) => (
+                                <li
+                                  key={idx}
+                                  className="text-sm flex items-start gap-2"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                                  <span>
+                                    {point.name}{' '}
+                                    {point.note && `(${point.note})`}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -232,7 +278,10 @@ export default function TripDetails() {
                         {trip.duration}
                       </Badge>
                       <p className="text-sm text-muted-foreground">
-                        Travel time • {trip.distanceKm ? `${trip.distanceKm} km` : 'Distance varies'}
+                        Travel time •{' '}
+                        {trip.distanceKm
+                          ? `${trip.distanceKm} km`
+                          : 'Distance varies'}
                       </p>
                     </div>
                   </div>
@@ -244,26 +293,43 @@ export default function TripDetails() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="border-success text-success">Arrival</Badge>
-                        <span className="text-2xl font-bold">{formatTime(trip.arrivalTime)}</span>
+                        <Badge
+                          variant="outline"
+                          className="border-success text-success"
+                        >
+                          Arrival
+                        </Badge>
+                        <span className="text-2xl font-bold">
+                          {formatTime(trip.arrivalTime)}
+                        </span>
                       </div>
                       <p className="text-lg font-semibold flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         {trip.to}
                       </p>
-                      {trip.routePoints && trip.routePoints.dropoff && trip.routePoints.dropoff.length > 0 && (
-                        <div className="mt-3 ml-6">
-                          <p className="text-sm font-medium text-muted-foreground mb-2">Drop-off Points:</p>
-                          <ul className="space-y-1">
-                            {trip.routePoints.dropoff.map((point, idx) => (
-                              <li key={idx} className="text-sm flex items-start gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                                <span>{point.name} {point.note && `(${point.note})`}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {trip.routePoints &&
+                        trip.routePoints.dropoff &&
+                        trip.routePoints.dropoff.length > 0 && (
+                          <div className="mt-3 ml-6">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">
+                              Drop-off Points:
+                            </p>
+                            <ul className="space-y-1">
+                              {trip.routePoints.dropoff.map((point, idx) => (
+                                <li
+                                  key={idx}
+                                  className="text-sm flex items-start gap-2"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                                  <span>
+                                    {point.name}{' '}
+                                    {point.note && `(${point.note})`}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -281,24 +347,38 @@ export default function TripDetails() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Operator</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Operator
+                    </p>
                     <p className="font-semibold">{trip.company}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Bus Type</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Bus Type
+                    </p>
                     <Badge variant="secondary">{trip.busType}</Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Bus Model</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Bus Model
+                    </p>
                     <p className="font-semibold">{trip.busModel || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Plate Number</p>
-                    <p className="font-semibold font-mono">{trip.plateNumber || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Plate Number
+                    </p>
+                    <p className="font-semibold font-mono">
+                      {trip.plateNumber || 'N/A'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Available Seats</p>
-                    <p className="font-semibold text-success">{trip.seatsAvailable} seats</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Available Seats
+                    </p>
+                    <p className="font-semibold text-success">
+                      {trip.seatsAvailable} seats
+                    </p>
                   </div>
                 </div>
 
@@ -313,21 +393,29 @@ export default function TripDetails() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {trip.amenities && trip.amenities.length > 0 ? (
                       trip.amenities.map((amenity) => {
-                        const amenityInfo = amenitiesMap[amenity as keyof typeof amenitiesMap];
+                        const amenityInfo =
+                          amenitiesMap[amenity as keyof typeof amenitiesMap];
                         if (!amenityInfo) return null;
                         const Icon = amenityInfo.icon;
                         return (
-                          <div key={amenity} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                          <div
+                            key={amenity}
+                            className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                          >
                             <Icon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="font-medium">{amenityInfo.label}</p>
-                              <p className="text-sm text-muted-foreground">{amenityInfo.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {amenityInfo.description}
+                              </p>
                             </div>
                           </div>
                         );
                       })
                     ) : (
-                      <p className="text-sm text-muted-foreground col-span-2">No amenities information available</p>
+                      <p className="text-sm text-muted-foreground col-span-2">
+                        No amenities information available
+                      </p>
                     )}
                   </div>
                 </div>
@@ -349,7 +437,8 @@ export default function TripDetails() {
                     <div>
                       <p className="font-medium">Cancellation Policy</p>
                       <p className="text-sm text-muted-foreground">
-                        Free cancellation up to 24 hours before departure. 50% refund for cancellations within 24 hours.
+                        Free cancellation up to 24 hours before departure. 50%
+                        refund for cancellations within 24 hours.
                       </p>
                     </div>
                   </div>
@@ -358,7 +447,8 @@ export default function TripDetails() {
                     <div>
                       <p className="font-medium">Baggage Allowance</p>
                       <p className="text-sm text-muted-foreground">
-                        Each passenger is allowed one carry-on bag (max 7kg) and one checked bag (max 20kg).
+                        Each passenger is allowed one carry-on bag (max 7kg) and
+                        one checked bag (max 20kg).
                       </p>
                     </div>
                   </div>
@@ -367,7 +457,8 @@ export default function TripDetails() {
                     <div>
                       <p className="font-medium">Check-in Time</p>
                       <p className="text-sm text-muted-foreground">
-                        Please arrive at the pickup point at least 15 minutes before departure time.
+                        Please arrive at the pickup point at least 15 minutes
+                        before departure time.
                       </p>
                     </div>
                   </div>
@@ -376,7 +467,8 @@ export default function TripDetails() {
                     <div>
                       <p className="font-medium">ID Requirements</p>
                       <p className="text-sm text-muted-foreground">
-                        Valid government-issued ID required for all passengers during check-in.
+                        Valid government-issued ID required for all passengers
+                        during check-in.
                       </p>
                     </div>
                   </div>
@@ -395,16 +487,22 @@ export default function TripDetails() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Route</span>
-                    <span className="font-semibold text-right">{trip.from} → {trip.to}</span>
+                    <span className="font-semibold text-right">
+                      {trip.from} → {trip.to}
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date</span>
-                    <span className="font-semibold">{new Date(trip.departureTime).toLocaleDateString('vi-VN')}</span>
+                    <span className="font-semibold">
+                      {new Date(trip.departureTime).toLocaleDateString('vi-VN')}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Departure</span>
-                    <span className="font-semibold">{formatTime(trip.departureTime)}</span>
+                    <span className="font-semibold">
+                      {formatTime(trip.departureTime)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Duration</span>
@@ -419,8 +517,12 @@ export default function TripDetails() {
                     <span className="font-semibold">{passengers}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Price per seat</span>
-                    <span className="font-semibold">{formatPrice(trip.price)}</span>
+                    <span className="text-muted-foreground">
+                      Price per seat
+                    </span>
+                    <span className="font-semibold">
+                      {formatPrice(trip.price)}
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">

@@ -41,13 +41,15 @@ export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
   private mapRoutePointSelection(
-    routePoints: Array<{
-      id: string;
-      type: string;
-      name: string;
-      address: string;
-      orderIndex: number;
-    }> | undefined,
+    routePoints:
+      | Array<{
+          id: string;
+          type: string;
+          name: string;
+          address: string;
+          orderIndex: number;
+        }>
+      | undefined,
     id: string | null,
   ) {
     if (!routePoints || !id) return null;
@@ -226,7 +228,7 @@ export class BookingController {
   async getBookingDetail(@Param('id') id: string) {
     const booking = await this.bookingService.getBookingDetail(id);
 
-    return {
+    const bookingDetail = {
       pickupPoint: this.mapRoutePointSelection(
         booking.trip?.route?.routePoints,
         booking.pickupPointId,
@@ -243,6 +245,7 @@ export class BookingController {
       name: booking.name,
       email: booking.email,
       phone: booking.phone,
+      ticketVerifyUrl: booking.ticketVerifyUrl,
       trip: booking.trip
         ? {
             id: booking.trip.id,
@@ -268,6 +271,7 @@ export class BookingController {
       totalAmount: Number(booking.totalAmount),
       createdAt: booking.bookedAt.toISOString(),
     };
+    return bookingDetail;
   }
 
   @Patch(':id')

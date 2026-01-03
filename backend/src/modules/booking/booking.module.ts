@@ -10,6 +10,8 @@ import { BookingEmailProvider } from './providers/booking-email.provider';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig } from '@/config/app.config';
 import { bookingConfig } from '@/config/booking.config';
+import { TicketTokenService } from './services/ticket-token.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Booking]),
@@ -23,12 +25,14 @@ import { bookingConfig } from '@/config/booking.config';
     BookingRepository,
     BookingProvider,
     BookingEmailProvider,
+    TicketTokenService,
   ],
   exports: [
     BookingService,
     BookingRepository,
     BookingProvider,
     BookingEmailProvider,
+    TicketTokenService,
   ],
 })
 export class BookingModule {}

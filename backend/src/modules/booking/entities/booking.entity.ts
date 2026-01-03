@@ -61,6 +61,15 @@ export class Booking {
   @Column({ type: 'uuid', nullable: true })
   dropoffPointId: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  ticketToken: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  ticketTokenIssuedAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  checkedInAt: Date | null;
+
   @ManyToOne(() => User, (user) => user.bookings, {
     onDelete: 'RESTRICT',
   })
