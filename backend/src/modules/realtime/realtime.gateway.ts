@@ -20,12 +20,15 @@ import { SeatSelectDto } from './dto/seat-select.dto';
 import { SeatReleaseDto } from './dto/seat-release.dto';
 import { WsGlobalExceptionFilter } from '@/common/filters/ws-exceptions.filter';
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  : ['http://localhost:3900'];
 @UseFilters(WsGlobalExceptionFilter)
 @Auth(AuthType.None)
 @WebSocketGateway({
   namespace: 'realtime',
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3900',
+    origin: allowedOrigins,
     credentials: true,
   },
 })

@@ -506,6 +506,7 @@ export class TripService {
 
     if (cached) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return JSON.parse(cached);
       } catch {
         // If parse fails, continue to fetch from DB

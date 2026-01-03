@@ -18,15 +18,24 @@ export class RedisClientProvider implements OnModuleDestroy {
     @Inject(redisConfig.KEY)
     private readonly redisConfiguration: ConfigType<typeof redisConfig>,
   ) {
-    const url = this.redisConfiguration.url;
-    const host = this.redisConfiguration.host;
-    const port = this.redisConfiguration.port ?? 6379;
-    const connectionUrl: string = url ?? `redis://${host}:${port}`;
+    if (this.redisConfiguration.url) {
+      this.client = new Redis(this.redisConfiguration.url);
+    } else {
+      this.client = new Redis({
+        host: this.redisConfiguration.host,
+        port: this.redisConfiguration.port,
+        username: this.redisConfiguration.username,
+        password: this.redisConfiguration.password,
+        tls: this.redisConfiguration.tls,
+      });
+    }
+    this.client.on('error', (err) => {
+      console.error('Redis connection error:', err);
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    const client: RedisClient = new Redis(connectionUrl);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.client = client;
+    this.client.on('connect', () => {
+      console.log('✅ Redis connected successfully');
+    });
   }
 
   getClient(): RedisClient {
@@ -34,7 +43,6 @@ export class RedisClientProvider implements OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     await this.client.quit();
   }
 }
