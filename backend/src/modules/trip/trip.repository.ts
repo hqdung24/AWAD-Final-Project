@@ -228,17 +228,6 @@ export class TripRepository {
     return result.affected ?? 0;
   }
 
-  async markDeparted(now: Date): Promise<number> {
-    const result = await this.repository
-      .createQueryBuilder()
-      .update(Trip)
-      .set({ status: 'completed' })
-      .where('status = :status', { status: 'scheduled' })
-      .andWhere('departureTime <= :now', { now })
-      .execute();
-    return result.affected ?? 0;
-  }
-
   async markCancelledIfNoSalesOrCheckins(now: Date): Promise<number> {
     const paidBookingsSubquery = this.repository
       .createQueryBuilder()
@@ -283,15 +272,46 @@ export class TripRepository {
     return result.affected ?? 0;
   }
 
-  async markArrived(now: Date): Promise<number> {
-    const result = await this.repository
-      .createQueryBuilder()
-      .update(Trip)
-      .set({ status: 'archived' })
-      .where('status = :status', { status: 'completed' })
-      .andWhere('arrivalTime <= :now', { now })
-      .execute();
-    return result.affected ?? 0;
+  async markDeparted(now: Date): Promise<Trip[]> {
+    return await this.repository.manager.transaction(async (manager) => {
+      const trips = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .where('trip.status = :status', { status: 'scheduled' })
+        .andWhere('trip.departureTime <= :now', { now })
+        .getMany();
+
+      if (trips.length === 0) return [];
+
+      await manager
+        .createQueryBuilder()
+        .update(Trip)
+        .set({ status: 'completed' })
+        .where('id IN (:...ids)', { ids: trips.map((t) => t.id) })
+        .execute();
+
+      return trips;
+    });
+  }
+
+  async markArrived(now: Date): Promise<Trip[]> {
+    return await this.repository.manager.transaction(async (manager) => {
+      const trips = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .where('trip.status = :status', { status: 'completed' })
+        .andWhere('trip.arrivalTime <= :now', { now })
+        .getMany();
+
+      if (trips.length === 0) return [];
+
+      await manager
+        .createQueryBuilder()
+        .update(Trip)
+        .set({ status: 'archived' })
+        .where('id IN (:...ids)', { ids: trips.map((t) => t.id) })
+        .execute();
+
+      return trips;
+    });
   }
 
   async findRelatedTrips(

@@ -184,7 +184,10 @@ export class ScheduleService {
 
   private async processRouteDeactivation(routeId: string) {
     const now = new Date();
-    const trips = await this.tripRepository.findScheduledByRouteId(routeId, now);
+    const trips = await this.tripRepository.findScheduledByRouteId(
+      routeId,
+      now,
+    );
     if (trips.length === 0) return;
 
     const tripIds = trips.map((trip) => trip.id);
@@ -205,7 +208,8 @@ export class ScheduleService {
         booking.passengerDetails
           ?.map((passenger) => passenger.seatCode)
           .filter((seat): seat is string => Boolean(seat)) ?? [];
-      const seats = seatsFromStatus.length > 0 ? seatsFromStatus : seatsFromPassengers;
+      const seats =
+        seatsFromStatus.length > 0 ? seatsFromStatus : seatsFromPassengers;
 
       const contactName =
         booking.name ||
