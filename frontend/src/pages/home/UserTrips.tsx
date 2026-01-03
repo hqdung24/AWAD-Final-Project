@@ -92,7 +92,9 @@ function UserDashboard() {
   const queryClient = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('all');
-  const [selectedTripStatus, setSelectedTripStatus] = useState<TripStatus | 'all'>('all');
+  const [selectedTripStatus, setSelectedTripStatus] = useState<
+    TripStatus | 'all'
+  >('all');
   const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
   const { bookingList, cancelBooking, updateBooking, changeSeats } = useBooking(
     user ? { userId: user.id } : undefined
@@ -326,7 +328,10 @@ function UserDashboard() {
         return false;
       }
       // Filter by trip status (completed/archived)
-      if (selectedTripStatus !== 'all' && b.trip.status !== selectedTripStatus) {
+      if (
+        selectedTripStatus !== 'all' &&
+        b.trip.status !== selectedTripStatus
+      ) {
         return false;
       }
       return true;
@@ -566,12 +571,16 @@ function UserDashboard() {
                   }`}
                 >
                   All
-                  {selectedTripStatus === 'all' && <Badge variant="default">●</Badge>}
+                  {selectedTripStatus === 'all' && (
+                    <Badge variant="default">●</Badge>
+                  )}
                 </button>
                 {tripStatusFilters.map((status) => (
                   <button
                     key={status.key}
-                    onClick={() => setSelectedTripStatus(status.key as TripStatus)}
+                    onClick={() =>
+                      setSelectedTripStatus(status.key as TripStatus)
+                    }
                     className={`flex items-center justify-between w-full rounded-lg px-3 py-2 font-medium transition-colors ${
                       selectedTripStatus === status.key
                         ? 'bg-muted/60 text-foreground'
