@@ -76,10 +76,10 @@ export function PhotoUpload({
             type="button"
             onClick={handleUploadClick}
             className={cn(
-              'aspect-square rounded-lg border-2 border-dashed',
+              'aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25',
               'flex flex-col items-center justify-center gap-2',
               'transition-colors hover:border-primary/50',
-              'bg-[rgb(209,215,224)] hover:bg-[rgb(209,215,224)]/80'
+              'bg-muted hover:bg-muted/80'
             )}
           >
             <ImagePlus className="h-8 w-8 text-muted-foreground" />
