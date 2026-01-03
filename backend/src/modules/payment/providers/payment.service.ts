@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { payosConfig } from '@/config/payment.config';
+import { appConfig } from '@/config/app.config';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { PayOS, Webhook } from '@payos/node';
+import QRCode from 'qrcode';
 import { CreatePaymentDto } from '../dtos/create-payment.dto';
 import { BookingService } from '@/modules/booking/booking.service';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
@@ -21,6 +23,8 @@ export class PaymentService {
   constructor(
     @Inject(payosConfig.KEY)
     private readonly payosConfiguration: ConfigType<typeof payosConfig>,
+    @Inject(appConfig.KEY)
+    private readonly appConfiguration: ConfigType<typeof appConfig>,
     private readonly bookingService: BookingService,
     private readonly paymentRepository: PaymentRepository,
     private readonly paymentEmailProvider: PaymentEmailProvider,
@@ -67,8 +71,9 @@ export class PaymentService {
   }
 
   private buildManageBookingUrl(bookingId: string) {
-    // Frontend base URL not configured; return undefined to avoid invalid links.
-    return bookingId;
+    const base = this.appConfiguration.frontendUrl?.replace(/\/$/, '');
+    if (!base) return undefined;
+    return `${base}/upcoming-trip/${bookingId}`;
   }
 
   private buildPaymentInitiatedPayload(
@@ -96,11 +101,34 @@ export class PaymentService {
     };
   }
 
-  private buildPaymentSuccessPayload(
+  private async buildPaymentSuccessPayload(
     booking: Booking,
     payment: Payment,
     transactionRef: string,
   ) {
+    const base = this.appConfiguration.frontendUrl?.replace(/\/$/, '');
+    const verifyTicketUrl =
+      base && booking.ticketToken
+        ? `${base}/ticket/verify/${booking.ticketToken}`
+        : undefined;
+
+    let verifyTicketQrBase64: string | undefined;
+    if (verifyTicketUrl) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        verifyTicketQrBase64 = await (QRCode as any).toDataURL(
+          verifyTicketUrl,
+          {
+            errorCorrectionLevel: 'H',
+            type: 'image/png',
+            width: 200,
+          },
+        );
+      } catch (err) {
+        console.error('Failed to generate QR code:', err);
+      }
+    }
+
     return {
       bookingId: booking.id,
       bookingReference: booking.bookingReference,
@@ -114,6 +142,8 @@ export class PaymentService {
       amount: Number(payment.amount),
       orderCode: payment.orderCode,
       transactionRef,
+      verifyTicketUrl,
+      verifyTicketQrBase64,
       manageBookingUrl: this.buildManageBookingUrl(booking.id),
     };
   }
@@ -176,7 +206,7 @@ export class PaymentService {
       });
 
       // Best-effort payment initiation email
-      const checkoutUrl =
+      const checkoutUrl: string =
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (response as any).checkoutUrl ||
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -253,13 +283,14 @@ export class PaymentService {
         payment.booking.user?.email;
 
       if (to) {
+        const emailPayload = await this.buildPaymentSuccessPayload(
+          bookingDetail,
+          updatedPayment || payment,
+          webhookData.reference,
+        );
         await this.paymentEmailProvider.sendPaymentSuccessEmail(
           to,
-          this.buildPaymentSuccessPayload(
-            bookingDetail,
-            updatedPayment || payment,
-            webhookData.reference,
-          ),
+          emailPayload,
         );
       }
 

@@ -5,13 +5,25 @@ import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft,
   Clock,
+  Download,
   MapPin,
   Ticket,
   UserRound,
   Calendar,
   Wallet,
+  QrCode,
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
+import type { Socket } from 'socket.io-client';
+import { getSocket } from '@/lib/socket';
+import { useUserStore } from '@/stores/user';
+import { bookingDetailResponseSchema } from '@/schemas/booking/booking.response';
+import QRCode from 'react-qr-code';
+import ETicketTemplate from '@/components/eticket/ETicketTemplate';
+import { generateETicketPDF } from '@/services/pdf/eticketService';
 
 function formatCurrency(amount?: number) {
   if (amount === undefined) return '--';
@@ -33,12 +45,82 @@ function formatDateTime(iso?: string) {
   });
 }
 
+// Simple schema for trip status update event from backend
+const tripStatusUpdateEventSchema = z.object({
+  tripId: z.string(),
+  oldStatus: z.string(),
+  newStatus: z.string(),
+  trip: z.object({
+    id: z.string(),
+    status: z.string(),
+  }),
+  timestamp: z.string().or(z.date()),
+});
+
+type BookingDetailResponse = z.infer<typeof bookingDetailResponseSchema>;
+
 export default function UpcomingTripDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const user = useUserStore((s) => s.me);
+  const queryClient = useQueryClient();
+  const socketRef = useRef<Socket | null>(null);
+  const pdfTemplateRef = useRef<HTMLDivElement>(null);
+  const [showQRCode, setShowQRCode] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!pdfTemplateRef.current || !data) return;
+    try {
+      await generateETicketPDF(
+        pdfTemplateRef.current,
+        data.bookingReference || data.bookingId
+      );
+    } catch (err) {
+      console.error('Failed to download ticket PDF', err);
+    }
+  };
 
   const { bookingDetail } = useBooking(undefined, id);
   const { data, isLoading, isError } = bookingDetail;
+
+  // Listen for realtime trip status updates
+  useEffect(() => {
+    const socket = getSocket(user?.id ?? undefined);
+    socketRef.current = socket;
+
+    const handleTripStatusUpdate = (eventData: unknown) => {
+      // Validate event data
+      const result = tripStatusUpdateEventSchema.safeParse(eventData);
+      if (!result.success) {
+        console.warn('Invalid trip status update event:', result.error);
+        return;
+      }
+
+      const event = result.data;
+
+      // Update booking detail cache
+      queryClient.setQueriesData<BookingDetailResponse>(
+        { queryKey: ['booking', id] },
+        (oldData) => {
+          if (!oldData || oldData.trip.id !== event.tripId) return oldData;
+
+          return {
+            ...oldData,
+            trip: {
+              ...oldData.trip,
+              status: event.newStatus,
+            },
+          };
+        }
+      );
+    };
+
+    socket.on('trip:status.updated', handleTripStatusUpdate);
+
+    return () => {
+      socket.off('trip:status.updated', handleTripStatusUpdate);
+    };
+  }, [id, user?.id, queryClient]);
 
   if (isLoading) {
     return (
@@ -59,7 +141,7 @@ export default function UpcomingTripDetail() {
           <Button
             variant="ghost"
             className="inline-flex items-center gap-2"
-            onClick={() => navigate('/upcoming-trip')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" /> Back to list
           </Button>
@@ -96,8 +178,26 @@ export default function UpcomingTripDetail() {
               </Button>
               <span>Booking Detail</span>
             </div>
-            <CardTitle className="text-2xl">
-              {trip.origin} → {trip.destination}
+            <CardTitle className="text-2xl inline-flex items-center gap-3">
+              <span>
+                {trip.origin} → {trip.destination}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    trip.status.toLowerCase() === 'scheduled'
+                      ? 'bg-green-500'
+                      : trip.status.toLowerCase() === 'cancelled'
+                      ? 'bg-red-500'
+                      : trip.status.toLowerCase() === 'completed'
+                      ? 'bg-gray-500'
+                      : trip.status.toLowerCase() === 'archived'
+                      ? 'bg-slate-500'
+                      : 'bg-blue-500'
+                  }`}
+                />
+                {trip.status}
+              </span>
             </CardTitle>
             <div className="text-sm text-muted-foreground">
               Booking Reference: {data.bookingReference || data.bookingId}
@@ -226,6 +326,84 @@ export default function UpcomingTripDetail() {
                   >
                     Pay Now
                   </Button>
+                </div>
+              </>
+            )}
+
+            {data.status === 'paid' && data.ticketVerifyUrl && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <QrCode className="h-4 w-4" />
+                      Ticket QR Code
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownloadPDF}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Ticket
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowQRCode(!showQRCode)}
+                      >
+                        {showQRCode ? 'Hide' : 'Show'} QR Code
+                      </Button>
+                    </div>
+                  </div>
+                  {showQRCode && (
+                    <div className="flex justify-center p-4 bg-muted rounded-lg">
+                      <QRCode
+                        value={data.ticketVerifyUrl}
+                        size={256}
+                        level="H"
+                      />
+                    </div>
+                  )}
+
+                  {/* Hidden template for PDF generation */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '-10000px',
+                      top: '-10000px',
+                      overflow: 'hidden',
+                      pointerEvents: 'none',
+                      opacity: 0,
+                    }}
+                  >
+                    <div ref={pdfTemplateRef}>
+                      <ETicketTemplate
+                        bookingReference={
+                          data.bookingReference || data.bookingId
+                        }
+                        bookingId={data.bookingId}
+                        status={data.status}
+                        origin={trip.origin}
+                        destination={trip.destination}
+                        departureTime={new Date(trip.departureTime)}
+                        arrivalTime={
+                          trip.arrivalTime
+                            ? new Date(trip.arrivalTime)
+                            : undefined
+                        }
+                        passengers={data.passengers}
+                        totalAmount={data.totalAmount}
+                        ticketVerifyUrl={data.ticketVerifyUrl}
+                        name={data.name || ''}
+                        email={data.email || ''}
+                        phone={data.phone || ''}
+                        pickupPoint={pickupPoint?.name}
+                        dropoffPoint={dropoffPoint?.name}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}

@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   BusFront,
   ChartNoAxesCombined,
-  Command,
+  Ticket,
   LifeBuoy,
   Map,
   PieChart,
@@ -79,11 +79,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton size="lg" asChild>
                 <a href="/">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <Command className="size-4" />
+                    <Ticket className="size-4" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">User Dashboard</span>
-                    <span className="truncate text-xs">Your trips</span>
+                    <span className="truncate font-medium">
+                      Bus Ticket Booking
+                    </span>
+                    <span className="truncate text-xs">Travel made simple</span>
                   </div>
                 </a>
               </SidebarMenuButton>

@@ -39,6 +39,8 @@ export type PaymentInitiatedParams = BasePaymentParams & {
 export type PaymentSuccessParams = BasePaymentParams & {
   transactionRef: string;
   manageBookingUrl?: string;
+  verifyTicketUrl?: string;
+  verifyTicketQrBase64?: string;
 };
 
 export type PaymentFailedParams = BasePaymentParams & {
@@ -208,8 +210,16 @@ export function getPaymentSuccessTemplate(params: PaymentSuccessParams) {
 
       <p style="margin-top:16px;color:${colors.muted};font-size:13px;">Booking reference: ${params.bookingReference || params.bookingId}</p>
       ${
+        params.verifyTicketQrBase64
+          ? `<div style="margin-top:16px;text-align:center;">
+              <div style="font-size:12px;color:${colors.muted};text-transform:uppercase;letter-spacing:0.03em;margin-bottom:8px;">E-Ticket QR Code</div>
+              <img src="${params.verifyTicketQrBase64}" alt="E-Ticket QR Code" style="max-width:200px;height:auto;border:1px solid ${colors.border};border-radius:8px;padding:8px;background:#fff;" />
+            </div>`
+          : ''
+      }
+      ${
         params.manageBookingUrl
-          ? `<a style="display:inline-block;margin-top:10px;color:${colors.primary};text-decoration:none;font-weight:700;" href="${params.manageBookingUrl}">View your e-ticket</a>`
+          ? `<div style="margin-top:10px;text-align:center;"><a style="color:${colors.primary};text-decoration:none;font-weight:700;" href="${params.manageBookingUrl}">View your e-ticket</a></div>`
           : ''
       }
     </div>

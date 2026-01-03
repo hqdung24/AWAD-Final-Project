@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useBooking } from '@/hooks/useBooking';
 import type { BookingListItem } from '@/schemas/booking/booking.response';
+import { type BookingListResponse } from '@/schemas/booking/booking.response';
 import type {
   SeatChange,
   UpdateBookingRequest,
@@ -40,13 +41,28 @@ import {
 import { useUserStore } from '@/stores/user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, Clock, MapPin, Pencil, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useQueryClient } from '@tanstack/react-query';
+import type { Socket } from 'socket.io-client';
+import { getSocket } from '@/lib/socket';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
+
+// Simple schema for trip status update event from backend
+const tripStatusUpdateEventSchema = z.object({
+  tripId: z.string(),
+  oldStatus: z.string(),
+  newStatus: z.string(),
+  trip: z.object({
+    id: z.string(),
+    status: z.string(),
+  }),
+  timestamp: z.string().or(z.date()),
+});
 
 const editBookingSchema = z.object({
   contact: z.object({
@@ -72,6 +88,8 @@ type EditBookingForm = z.infer<typeof editBookingSchema>;
 function UserDashboard() {
   const navigate = useNavigate();
   const user = useUserStore((s) => s.me);
+  const queryClient = useQueryClient();
+  const socketRef = useRef<Socket | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('all');
   const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
   const { bookingList, cancelBooking, updateBooking, changeSeats } = useBooking(
@@ -110,6 +128,73 @@ function UserDashboard() {
     { key: 'expired', label: 'Expired' },
     { key: 'cancelled', label: 'Cancelled' },
   ];
+
+  // Listen for realtime trip status updates
+  useEffect(() => {
+    const socket = getSocket(user?.id ?? undefined);
+    socketRef.current = socket;
+
+    const handleTripStatusUpdate = (data: unknown) => {
+      // Validate event data
+      const result = tripStatusUpdateEventSchema.safeParse(data);
+      if (!result.success) {
+        console.warn('Invalid trip status update event:', result.error);
+        return;
+      }
+
+      const event = result.data;
+
+      // Update the bookings list cache
+      queryClient.setQueriesData<BookingListResponse>(
+        { queryKey: ['bookings'] },
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            data: oldData.data.map((booking) =>
+              booking.trip.id === event.tripId
+                ? {
+                    ...booking,
+                    trip: {
+                      ...booking.trip,
+                      status: event.newStatus,
+                    },
+                  }
+                : booking
+            ),
+          };
+        }
+      );
+
+      queryClient.setQueriesData(
+        { queryKey: ['booking'] },
+        (oldData: unknown) => {
+          const data = oldData as Record<string, unknown> | undefined;
+          if (!data || typeof data.trip !== 'object' || !data.trip)
+            return oldData;
+
+          const trip = data.trip as Record<string, unknown>;
+          if (trip.id === event.tripId) {
+            return {
+              ...data,
+              trip: {
+                ...trip,
+                status: event.newStatus,
+              },
+            };
+          }
+          return oldData;
+        }
+      );
+    };
+
+    socket.on('trip:status.updated', handleTripStatusUpdate);
+
+    return () => {
+      socket.off('trip:status.updated', handleTripStatusUpdate);
+    };
+  }, [user?.id, queryClient]);
 
   const handleCancel = (id: string, status: BookingStatus) => {
     if (status !== 'pending') return;
@@ -239,10 +324,11 @@ function UserDashboard() {
         day: '2-digit',
         month: '2-digit',
       }),
-      seats: b.seats.map((s) => s.seatCode).join(', '),
+      seats: b.passengers.map((s) => s.seatCode).join(', '),
       bookingId: b.id,
       bookingRef: b.bookingReference || b.id,
       status: b.status as BookingStatus,
+      tripStatus: b.trip.status,
       canEdit: canEditBooking(b),
     }));
 
@@ -317,8 +403,24 @@ function UserDashboard() {
               <Card key={trip.bookingId} className="shadow-sm">
                 <CardHeader className="flex flex-row items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg font-semibold">
-                      {trip.route}
+                    <CardTitle className="text-lg font-semibold inline-flex items-center gap-3">
+                      <span>{trip.route}</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            trip.tripStatus.toLowerCase() === 'scheduled'
+                              ? 'bg-blue-500'
+                              : trip.tripStatus.toLowerCase() === 'cancelled'
+                              ? 'bg-red-500'
+                              : trip.tripStatus.toLowerCase() === 'completed'
+                              ? 'bg-gray-500'
+                              : trip.tripStatus.toLowerCase() === 'archived'
+                              ? 'bg-slate-500'
+                              : 'bg-green-500'
+                          }`}
+                        />
+                        {trip.tripStatus}
+                      </span>
                     </CardTitle>
                     <p className="text-muted-foreground text-sm flex items-center gap-2">
                       <Clock className="h-4 w-4" />
@@ -333,20 +435,22 @@ function UserDashboard() {
                       Booking ref: {trip.bookingRef}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={statusBadgeClass[trip.status]}>
-                      {trip.status}
-                    </Badge>
-                    {trip.canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditModal(trip.booking)}
-                        aria-label="Edit booking"
-                      >
-                        {trip.canEdit && <Pencil className="h-4 w-4" />}
-                      </Button>
-                    )}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className={statusBadgeClass[trip.status]}>
+                        {trip.status}
+                      </Badge>
+                      {trip.canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditModal(trip.booking)}
+                          aria-label="Edit booking"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">

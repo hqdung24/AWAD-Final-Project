@@ -91,6 +91,7 @@ export const bookingDetailResponseSchema = z.object({
   createdAt: z.string().datetime(),
   pickupPoint: routePointSelectionSchema.nullable().optional(),
   dropoffPoint: routePointSelectionSchema.nullable().optional(),
+  ticketVerifyUrl: z.string().optional().nullable(),
 });
 
 // Error response schema

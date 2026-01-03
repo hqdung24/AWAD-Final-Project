@@ -20,6 +20,7 @@ import { NotificationType } from '@/modules/notification/enums/notification.enum
 import type { NotificationCreateEventPayload } from '@/modules/notification/dto/notification-event.dto';
 import { BookingEmailProvider } from './providers/booking-email.provider';
 import { appConfig } from '@/config/app.config';
+import { TicketTokenService } from './services/ticket-token.service';
 
 @Injectable()
 export class BookingService {
@@ -27,6 +28,7 @@ export class BookingService {
   constructor(
     private readonly bookingRepository: BookingRepository,
     private readonly bookingProvider: BookingProvider,
+    private readonly ticketTokenService: TicketTokenService,
     @Inject(bookingConfig.KEY)
     private readonly bookingConfiguration: ConfigType<typeof bookingConfig>,
     private readonly eventEmitter: EventEmitter2,
@@ -54,6 +56,32 @@ export class BookingService {
         `Booking can only be modified at least ${cutoffHours} hours before departure`,
       );
     }
+  }
+
+  /**
+   * Ensure booking has a ticket token for eligible bookings (PAID status)
+   * Generates token lazily on first fetch if not already generated
+   * Returns the raw token to include in the verify URL
+   */
+  private async ensureTicketToken(booking: Booking): Promise<string | null> {
+    // Only generate tokens for paid bookings
+    if (booking.status !== 'paid') {
+      return null;
+    }
+
+    // If token already exists, return it
+    if (booking.ticketToken) {
+      return booking.ticketToken;
+    }
+
+    // Generate new token and save to DB
+    const { rawToken } = this.ticketTokenService.generateToken();
+    await this.bookingRepository.updateTicketToken(
+      booking.id,
+      rawToken,
+      new Date(),
+    );
+    return rawToken;
   }
 
   /**
@@ -109,13 +137,28 @@ export class BookingService {
     return await this.bookingRepository.findAllWithFilters(query);
   }
 
-  async getBookingDetail(id: string): Promise<Booking> {
+  async getBookingDetail(
+    id: string,
+  ): Promise<Booking & { ticketVerifyUrl?: string | null }> {
     const booking = await this.bookingRepository.findDetailById(id);
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
 
-    return booking;
+    // Ensure ticket token is generated for eligible bookings
+    const rawToken = await this.ensureTicketToken(booking);
+
+    // Build the response with ticket verify URL if applicable
+    const response: Booking & { ticketVerifyUrl?: string | null } = {
+      ...booking,
+    };
+
+    if (booking.status === 'paid' && rawToken) {
+      const appUrl = this.appConfiguration.frontendUrl || '';
+      response.ticketVerifyUrl = `${appUrl}/ticket/verify/${rawToken}`;
+    }
+
+    return response;
   }
 
   async updateBooking(id: string, dto: UpdateBookingDto): Promise<Booking> {
@@ -214,18 +257,19 @@ export class BookingService {
     const seatsFromPassengers = (bookingDetail.passengerDetails || [])
       .map((passenger) => passenger.seatCode)
       .filter((code): code is string => Boolean(code));
-    const seats = seatsFromStatuses.length > 0 ? seatsFromStatuses : seatsFromPassengers;
+    const seats =
+      seatsFromStatuses.length > 0 ? seatsFromStatuses : seatsFromPassengers;
 
     if (status === 'cancelled') {
       await this.bookingRepository.releaseSeatsByBookingId(id);
       if (contactEmail) {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.bookingEmailProvider.sendBookingCancelledEmail(contactEmail, {
+        void this.bookingEmailProvider.sendBookingCancelledEmail(contactEmail, {
           bookingId: bookingDetail.id,
           bookingReference: bookingDetail.bookingReference,
           origin: bookingDetail.trip?.route?.origin || 'Unknown',
           destination: bookingDetail.trip?.route?.destination || 'Unknown',
-          departureTime: bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
+          departureTime:
+            bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
           seats,
           contact: {
             name: bookingDetail.name,
@@ -247,30 +291,33 @@ export class BookingService {
         const paymentUrl = `${this.appConfiguration.frontendUrl}/payment/${bookingDetail.id}`;
         const manageBookingUrl = `${this.appConfiguration.frontendUrl}/upcoming-trip/${bookingDetail.id}`;
 
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.bookingEmailProvider.sendBookingConfirmationEmail(contactEmail, {
-          bookingId: bookingDetail.id,
-          bookingReference: bookingDetail.bookingReference,
-          origin: bookingDetail.trip?.route?.origin || 'Unknown',
-          destination: bookingDetail.trip?.route?.destination || 'Unknown',
-          departureTime: bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
-          arrivalTime: bookingDetail.trip?.arrivalTime?.toISOString?.(),
-          seats,
-          passengers: (bookingDetail.passengerDetails || []).map((p) => ({
-            fullName: p.fullName,
-            seatCode: p.seatCode,
-            documentId: p.documentId,
-          })),
-          contact: {
-            name: bookingDetail.name,
-            email: bookingDetail.email,
-            phone: bookingDetail.phone,
+        void this.bookingEmailProvider.sendBookingConfirmationEmail(
+          contactEmail,
+          {
+            bookingId: bookingDetail.id,
+            bookingReference: bookingDetail.bookingReference,
+            origin: bookingDetail.trip?.route?.origin || 'Unknown',
+            destination: bookingDetail.trip?.route?.destination || 'Unknown',
+            departureTime:
+              bookingDetail.trip?.departureTime?.toISOString?.() ?? '',
+            arrivalTime: bookingDetail.trip?.arrivalTime?.toISOString?.(),
+            seats,
+            passengers: (bookingDetail.passengerDetails || []).map((p) => ({
+              fullName: p.fullName,
+              seatCode: p.seatCode,
+              documentId: p.documentId,
+            })),
+            contact: {
+              name: bookingDetail.name,
+              email: bookingDetail.email,
+              phone: bookingDetail.phone,
+            },
+            totalAmount: Number(bookingDetail.totalAmount),
+            paymentDeadline,
+            paymentUrl,
+            manageBookingUrl,
           },
-          totalAmount: Number(bookingDetail.totalAmount),
-          paymentDeadline,
-          paymentUrl,
-          manageBookingUrl,
-        });
+        );
       }
     }
 
