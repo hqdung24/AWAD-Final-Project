@@ -2,7 +2,7 @@ import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { CreateTripDto } from './create-trip.dto';
 import { IsEnum, IsOptional } from 'class-validator';
 
-enum TripStatus {
+export enum TripStatus {
   SCHEDULED = 'scheduled',
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
