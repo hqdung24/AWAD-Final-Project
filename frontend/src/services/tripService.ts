@@ -141,3 +141,24 @@ export async function getTripDetails(id: string): Promise<TripDetails> {
   const res = await http.get(`/trips/${id}`);
   return (res as { data: TripDetails }).data;
 }
+
+export interface RelatedTrip {
+  id: string;
+  from: string;
+  to: string;
+  departureTime: string;
+  arrivalTime: string;
+  duration: string;
+  price: number;
+  busType: string;
+  company: string;
+  amenities: string[];
+  seatsAvailable: number;
+  busModel?: string;
+  plateNumber?: string;
+}
+
+export async function getRelatedTrips(tripId: string): Promise<RelatedTrip[]> {
+  const res = await http.get(`/trips/${tripId}/related`);
+  return (res as { data: RelatedTrip[] }).data;
+}

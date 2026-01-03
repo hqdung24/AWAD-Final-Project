@@ -26,6 +26,7 @@ import {
 import { getTripDetails } from '@/services/tripService';
 import { notify } from '@/lib/notify';
 import { useEffect } from 'react';
+import { RelatedTrips } from '@/components/search/RelatedTrips';
 
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
@@ -475,6 +476,9 @@ export default function TripDetails() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Related Trips */}
+            {id && <RelatedTrips currentTripId={id} />}
           </div>
 
           {/* Right Column - Booking Summary */}

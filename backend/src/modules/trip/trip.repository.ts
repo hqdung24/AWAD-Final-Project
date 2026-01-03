@@ -293,4 +293,45 @@ export class TripRepository {
       .execute();
     return result.affected ?? 0;
   }
+
+  async findRelatedTrips(
+    tripId: string,
+    routeId: string,
+    departureTime: Date,
+    basePrice: number,
+    limit: number = 6,
+  ): Promise<Trip[]> {
+    // Calculate date range (±3 days)
+    const startDate = new Date(departureTime);
+    startDate.setDate(startDate.getDate() - 3);
+    const endDate = new Date(departureTime);
+    endDate.setDate(endDate.getDate() + 3);
+
+    // Calculate price range (±30%)
+    const minPrice = basePrice * 0.7;
+    const maxPrice = basePrice * 1.3;
+
+    return await this.repository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.route', 'route')
+      .leftJoinAndSelect('route.operator', 'operator')
+      .leftJoinAndSelect('trip.bus', 'bus')
+      .leftJoinAndSelect('bus.operator', 'busOperator')
+      .leftJoinAndSelect('trip.seatStatuses', 'seatStatus')
+      .where('trip.id != :tripId', { tripId })
+      .andWhere('trip.routeId = :routeId', { routeId })
+      .andWhere('trip.status = :status', { status: 'scheduled' })
+      .andWhere('trip.departureTime BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('trip.basePrice BETWEEN :minPrice AND :maxPrice', {
+        minPrice,
+        maxPrice,
+      })
+      .andWhere('trip.departureTime > :now', { now: new Date() })
+      .orderBy('trip.departureTime', 'ASC')
+      .take(limit)
+      .getMany();
+  }
 }

@@ -256,4 +256,48 @@ export class TripController {
   async getTripDetails(@Param() params: TripIdDto) {
     return await this.tripService.getTripDetails(params.id);
   }
+
+  @Get(':id/related')
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get related trips (Public)',
+    description:
+      'Public endpoint to retrieve related trips for a specific trip based on same route, similar dates (±3 days), and similar price range (±30%). Results are cached in Redis for 5 minutes.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Trip UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Related trips retrieved successfully',
+    schema: {
+      example: [
+        {
+          id: 'uuid',
+          from: 'TP.HCM',
+          to: 'Đà Lạt',
+          departureTime: '2025-12-06T08:00:00Z',
+          arrivalTime: '2025-12-06T14:30:00Z',
+          duration: '6h 30m',
+          price: 260000,
+          busType: 'Sleeper',
+          company: 'Phương Trang',
+          amenities: ['wifi', 'air_conditioning'],
+          seatsAvailable: 20,
+          busModel: 'Thaco Universe',
+          plateNumber: '51A-222.22',
+        },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Trip not found',
+  })
+  async getRelatedTrips(@Param() params: TripIdDto) {
+    return await this.tripService.getRelatedTrips(params.id);
+  }
 }

@@ -14,6 +14,7 @@ import { MediaType } from '@/modules/media/enums/media-type.enum';
 import { NotificationType } from '../notification/enums/notification.enum';
 import { BookingRepository } from '@/modules/booking/booking.repository';
 import { BookingEmailProvider } from '@/modules/booking/providers/booking-email.provider';
+import { RedisService } from '@/modules/redis/redis.service';
 
 @Injectable()
 export class TripService {
@@ -26,6 +27,7 @@ export class TripService {
     private readonly eventEmitter: EventEmitter2,
     private readonly bookingRepository: BookingRepository,
     private readonly bookingEmailProvider: BookingEmailProvider,
+    private readonly redisService: RedisService,
   ) {}
 
   async createTrip(createTripDto: CreateTripDto): Promise<Trip> {
@@ -451,5 +453,66 @@ export class TripService {
     } catch {
       return [];
     }
+  }
+
+  async getRelatedTrips(tripId: string): Promise<any[]> {
+    // Try to get from Redis cache first
+    const cacheKey = `related_trips:${tripId}`;
+    const cached = await this.redisService.get(cacheKey);
+    
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        // If parse fails, continue to fetch from DB
+      }
+    }
+
+    // Get the current trip details
+    const currentTrip = await this.tripRepository.findById(tripId);
+    
+    if (!currentTrip) {
+      throw new NotFoundException(`Trip with ID ${tripId} not found`);
+    }
+
+    // Find related trips
+    const relatedTrips = await this.tripRepository.findRelatedTrips(
+      tripId,
+      currentTrip.routeId,
+      currentTrip.departureTime,
+      Number(currentTrip.basePrice),
+      6,
+    );
+
+    // Transform trips to include bus and route details (same format as searchTrips)
+    const formattedTrips = relatedTrips.map((trip) => {
+      const availableSeats =
+        trip.seatStatuses?.filter((ss) => ss.state === 'available').length || 0;
+
+      return {
+        id: trip.id,
+        from: trip.route?.origin || '',
+        to: trip.route?.destination || '',
+        departureTime: trip.departureTime,
+        arrivalTime: trip.arrivalTime,
+        duration: this.calculateDuration(trip.departureTime, trip.arrivalTime),
+        price: Number(trip.basePrice),
+        busType: trip.bus?.busType || 'Standard',
+        company: trip.bus?.operator?.name || 'Unknown',
+        amenities: this.parseAmenities(trip.bus?.amenitiesJson),
+        seatsAvailable: availableSeats,
+        busModel: trip.bus?.model,
+        plateNumber: trip.bus?.plateNumber,
+      };
+    });
+
+    // Cache the results for 5 minutes (300 seconds)
+    await this.redisService.set(
+      cacheKey,
+      JSON.stringify(formattedTrips),
+      300,
+    );
+
+    return formattedTrips;
   }
 }

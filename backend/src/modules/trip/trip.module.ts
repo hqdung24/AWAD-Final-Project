@@ -12,6 +12,8 @@ import { SeatModule } from '@/modules/seat/seat.module';
 import { SeatStatusModule } from '@/modules/seat-status/seat-status.module';
 import { MediaModule } from '@/modules/media/media.module';
 import { BookingModule } from '@/modules/booking/booking.module';
+import { RedisModule } from '@/modules/redis/redis.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Trip]),
@@ -21,6 +23,7 @@ import { BookingModule } from '@/modules/booking/booking.module';
     SeatStatusModule,
     MediaModule,
     BookingModule,
+    RedisModule,
   ],
   controllers: [TripController],
   providers: [
