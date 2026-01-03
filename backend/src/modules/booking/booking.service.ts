@@ -59,13 +59,13 @@ export class BookingService {
   }
 
   /**
-   * Ensure booking has a ticket token for eligible bookings (PAID status)
+   * Ensure booking has a ticket token for eligible bookings (PAID or REVIEWED status)
    * Generates token lazily on first fetch if not already generated
    * Returns the raw token to include in the verify URL
    */
   private async ensureTicketToken(booking: Booking): Promise<string | null> {
-    // Only generate tokens for paid bookings
-    if (booking.status !== 'paid') {
+    // Only generate tokens for paid or reviewed bookings
+    if (booking.status !== 'paid' && booking.status !== 'reviewed') {
       return null;
     }
 

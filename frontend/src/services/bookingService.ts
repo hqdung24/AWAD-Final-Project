@@ -73,7 +73,7 @@ export async function changeBookingSeats(
 
 export async function updateBookingStatus(
   bookingId: string,
-  status: 'pending' | 'paid' | 'cancelled' | 'expired'
+  status: 'pending' | 'paid' | 'cancelled' | 'expired' | 'reviewed'
 ): Promise<{ bookingId: string; status: string }> {
   const res = await http.patch(`/booking/${bookingId}/status`, { status });
   return (res as { data: { bookingId: string; status: string } }).data;

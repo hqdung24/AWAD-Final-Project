@@ -4312,7 +4312,8 @@
               "pending",
               "paid",
               "cancelled",
-              "expired"
+              "expired",
+              "reviewed"
             ]
           },
           "seats": {
@@ -4503,7 +4504,8 @@
               "pending",
               "paid",
               "cancelled",
-              "expired"
+              "expired",
+              "reviewed"
             ]
           },
           "totalAmount": {

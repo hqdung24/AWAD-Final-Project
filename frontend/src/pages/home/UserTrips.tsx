@@ -51,7 +51,7 @@ import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/lib/socket';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
-type TripStatus = 'scheduled' | 'in-progress' | 'completed' | 'cancelled' | 'archived';
+type TripStatus = 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
 
 // Simple schema for trip status update event from backend
 const tripStatusUpdateEventSchema = z.object({
@@ -136,7 +136,6 @@ function UserDashboard() {
     { key: 'in-progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
-    { key: 'archived', label: 'Archived' },
   ];
 
   // Listen for realtime trip status updates
@@ -313,8 +312,7 @@ function UserDashboard() {
     if (
       b.status === 'expired' ||
       b.status === 'cancelled' ||
-      b.status === 'paid' ||
-      b.trip.status === 'archived'
+      b.status === 'paid'
     )
       return false;
     const dep = new Date(b.trip.departureTime).getTime();
@@ -432,8 +430,6 @@ function UserDashboard() {
                               ? 'bg-red-500'
                               : trip.tripStatus.toLowerCase() === 'completed'
                               ? 'bg-gray-500'
-                              : trip.tripStatus.toLowerCase() === 'archived'
-                              ? 'bg-slate-500'
                               : 'bg-green-500'
                           }`}
                         />

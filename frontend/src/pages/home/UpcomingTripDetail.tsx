@@ -83,6 +83,9 @@ export default function UpcomingTripDetail() {
 
   const { bookingDetail } = useBooking(undefined, id);
   const { data, isLoading, isError } = bookingDetail;
+  console.log('Booking detail data:', data?.status);
+  console.log('Ticket verify URL:', data?.ticketVerifyUrl);
+  console.log('Should show QR section:', (data?.status === 'paid' || data?.status === 'reviewed') && !!data?.ticketVerifyUrl);
 
   // Listen for realtime trip status updates
   useEffect(() => {
@@ -192,8 +195,6 @@ export default function UpcomingTripDetail() {
                       ? 'bg-red-500'
                       : trip.status.toLowerCase() === 'completed'
                       ? 'bg-gray-500'
-                      : trip.status.toLowerCase() === 'archived'
-                      ? 'bg-slate-500'
                       : 'bg-blue-500'
                   }`}
                 />
@@ -331,52 +332,68 @@ export default function UpcomingTripDetail() {
               </>
             )}
 
-            {data.status === 'paid' && data.ticketVerifyUrl && (
+            {(data.status === 'paid' || data.status === 'reviewed') && (
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <QrCode className="h-4 w-4" />
-                      Ticket QR Code
+                  {data.status === 'reviewed' ? (
+                    <div className="flex items-center justify-center">
+                      <Button
+                        variant="default"
+                        size="lg"
+                        onClick={() => navigate(`/my-reviews?highlight=${data.bookingId}`)}
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
+                      >
+                        <Star className="h-5 w-5 mr-2" />
+                        View Your Review
+                      </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDownloadPDF}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Ticket
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowQRCode(!showQRCode)}
-                      >
-                        {showQRCode ? 'Hide' : 'Show'} QR Code
-                      </Button>
-                      {trip.status === 'completed' && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => navigate(`/upcoming-trip/${id}/feedback`)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                        >
-                          <Star className="h-4 w-4 mr-2" />
-                          Review & Rate
-                        </Button>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <QrCode className="h-4 w-4" />
+                          Ticket QR Code
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDownloadPDF}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Ticket
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowQRCode(!showQRCode)}
+                          >
+                            {showQRCode ? 'Hide' : 'Show'} QR Code
+                          </Button>
+                          {trip.status === 'completed' && data.status !== 'reviewed' && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => navigate(`/upcoming-trip/${id}/feedback`)}
+                              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                            >
+                              <Star className="h-4 w-4 mr-2" />
+                              Review & Rate
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {showQRCode && (
+                        <div className="flex justify-center p-4 bg-muted rounded-lg">
+                          <QRCode
+                            value={data.ticketVerifyUrl}
+                            size={256}
+                            level="H"
+                          />
+                        </div>
                       )}
-                    </div>
-                  </div>
-                  {showQRCode && (
-                    <div className="flex justify-center p-4 bg-muted rounded-lg">
-                      <QRCode
-                        value={data.ticketVerifyUrl}
-                        size={256}
-                        level="H"
-                      />
-                    </div>
+                    </>
                   )}
 
                   {/* Hidden template for PDF generation */}

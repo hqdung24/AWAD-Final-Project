@@ -70,7 +70,7 @@ export class FeedbackService {
       dto.bookingId,
     );
     console.log('[FeedbackService] Existing feedback:', !!existingFeedback);
-    
+
     if (existingFeedback) {
       throw new BadRequestException(
         'Feedback already submitted for this booking',
@@ -81,7 +81,7 @@ export class FeedbackService {
     let photoUrls: string[] = [];
     if (photos && photos.length > 0) {
       console.log('[FeedbackService] Uploading photos:', photos.length);
-      
+
       // Validate accepted image types
       const acceptedTypes = [
         'image/jpeg',
@@ -126,10 +126,10 @@ export class FeedbackService {
     );
     console.log('[FeedbackService] Feedback created:', feedback.id);
 
-    // Update trip status to archived
-    console.log('[FeedbackService] Updating trip status to archived...');
-    await this.tripRepository.update(booking.tripId, { status: 'archived' });
-    console.log('[FeedbackService] Trip status updated to archived');
+    // Update booking status to reviewed
+    console.log('[FeedbackService] Updating booking status to reviewed...');
+    await this.bookingRepository.updateBookingStatus(dto.bookingId, 'reviewed');
+    console.log('[FeedbackService] Booking status updated to reviewed');
 
     return {
       id: feedback.id,

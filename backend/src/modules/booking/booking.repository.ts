@@ -163,7 +163,7 @@ export class BookingRepository {
 
   async updateBookingStatus(
     bookingId: string,
-    status: 'pending' | 'paid' | 'expired' | 'cancelled' | 'archived',
+    status: 'pending' | 'paid' | 'expired' | 'cancelled' | 'reviewed',
   ): Promise<Booking | null> {
     await this.repository.update(bookingId, { status });
     return this.repository.findOne({ where: { id: bookingId } });

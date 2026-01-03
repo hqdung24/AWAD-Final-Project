@@ -73,7 +73,7 @@ export class BookingListItemDto {
   @ApiProperty({
     description: 'Status',
     example: 'pending',
-    enum: ['pending', 'paid', 'cancelled', 'expired'],
+    enum: ['pending', 'paid', 'cancelled', 'expired', 'reviewed'],
   })
   status: string;
 

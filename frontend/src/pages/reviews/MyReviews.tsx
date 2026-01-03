@@ -5,6 +5,8 @@ import { useUserStore } from '@/stores/user';
 import { useQuery } from '@tanstack/react-query';
 import { http } from '@/lib/http';
 import { Calendar, MessageSquare } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 
 interface FeedbackItem {
   id: string;
@@ -37,6 +39,9 @@ function formatDateTime(iso?: string) {
 
 export default function MyReviews() {
   const user = useUserStore((s) => s.me);
+  const [searchParams] = useSearchParams();
+  const highlightBookingId = searchParams.get('highlight');
+  const highlightRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError } = useQuery<FeedbackItem[]>({
     queryKey: ['my-reviews', user?.id],
@@ -48,6 +53,20 @@ export default function MyReviews() {
     },
     enabled: !!user?.id,
   });
+
+  const reviews = data || [];
+
+  // Scroll to highlighted review - MUST be before any early returns
+  useEffect(() => {
+    if (highlightBookingId && highlightRef.current && reviews.length > 0) {
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 100);
+    }
+  }, [highlightBookingId, reviews]);
 
   if (isLoading) {
     return (
@@ -77,13 +96,10 @@ export default function MyReviews() {
     );
   }
 
-  const reviews = data || [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-6">
-          <p className="text-sm font-semibold text-primary">Your account</p>
           <h1 className="text-3xl font-bold tracking-tight">My Reviews</h1>
           <p className="text-muted-foreground text-sm mt-2">
             View all your trip reviews and feedback
@@ -104,19 +120,34 @@ export default function MyReviews() {
           </Card>
         ) : (
           <div className="grid gap-6">
-            {reviews.map((review) => (
-              <Card key={review.id} className="shadow-sm">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg font-semibold">
-                          {review.trip.origin} → {review.trip.destination}
-                        </CardTitle>
-                        <Badge variant="outline" className="text-xs">
-                          {review.trip.status}
-                        </Badge>
-                      </div>
+            {reviews.map((review) => {
+              const isHighlighted = highlightBookingId === review.bookingId;
+              return (
+                <Card 
+                  key={review.id} 
+                  ref={isHighlighted ? highlightRef : null}
+                  className={`shadow-sm transition-all duration-300 ${
+                    isHighlighted 
+                      ? 'ring-2 ring-primary border-primary bg-primary/5' 
+                      : ''
+                  }`}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-lg font-semibold">
+                            {review.trip.origin} → {review.trip.destination}
+                          </CardTitle>
+                          <Badge variant="outline" className="text-xs">
+                            {review.trip.status}
+                          </Badge>
+                          {isHighlighted && (
+                            <Badge className="bg-primary text-primary-foreground">
+                              Your Latest Review
+                            </Badge>
+                          )}
+                        </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
@@ -157,7 +188,7 @@ export default function MyReviews() {
                   {/* Comment */}
                   <div>
                     <p className="text-sm font-medium mb-2">Your Feedback</p>
-                    <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-foreground bg-muted p-4 rounded-lg border">
                       {review.comment}
                     </p>
                   </div>
@@ -184,7 +215,8 @@ export default function MyReviews() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

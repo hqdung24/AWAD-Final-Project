@@ -31,7 +31,7 @@ export class Booking {
   tripId: string;
 
   @Column()
-  status: string; // pending / paid / cancelled / expired
+  status: string; // pending / paid / cancelled / expired / reviewed
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalAmount: number;

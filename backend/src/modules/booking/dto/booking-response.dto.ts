@@ -96,7 +96,7 @@ export class CreateBookingSuccessResponseDto {
   @ApiProperty({
     description: 'Booking status',
     example: 'pending',
-    enum: ['pending', 'paid', 'cancelled', 'expired'],
+    enum: ['pending', 'paid', 'cancelled', 'expired', 'reviewed'],
   })
   status: string;
 
