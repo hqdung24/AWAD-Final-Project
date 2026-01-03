@@ -1,6 +1,7 @@
 import type { Response } from 'express';
 
-const isProd = process.env.NODE_ENV === 'production';
+const ENV = process.env.NODE_ENV;
+const isProd = ENV !== 'development' && ENV !== 'test';
 
 export const RT_COOKIE_NAME = process.env.REFRESH_COOKIE_NAME ?? 'refreshToken';
 

@@ -11,7 +11,6 @@ export const environmentValidationSchema = joi.object({
   DB_USER: joi.string().required(),
   DB_PASS: joi.string().required(),
   DB_NAME: joi.string().required(),
-  S3_BUCKET: joi.string().required(),
   GOOGLE_CLIENT_ID: joi.string().required(),
   JWT_SECRET: joi.string().required(),
   JWT_AUDIENCE: joi.string().required(),

@@ -1,13 +1,14 @@
 import { io, Socket } from 'socket.io-client';
 import { getGuestId } from './utils';
 
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+
 let socket: Socket | null = null;
 let currentUserId: string | null = null;
 
 export function getSocket(userId?: string): Socket {
   const nextUserId = userId ?? `guest:${getGuestId()}`;
 
-  // 🔁 Identity changed → force reconnect
   if (socket && currentUserId !== nextUserId) {
     socket.disconnect();
     socket = null;
@@ -15,13 +16,14 @@ export function getSocket(userId?: string): Socket {
   }
 
   if (!socket) {
-    socket = io('http://localhost:3000/realtime', {
+    socket = io(`${SOCKET_URL}/realtime`, {
       auth: {
         userId: userId ?? undefined,
         guestId: userId ? undefined : nextUserId.replace('guest:', ''),
       },
       transports: ['websocket'],
       autoConnect: true,
+      withCredentials: true,
     });
 
     currentUserId = nextUserId;
