@@ -679,7 +679,8 @@
                       "bus",
                       "route",
                       "trip",
-                      "user"
+                      "user",
+                      "feedback"
                     ]
                   },
                   "domainId": {
@@ -2949,6 +2950,127 @@
         ]
       }
     },
+    "/feedback": {
+      "post": {
+        "operationId": "FeedbackController_createFeedback",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Feedback data with optional photos",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Booking ID"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Trip rating (1-5)"
+                  },
+                  "recommendation": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Recommendation score (1-10)"
+                  },
+                  "comment": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 1000,
+                    "description": "Feedback comment"
+                  },
+                  "photos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "maxItems": 5,
+                    "description": "Photos (max 5, only JPEG/PNG/WebP/SVG)"
+                  }
+                },
+                "required": [
+                  "bookingId",
+                  "rating",
+                  "recommendation",
+                  "comment"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit feedback for a completed trip",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
+    "/feedback/booking/{bookingId}": {
+      "get": {
+        "operationId": "FeedbackController_getFeedbackByBooking",
+        "parameters": [
+          {
+            "name": "bookingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get feedback by booking ID",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
+    "/feedback/trip/{tripId}": {
+      "get": {
+        "operationId": "FeedbackController_getFeedbackByTrip",
+        "parameters": [
+          {
+            "name": "tripId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get all feedback for a trip",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
     "/reports/admin": {
       "get": {
         "operationId": "ReportController_getAdminReport",
@@ -3183,7 +3305,8 @@
               "bus",
               "route",
               "trip",
-              "user"
+              "user",
+              "feedback"
             ]
           },
           "domainId": {
@@ -3406,7 +3529,8 @@
               "bus",
               "route",
               "trip",
-              "user"
+              "user",
+              "feedback"
             ]
           },
           "domainId": {

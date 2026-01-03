@@ -23,6 +23,8 @@ import {
 } from '@/schemas/feedback/feedback.schema';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { createFeedback } from '@/services/feedbackService';
+import { useState } from 'react';
 
 function formatDateTime(iso?: string) {
   if (!iso) return '--';
@@ -39,6 +41,7 @@ function formatDateTime(iso?: string) {
 export default function TripFeedbackPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { bookingDetail } = useBooking(undefined, id);
   const { data, isLoading } = bookingDetail;
@@ -54,23 +57,26 @@ export default function TripFeedbackPage() {
   });
 
   const onSubmit = async (formData: FeedbackFormData) => {
+    if (!id) return;
+    
+    setIsSubmitting(true);
     try {
-      // TODO: Backend API Implementation
-      // - Create POST /api/feedback endpoint
-      // - Handle multipart/form-data for photo uploads
-      // - Store photos in R2/Cloudflare storage (use MediaModule)
-      // - Save feedback with bookingId, rating, recommendation, comment, photo URLs
-      // - Return success response
-      console.log('Feedback data:', formData);
+      await createFeedback({
+        bookingId: id,
+        rating: formData.rating,
+        recommendation: formData.recommendation,
+        comment: formData.comment,
+        photos: formData.photos,
+      });
       
-      // For now, show a success message
       toast.success('Thank you for your feedback!');
-      
-      // Navigate back to trip detail
       navigate(`/upcoming-trip/${id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to submit feedback:', error);
-      toast.error('Failed to submit feedback. Please try again.');
+      const errorMessage = (error as any)?.response?.data?.message || 'Failed to submit feedback. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -265,10 +271,13 @@ export default function TripFeedbackPage() {
                     type="button"
                     variant="outline"
                     onClick={handleCancel}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Submit Feedback</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                  </Button>
                 </div>
               </form>
             </Form>

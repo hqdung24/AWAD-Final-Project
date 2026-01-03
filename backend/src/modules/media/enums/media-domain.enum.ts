@@ -3,4 +3,5 @@ export enum MediaDomain {
   ROUTE = 'route',
   TRIP = 'trip',
   USER = 'user',
+  FEEDBACK = 'feedback',
 }
