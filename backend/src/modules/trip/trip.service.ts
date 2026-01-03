@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TripRepository } from './trip.repository';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -15,7 +19,7 @@ import { NotificationType } from '../notification/enums/notification.enum';
 import { BookingRepository } from '@/modules/booking/booking.repository';
 import { BookingEmailProvider } from '@/modules/booking/providers/booking-email.provider';
 import { RedisService } from '@/modules/redis/redis.service';
-
+import { TripStatus } from './dto/update-trip.dto';
 @Injectable()
 export class TripService {
   constructor(
@@ -101,6 +105,44 @@ export class TripService {
     return trip;
   }
 
+  private async emitTripStatusChangeEvents(
+    tripId: string,
+    oldStatus: string,
+    newStatus: string,
+    updatedTrip: Trip,
+  ): Promise<void> {
+    // Get all bookings for this trip to notify passengers
+    const trip = await this.tripRepository.findBookingsByTripId(tripId);
+    const bookings = trip ? trip.bookings : [];
+
+    // Emit event for each user with a booking on this trip
+    const validBookings = bookings.filter(
+      (b) => b.userId && b.status !== 'cancelled' && b.status !== 'expired',
+    );
+
+    for (const booking of validBookings) {
+      this.eventEmitter.emit('notification.create', {
+        userId: booking.userId,
+        type: NotificationType.TRIP_LIVE_UPDATE,
+        payload: {
+          tripId,
+          bookingId: booking.id,
+          bookingRef: booking.bookingReference,
+          message: `Trip status for booking ${booking.bookingReference} has been updated to ${newStatus}`,
+        },
+      });
+    }
+
+    // Emit trip status update event for realtime broadcast
+    this.eventEmitter.emit('trip.status.updated', {
+      tripId,
+      oldStatus,
+      newStatus,
+      trip: updatedTrip,
+      timestamp: new Date(),
+    });
+  }
+
   async updateTrip(id: string, updateTripDto: UpdateTripDto): Promise<Trip> {
     // Check if trip exists
     const existingTrip = await this.getTripById(id);
@@ -154,7 +196,7 @@ export class TripService {
 
     // If reactivating a trip, revalidate bus scheduling for the existing time
     if (
-      updateTripDto.status === 'scheduled' &&
+      updateTripDto.status === TripStatus.SCHEDULED &&
       existingTrip.status !== 'scheduled' &&
       !updateTripDto.busId &&
       !updateTripDto.departureTime &&
@@ -205,36 +247,12 @@ export class TripService {
 
     // Emit events if status changed
     if (statusChanged && updatedTrip) {
-      // Get all bookings for this trip to notify passengers
-      const trip = await this.tripRepository.findBookingsByTripId(id);
-      const bookings = trip ? trip.bookings : [];
-      console.log('🚀 Updated bookings: ', bookings); // DEBUG
-      // Emit event for each user with a booking on this trip
-      const validBookings = bookings.filter(
-        (b) => b.userId && b.status !== 'cancelled' && b.status !== 'expired',
-      );
-
-      for (const booking of validBookings) {
-        this.eventEmitter.emit('notification.create', {
-          userId: booking.userId,
-          type: NotificationType.TRIP_LIVE_UPDATE,
-          payload: {
-            tripId: id,
-            bookingId: booking.id,
-            bookingRef: booking.bookingReference,
-            message: `Trip status for booking ${booking.bookingReference} has been updated to ${newStatus}`,
-          },
-        });
-      }
-
-      // Emit trip status update event for realtime broadcast
-      this.eventEmitter.emit('trip.status.updated', {
-        tripId: id,
+      await this.emitTripStatusChangeEvents(
+        id,
         oldStatus,
         newStatus,
-        trip: updatedTrip,
-        timestamp: new Date(),
-      });
+        updatedTrip,
+      );
     }
 
     // If bus changed, regenerate seat statuses for the new bus
@@ -300,7 +318,8 @@ export class TripService {
         booking.passengerDetails
           ?.map((passenger) => passenger.seatCode)
           .filter((seat): seat is string => Boolean(seat)) ?? [];
-      const seats = seatsFromStatus.length > 0 ? seatsFromStatus : seatsFromPassengers;
+      const seats =
+        seatsFromStatus.length > 0 ? seatsFromStatus : seatsFromPassengers;
 
       const contactName =
         booking.name ||
@@ -332,9 +351,34 @@ export class TripService {
   }> {
     const cancelled =
       await this.tripRepository.markCancelledIfNoSalesOrCheckins(now);
-    const completed = await this.tripRepository.markDeparted(now);
-    const archived = await this.tripRepository.markArrived(now);
-    return { cancelled, completed, archived };
+
+    const completedTrips = await this.tripRepository.markDeparted(now);
+    // Emit events for completed trips
+    for (const trip of completedTrips) {
+      await this.emitTripStatusChangeEvents(
+        trip.id,
+        'scheduled',
+        'completed',
+        trip,
+      );
+    }
+
+    const archivedTrips = await this.tripRepository.markArrived(now);
+    // Emit events for archived trips
+    for (const trip of archivedTrips) {
+      await this.emitTripStatusChangeEvents(
+        trip.id,
+        'completed',
+        'archived',
+        trip,
+      );
+    }
+
+    return {
+      cancelled,
+      completed: completedTrips.length,
+      archived: archivedTrips.length,
+    };
   }
 
   async searchTrips(filters: {
@@ -459,7 +503,7 @@ export class TripService {
     // Try to get from Redis cache first
     const cacheKey = `related_trips:${tripId}`;
     const cached = await this.redisService.get(cacheKey);
-    
+
     if (cached) {
       try {
         return JSON.parse(cached);
@@ -470,7 +514,7 @@ export class TripService {
 
     // Get the current trip details
     const currentTrip = await this.tripRepository.findById(tripId);
-    
+
     if (!currentTrip) {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
@@ -507,11 +551,7 @@ export class TripService {
     });
 
     // Cache the results for 5 minutes (300 seconds)
-    await this.redisService.set(
-      cacheKey,
-      JSON.stringify(formattedTrips),
-      300,
-    );
+    await this.redisService.set(cacheKey, JSON.stringify(formattedTrips), 300);
 
     return formattedTrips;
   }
