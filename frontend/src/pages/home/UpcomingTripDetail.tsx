@@ -12,6 +12,7 @@ import {
   Calendar,
   Wallet,
   QrCode,
+  Star,
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -355,6 +356,17 @@ export default function UpcomingTripDetail() {
                       >
                         {showQRCode ? 'Hide' : 'Show'} QR Code
                       </Button>
+                      {trip.status === 'completed' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => navigate(`/upcoming-trip/${id}/feedback`)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                        >
+                          <Star className="h-4 w-4 mr-2" />
+                          Review & Rate
+                        </Button>
+                      )}
                     </div>
                   </div>
                   {showQRCode && (

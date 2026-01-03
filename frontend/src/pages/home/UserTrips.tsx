@@ -51,6 +51,7 @@ import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/lib/socket';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
+type TripStatus = 'completed' | 'archived';
 
 // Simple schema for trip status update event from backend
 const tripStatusUpdateEventSchema = z.object({
@@ -91,6 +92,7 @@ function UserDashboard() {
   const queryClient = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus>('all');
+  const [selectedTripStatus, setSelectedTripStatus] = useState<TripStatus | 'all'>('all');
   const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
   const { bookingList, cancelBooking, updateBooking, changeSeats } = useBooking(
     user ? { userId: user.id } : undefined
@@ -127,6 +129,11 @@ function UserDashboard() {
     { key: 'paid', label: 'Paid' },
     { key: 'expired', label: 'Expired' },
     { key: 'cancelled', label: 'Cancelled' },
+  ];
+
+  const tripStatusFilters: { key: string; label: string }[] = [
+    { key: 'completed', label: 'Completed' },
+    { key: 'archived', label: 'Archived' },
   ];
 
   // Listen for realtime trip status updates
@@ -312,8 +319,15 @@ function UserDashboard() {
 
   const upcomingTrips = (bookingList.data?.data ?? [])
     .filter((b) => {
-      if (selectedStatus === 'all') return true;
-      return b.status === selectedStatus;
+      // Filter by booking status
+      if (selectedStatus !== 'all' && b.status !== selectedStatus) {
+        return false;
+      }
+      // Filter by trip status (completed/archived)
+      if (selectedTripStatus !== 'all' && b.trip.status !== selectedTripStatus) {
+        return false;
+      }
+      return true;
     })
     .map((b) => ({
       booking: b,
@@ -510,7 +524,7 @@ function UserDashboard() {
                 {selectedStatus === 'all' && <Badge variant="default">●</Badge>}
               </button>
 
-              {/* Status filter buttons */}
+              {/* Booking status filter buttons */}
               {statusFilters.map((status) => (
                 <button
                   key={status.key}
@@ -527,6 +541,29 @@ function UserDashboard() {
                   )}
                 </button>
               ))}
+
+              {/* Trip status filters (completed/archived) */}
+              <div className="pt-2 border-t">
+                <p className="text-xs font-medium text-muted-foreground mb-2 px-3">
+                  Trip Status
+                </p>
+                {tripStatusFilters.map((status) => (
+                  <button
+                    key={status.key}
+                    onClick={() => setSelectedTripStatus(status.key as TripStatus)}
+                    className={`flex items-center justify-between w-full rounded-lg px-3 py-2 font-medium transition-colors ${
+                      selectedTripStatus === status.key
+                        ? 'bg-muted/60 text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                    }`}
+                  >
+                    {status.label}
+                    {selectedTripStatus === status.key && (
+                      <Badge variant="default">●</Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

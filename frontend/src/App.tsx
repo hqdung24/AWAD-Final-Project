@@ -30,6 +30,7 @@ import AdminDashboard from './pages/home/AdminDashboard';
 import LandingPage from './pages/home/LandingPage';
 import UpcomingTripDetail from './pages/home/UpcomingTripDetail';
 import UserDashboard from './pages/home/UserTrips';
+import TripFeedbackPage from './pages/feedback/TripFeedbackPage';
 import PaymentConfirmation from './pages/payment/PaymentConfirmation';
 import Checkout from './pages/search/ConfirmBooking';
 import SearchResults from './pages/search/SearchResults';
@@ -117,6 +118,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <UpcomingTripDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/upcoming-trip/:id/feedback"
+                      element={
+                        <ProtectedRoute>
+                          <TripFeedbackPage />
                         </ProtectedRoute>
                       }
                     />
