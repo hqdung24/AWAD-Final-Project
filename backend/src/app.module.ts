@@ -87,7 +87,7 @@ const ENV = process.env.NODE_ENV; //if (ENV === 'development' || ENV === 'test')
         // logging: true, // tắt nếu không cần
         namingStrategy: new SnakeNamingStrategy(),
         ssl:
-          process.env.NODE_ENV === 'production'
+          ENV !== 'development' && ENV !== 'test'
             ? { rejectUnauthorized: false }
             : false,
       }),

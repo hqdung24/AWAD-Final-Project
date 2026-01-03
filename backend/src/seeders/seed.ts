@@ -19,8 +19,9 @@ import { Feedback } from '@/modules/feedback/entities/feedback.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { RoutePoint } from '@/modules/route/entities/route-point.entity';
 // Load environment variables
-const ENV = process.env.NODE_ENV || 'development';
-config({ path: `.env.${ENV}` });
+const ENV = process.env.NODE_ENV;
+const envFile = ENV ? `.env.${process.env.NODE_ENV}` : '.env';
+config({ path: envFile });
 
 // Create DataSource
 const AppDataSource = new DataSource({
@@ -48,6 +49,10 @@ const AppDataSource = new DataSource({
   ],
   synchronize: false,
   namingStrategy: new SnakeNamingStrategy(),
+  ssl:
+    ENV !== 'development' && ENV !== 'test'
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 interface OperatorRow {
@@ -299,26 +304,53 @@ async function seed() {
     }
 
     // 7. Generate Seat Statuses for all Trips
+    // console.log('🪑 Generating seat statuses for trips...');
+    // let seatStatusCount = 0;
+
+    // for (const trip of createdTrips) {
+    //   // Get all seats for this trip's bus
+    //   const seats = await AppDataSource.getRepository(Seat).find({
+    //     where: { busId: trip.busId },
+    //   });
+
+    //   for (const seat of seats) {
+    //     const seatStatus = new SeatStatus();
+    //     seatStatus.tripId = trip.id;
+    //     seatStatus.seatId = seat.id;
+    //     seatStatus.state = 'available';
+    //     seatStatus.lockedUntil = new Date(0); // epoch time
+
+    //     await AppDataSource.getRepository(SeatStatus).save(seatStatus);
+    //     seatStatusCount++;
+    //   }
+    // }
+    // console.log(`  ✓ Created ${seatStatusCount} seat statuses`);
+
+    // 7. Generate Seat Statuses for all Trips (FAST VERSION)
     console.log('🪑 Generating seat statuses for trips...');
     let seatStatusCount = 0;
 
+    const seatStatusRepo = AppDataSource.getRepository(SeatStatus);
+
     for (const trip of createdTrips) {
-      // Get all seats for this trip's bus
       const seats = await AppDataSource.getRepository(Seat).find({
         where: { busId: trip.busId },
+        select: ['id'], // quan trọng: giảm payload
       });
 
-      for (const seat of seats) {
-        const seatStatus = new SeatStatus();
-        seatStatus.tripId = trip.id;
-        seatStatus.seatId = seat.id;
-        seatStatus.state = 'available';
-        seatStatus.lockedUntil = new Date(0); // epoch time
+      const seatStatuses = seats.map((seat) => {
+        const ss = new SeatStatus();
+        ss.tripId = trip.id;
+        ss.seatId = seat.id;
+        ss.state = 'available';
+        ss.lockedUntil = new Date(0);
+        return ss;
+      });
 
-        await AppDataSource.getRepository(SeatStatus).save(seatStatus);
-        seatStatusCount++;
-      }
+      await seatStatusRepo.save(seatStatuses); // 🔥 1 query cho cả batch
+      seatStatusCount += seatStatuses.length;
     }
+
     console.log(`  ✓ Created ${seatStatusCount} seat statuses`);
 
     console.log('');

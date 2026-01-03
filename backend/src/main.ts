@@ -16,11 +16,14 @@ async function bootstrap() {
 
   //Enable cors
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
     : ['http://localhost:3900'];
 
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
+    origin:
+      process.env.NODE_ENV === 'development'
+        ? true // dev cho thoáng
+        : allowedOrigins,
     credentials: true,
   });
 
@@ -70,7 +73,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'development') {
     writeFileSync('./openapi.json', JSON.stringify(document, null, 2));
   }
   //add prefix api
