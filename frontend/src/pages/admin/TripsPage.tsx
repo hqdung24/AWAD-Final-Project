@@ -72,26 +72,18 @@ export default function TripsPage() {
     queryKey: ['admin-routes'],
     queryFn: () => listAdminRoutes({ isActive: undefined }),
   });
-  const isDerivedStatusFilter =
-    filters.status === 'in_progress' || filters.status === 'completed';
-  const backendStatus =
-    filters.status === 'in_progress'
-      ? undefined
-      : filters.status === 'completed'
-      ? undefined
-      : filters.status;
-  const effectivePage = isDerivedStatusFilter ? 1 : page;
-  const effectiveLimit = isDerivedStatusFilter ? 2000 : pageSize;
+  const effectivePage = page;
+  const effectiveLimit = pageSize;
 
   const { data: tripsResponse } = useQuery<TripListResponse>({
-    queryKey: ['trips', effectivePage, effectiveLimit, filters, backendStatus],
+    queryKey: ['trips', effectivePage, effectiveLimit, filters],
     queryFn: () =>
       listTrips({
         page: effectivePage,
         limit: effectiveLimit,
         routeId: filters.routeId,
         busId: filters.busId,
-        status: backendStatus,
+        status: filters.status,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       }),
@@ -105,23 +97,18 @@ export default function TripsPage() {
   const now = new Date();
 
   const getDisplayStatusKey = (trip: Trip) => {
+    if (trip.status === 'in_progress') return 'in_progress';
     if (trip.status === 'cancelled') return 'cancelled';
-    const departure = new Date(trip.departureTime);
-    const arrival = new Date(trip.arrivalTime);
-    if (now >= departure && now <= arrival) {
-      if (trip.status === 'scheduled' || trip.status === 'completed') {
-        return 'in_progress';
-      }
-    }
-    if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
-    if (trip.status === 'scheduled') return 'scheduled';
-    return trip.status;
+    if (trip.status === 'archived') return 'archived';
+    if (trip.status === 'completed') return 'completed';
+    return 'scheduled';
   };
 
   const getDisplayStatusLabel = (trip: Trip) => {
     const key = getDisplayStatusKey(trip);
     if (key === 'in_progress') return 'In Progress';
     if (key === 'completed') return 'Completed';
+    if (key === 'archived') return 'Archived';
     if (key === 'cancelled') return 'Cancelled';
     return 'Scheduled';
   };
@@ -129,17 +116,16 @@ export default function TripsPage() {
   const filteredTrips = filters.status
     ? trips.filter((trip) => getDisplayStatusKey(trip) === filters.status)
     : trips;
-  const total = isDerivedStatusFilter ? filteredTrips.length : tripsResponse?.total ?? 0;
-  const totalPages =
-    pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const visibleTrips = isDerivedStatusFilter
-    ? filteredTrips.slice((page - 1) * pageSize, page * pageSize)
-    : filteredTrips;
+  const total = tripsResponse?.total ?? 0;
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const visibleTrips = filteredTrips;
 
   const isTripFormLocked =
     editingTripId &&
     (tripForm.status === 'cancelled' ||
       tripForm.status === 'completed' ||
+      tripForm.status === 'archived' ||
+      tripForm.status === 'in_progress' ||
       (tripForm.status === 'scheduled' &&
         tripForm.departureTime &&
         tripForm.arrivalTime &&
@@ -235,7 +221,7 @@ export default function TripsPage() {
       busId: trip.busId,
       departureTime: trip.departureTime.slice(0, 16),
       arrivalTime: trip.arrivalTime.slice(0, 16),
-      status: trip.status === 'archived' ? 'completed' : trip.status,
+      status: trip.status,
       basePrice: Number(trip.basePrice),
     });
     setTripModalOpen(true);
@@ -376,6 +362,7 @@ export default function TripsPage() {
                   <option value="scheduled">Scheduled</option>
                   <option value="in_progress">In Progress</option>
                   <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
               </label>
@@ -587,8 +574,10 @@ export default function TripsPage() {
                 disabled={Boolean(isTripFormLocked)}
               >
                 <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
                 <option value="cancelled">Cancelled</option>
                 <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
               </select>
             </label>
             <label className="text-xs font-medium text-muted-foreground flex flex-col gap-1">

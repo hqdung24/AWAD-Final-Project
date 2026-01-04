@@ -149,7 +149,7 @@ export class TripService {
 
     const now = new Date();
     const isDerivedInProgress =
-      existingTrip.status === 'scheduled' &&
+      existingTrip.status === TripStatus.SCHEDULED &&
       now >= existingTrip.departureTime &&
       now <= existingTrip.arrivalTime;
 
@@ -157,7 +157,9 @@ export class TripService {
       updateTripDto.status &&
       (existingTrip.status === 'cancelled' ||
         existingTrip.status === 'completed' ||
-        isDerivedInProgress)
+        existingTrip.status === 'archived' ||
+        existingTrip.status === TripStatus.IN_PROGRESS ||
+        (isDerivedInProgress && updateTripDto.status !== TripStatus.IN_PROGRESS))
     ) {
       throw new BadRequestException(
         'Trip status cannot be changed when cancelled, completed, or in progress',
@@ -346,25 +348,34 @@ export class TripService {
 
   async autoUpdateTripStatuses(now: Date): Promise<{
     cancelled: number;
+    inProgress: number;
     completed: number;
     archived: number;
   }> {
     const cancelled =
       await this.tripRepository.markCancelledIfNoSalesOrCheckins(now);
 
-    const completedTrips = await this.tripRepository.markDeparted(now);
-    // Emit events for completed trips
-    for (const trip of completedTrips) {
+    const inProgressTrips = await this.tripRepository.markInProgress(now);
+    for (const trip of inProgressTrips) {
       await this.emitTripStatusChangeEvents(
         trip.id,
         'scheduled',
+        'in_progress',
+        trip,
+      );
+    }
+
+    const completedTrips = await this.tripRepository.markCompleted(now);
+    for (const trip of completedTrips) {
+      await this.emitTripStatusChangeEvents(
+        trip.id,
+        'in_progress',
         'completed',
         trip,
       );
     }
 
     const archivedTrips = await this.tripRepository.markArrived(now);
-    // Emit events for archived trips
     for (const trip of archivedTrips) {
       await this.emitTripStatusChangeEvents(
         trip.id,
@@ -376,6 +387,7 @@ export class TripService {
 
     return {
       cancelled,
+      inProgress: inProgressTrips.length,
       completed: completedTrips.length,
       archived: archivedTrips.length,
     };

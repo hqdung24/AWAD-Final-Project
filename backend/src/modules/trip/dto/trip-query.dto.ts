@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 
 enum TripStatus {
   SCHEDULED = 'scheduled',
+  IN_PROGRESS = 'in_progress',
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',

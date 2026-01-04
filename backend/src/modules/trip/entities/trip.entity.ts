@@ -36,7 +36,7 @@ export class Trip {
   basePrice: number;
 
   @Column()
-  status: string; // scheduled / cancelled / completed / archived
+  status: string; // scheduled / in_progress / cancelled / completed / archived
 
   @ManyToOne(() => Route, (route) => route.trips, {
     onDelete: 'RESTRICT',

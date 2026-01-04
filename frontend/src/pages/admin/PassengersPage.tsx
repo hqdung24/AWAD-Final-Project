@@ -102,18 +102,10 @@ export default function PassengersPage() {
 
   const trips = tripsQuery.data?.data ?? [];
   const getDisplayStatusKey = (trip: (typeof trips)[number]) => {
+    if (trip.status === 'in_progress') return 'in_progress';
     if (trip.status === 'cancelled') return 'cancelled';
-    const now = new Date();
-    const departure = new Date(trip.departureTime);
-    const arrival = new Date(trip.arrivalTime);
-    if (now >= departure && now <= arrival) {
-      if (trip.status === 'scheduled' || trip.status === 'completed') {
-        return 'in_progress';
-      }
-    }
     if (trip.status === 'completed' || trip.status === 'archived') return 'completed';
-    if (trip.status === 'scheduled') return 'scheduled';
-    return trip.status;
+    return 'scheduled';
   };
 
   const getDisplayStatusLabel = (trip: (typeof trips)[number]) => {
@@ -193,6 +185,7 @@ export default function PassengersPage() {
   const checkedInCount = filteredPassengers.filter((p) => p.checkedInAt).length;
   const pendingCount = filteredPassengers.length - checkedInCount;
   const isTripLocked =
+    selectedTrip?.status === 'in_progress' ||
     selectedTrip?.status === 'completed' ||
     selectedTrip?.status === 'archived' ||
     selectedTrip?.status === 'cancelled';

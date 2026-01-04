@@ -272,12 +272,34 @@ export class TripRepository {
     return result.affected ?? 0;
   }
 
-  async markDeparted(now: Date): Promise<Trip[]> {
+  async markInProgress(now: Date): Promise<Trip[]> {
     return await this.repository.manager.transaction(async (manager) => {
       const trips = await manager
         .createQueryBuilder(Trip, 'trip')
         .where('trip.status = :status', { status: 'scheduled' })
         .andWhere('trip.departureTime <= :now', { now })
+        .andWhere('trip.arrivalTime > :now', { now })
+        .getMany();
+
+      if (trips.length === 0) return [];
+
+      await manager
+        .createQueryBuilder()
+        .update(Trip)
+        .set({ status: 'in_progress' })
+        .where('id IN (:...ids)', { ids: trips.map((t) => t.id) })
+        .execute();
+
+      return trips;
+    });
+  }
+
+  async markCompleted(now: Date): Promise<Trip[]> {
+    return await this.repository.manager.transaction(async (manager) => {
+      const trips = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .where('trip.status = :status', { status: 'in_progress' })
+        .andWhere('trip.arrivalTime <= :now', { now })
         .getMany();
 
       if (trips.length === 0) return [];
@@ -295,10 +317,11 @@ export class TripRepository {
 
   async markArrived(now: Date): Promise<Trip[]> {
     return await this.repository.manager.transaction(async (manager) => {
+      const archiveCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const trips = await manager
         .createQueryBuilder(Trip, 'trip')
         .where('trip.status = :status', { status: 'completed' })
-        .andWhere('trip.arrivalTime <= :now', { now })
+        .andWhere('trip.arrivalTime <= :archiveCutoff', { archiveCutoff })
         .getMany();
 
       if (trips.length === 0) return [];

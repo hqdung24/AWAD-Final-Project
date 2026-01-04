@@ -4,6 +4,7 @@ import { IsEnum, IsOptional } from 'class-validator';
 
 export enum TripStatus {
   SCHEDULED = 'scheduled',
+  IN_PROGRESS = 'in_progress',
   CANCELLED = 'cancelled',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
