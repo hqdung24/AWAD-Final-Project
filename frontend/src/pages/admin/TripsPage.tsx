@@ -47,6 +47,12 @@ const initialTripForm: Partial<Trip> = {
   status: 'scheduled',
 };
 
+const toOffsetIso = (value: string) => {
+  if (!value) return value;
+  if (/[Z+-]\d{2}:\d{2}$/.test(value)) return value;
+  return `${value}:00+07:00`;
+};
+
 export default function TripsPage() {
   const qc = useQueryClient();
   const [tripForm, setTripForm] = useState<Partial<Trip>>(initialTripForm);
@@ -199,8 +205,8 @@ export default function TripsPage() {
         data: {
           routeId: tripForm.routeId,
           busId: tripForm.busId,
-          departureTime: tripForm.departureTime,
-          arrivalTime: tripForm.arrivalTime,
+          departureTime: toOffsetIso(tripForm.departureTime),
+          arrivalTime: toOffsetIso(tripForm.arrivalTime),
           basePrice,
           status: tripForm.status,
         },
@@ -209,8 +215,8 @@ export default function TripsPage() {
       tripCreateMutation.mutate({
         routeId: tripForm.routeId,
         busId: tripForm.busId,
-        departureTime: tripForm.departureTime,
-        arrivalTime: tripForm.arrivalTime,
+        departureTime: toOffsetIso(tripForm.departureTime),
+        arrivalTime: toOffsetIso(tripForm.arrivalTime),
         basePrice,
       });
     }
