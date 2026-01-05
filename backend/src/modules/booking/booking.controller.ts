@@ -392,6 +392,7 @@ export class BookingController {
 
   @Patch(':id/cancel')
   @HttpCode(HttpStatus.OK)
+  @Auth(AuthType.None) // Public access
   @ApiOperation({ summary: 'Cancel a pending booking (soft delete)' })
   @ApiParam({ name: 'id', description: 'Booking ID', type: String })
   @ApiResponse({

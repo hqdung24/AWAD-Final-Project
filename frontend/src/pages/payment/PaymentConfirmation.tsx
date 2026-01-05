@@ -163,7 +163,9 @@ export default function PaymentConfirmation() {
                         })
                       : Promise.resolve(),
                   ]);
-                  navigate('/upcoming-trip');
+                  //if booking is successful, navigate to upcoming trips (for sigined in user)
+                  if (bookingDetail.data?.userId) navigate('/upcoming-trip');
+                  else navigate('/');
                 }}
                 className="w-full py-6 text-base font-semibold bg-muted text-foreground hover:bg-muted/80"
               >

@@ -26,6 +26,7 @@ import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import VerificationPage from './pages/auth/VerificationPage';
 import GuestBookingLookup from './pages/guest/GuestBookingLookup';
+import GuestBookingDetail from './pages/guest/GuestBookingDetail';
 import AdminDashboard from './pages/home/AdminDashboard';
 import LandingPage from './pages/home/LandingPage';
 import UpcomingTripDetail from './pages/home/UpcomingTripDetail';
@@ -239,6 +240,14 @@ function App() {
                       element={
                         <ProtectedRoute allowGuest>
                           <GuestBookingLookup />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/guest/booking/:id"
+                      element={
+                        <ProtectedRoute allowGuest>
+                          <GuestBookingDetail />
                         </ProtectedRoute>
                       }
                     />

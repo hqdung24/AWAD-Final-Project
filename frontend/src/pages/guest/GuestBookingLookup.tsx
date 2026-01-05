@@ -7,6 +7,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -48,12 +58,19 @@ export default function GuestBookingLookup() {
   const [searchParams, setSearchParams] = useState<
     BookingListQuery | undefined
   >(undefined);
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { bookingList } = useBooking(searchParams);
+  const { bookingList, cancelBooking } = useBooking(searchParams);
   const isLoading = bookingList.isLoading;
-  const bookings = bookingList.data?.data || [];
-
+  // Filter to only show guest bookings (bookings without userId)
+  const bookings = (bookingList.data?.data || []).filter(
+    (booking) => !booking.userId
+  );
+  const handleCancel = (id: string, status: string) => {
+    if (status !== 'pending') return;
+    setPendingCancelId(id);
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -227,7 +244,8 @@ export default function GuestBookingLookup() {
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {booking.pickupPoint?.address ?? ''}
-                              {booking.pickupPoint?.address && booking.dropoffPoint?.address
+                              {booking.pickupPoint?.address &&
+                              booking.dropoffPoint?.address
                                 ? ' • '
                                 : ''}
                               {booking.dropoffPoint?.address ?? ''}
@@ -255,6 +273,43 @@ export default function GuestBookingLookup() {
                           )}
                         </div>
                       </div>
+                      <Separator />
+                      <div className="flex flex-wrap gap-3">
+                        {booking.status === 'pending' && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/payment/${booking.id}`)}
+                          >
+                            Pay Now
+                          </Button>
+                        )}
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() =>
+                            navigate(`/guest/booking/${booking.id}`)
+                          }
+                        >
+                          {booking.status === 'paid'
+                            ? 'View E-ticket'
+                            : 'View details'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={booking.status !== 'pending'}
+                          onClick={() =>
+                            handleCancel(booking.id, booking.status)
+                          }
+                          className="text-red-500 border-red-500 dark:border-red-500 hover:bg-red-500/10 hover:border-red-500 hover:text-red-500 disabled:opacity-50 disabled:hover:bg-transparent"
+                        >
+                          {cancelBooking.isPending &&
+                          booking.id === cancelBooking.variables
+                            ? 'Cancelling…'
+                            : 'Cancel'}
+                        </Button>
+                      </div>
                       {bookings.length > 1 && <Separator className="mt-4" />}
                     </div>
                   ))}
@@ -270,6 +325,40 @@ export default function GuestBookingLookup() {
           </Card>
         )}
       </div>
+
+      <AlertDialog
+        open={!!pendingCancelId}
+        onOpenChange={(open: boolean) => {
+          if (!open) setPendingCancelId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel? This action cannot be undone and
+              your seats will be released.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelBooking.isPending}>
+              Keep booking
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 text-white hover:bg-red-600"
+              disabled={cancelBooking.isPending}
+              onClick={() => {
+                if (!pendingCancelId) return;
+                cancelBooking.mutate(pendingCancelId, {
+                  onSettled: () => setPendingCancelId(null),
+                });
+              }}
+            >
+              {cancelBooking.isPending ? 'Cancelling…' : 'Yes, cancel booking'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
