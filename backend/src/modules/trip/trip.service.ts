@@ -149,7 +149,7 @@ export class TripService {
 
     const now = new Date();
     const isDerivedInProgress =
-      existingTrip.status === TripStatus.SCHEDULED &&
+      existingTrip.status === 'scheduled' &&
       now >= existingTrip.departureTime &&
       now <= existingTrip.arrivalTime;
 
@@ -158,8 +158,9 @@ export class TripService {
       (existingTrip.status === 'cancelled' ||
         existingTrip.status === 'completed' ||
         existingTrip.status === 'archived' ||
-        existingTrip.status === TripStatus.IN_PROGRESS ||
-        (isDerivedInProgress && updateTripDto.status !== TripStatus.IN_PROGRESS))
+        existingTrip.status === 'in_progress' ||
+        (isDerivedInProgress &&
+          updateTripDto.status !== TripStatus.IN_PROGRESS))
     ) {
       throw new BadRequestException(
         'Trip status cannot be changed when cancelled, completed, or in progress',
@@ -327,8 +328,7 @@ export class TripService {
         booking.name ||
         `${booking.user?.firstName ?? ''} ${booking.user?.lastName ?? ''}`.trim();
 
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this.bookingEmailProvider.sendBookingCancelledEmail(email, {
+      void this.bookingEmailProvider.sendBookingCancelledEmail(email, {
         bookingId: booking.id,
         bookingReference: booking.bookingReference,
         origin: booking.trip?.route?.origin || '—',

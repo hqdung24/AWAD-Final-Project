@@ -46,6 +46,14 @@ function formatDateTime(iso?: string) {
   });
 }
 
+// Format status text by removing underscores and capitalizing
+function formatTripStatus(status: string): string {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 // Simple schema for trip status update event from backend
 const tripStatusUpdateEventSchema = z.object({
   tripId: z.string(),
@@ -194,15 +202,17 @@ export default function UpcomingTripDetail() {
                 <span
                   className={`h-2 w-2 rounded-full ${
                     trip.status.toLowerCase() === 'scheduled'
+                      ? 'bg-blue-500'
+                      : trip.status.toLowerCase() === 'in_progress'
+                      ? 'bg-purple-500'
+                      : trip.status.toLowerCase() === 'completed'
                       ? 'bg-green-500'
                       : trip.status.toLowerCase() === 'cancelled'
                       ? 'bg-red-500'
-                      : trip.status.toLowerCase() === 'completed'
-                      ? 'bg-gray-500'
-                      : 'bg-blue-500'
+                      : 'bg-slate-500'
                   }`}
                 />
-                {trip.status}
+                {formatTripStatus(trip.status)}
               </span>
             </CardTitle>
             <div className="text-sm text-muted-foreground">

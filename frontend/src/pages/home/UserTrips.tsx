@@ -51,7 +51,39 @@ import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/lib/socket';
 
 type BookingStatus = 'all' | 'pending' | 'paid' | 'expired' | 'cancelled';
-type TripStatus = 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+type TripStatus =
+  | 'scheduled'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | 'archived';
+
+// Format status text by removing underscores and capitalizing
+function formatTripStatus(status: string): string {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Get status color for badge
+function getTripStatusColor(status: string): string {
+  const normalizedStatus = status.toLowerCase();
+  switch (normalizedStatus) {
+    case 'scheduled':
+      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/40';
+    case 'in_progress':
+      return 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/40';
+    case 'completed':
+      return 'bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/40';
+    case 'cancelled':
+      return 'bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/40';
+    case 'archived':
+      return 'bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-500/40';
+    default:
+      return 'bg-gray-500/15 text-gray-700 dark:text-gray-400 border border-gray-500/40';
+  }
+}
 
 // Simple schema for trip status update event from backend
 const tripStatusUpdateEventSchema = z.object({
@@ -135,9 +167,10 @@ function UserDashboard() {
 
   const tripStatusFilters: { key: string; label: string }[] = [
     { key: 'scheduled', label: 'Scheduled' },
-    { key: 'in-progress', label: 'In Progress' },
+    { key: 'in_progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
+    { key: 'archived', label: 'Archived' },
   ];
 
   // Listen for realtime trip status updates
@@ -431,14 +464,16 @@ function UserDashboard() {
                           className={`h-2 w-2 rounded-full ${
                             trip.tripStatus.toLowerCase() === 'scheduled'
                               ? 'bg-blue-500'
+                              : trip.tripStatus.toLowerCase() === 'in_progress'
+                              ? 'bg-purple-500'
+                              : trip.tripStatus.toLowerCase() === 'completed'
+                              ? 'bg-green-500'
                               : trip.tripStatus.toLowerCase() === 'cancelled'
                               ? 'bg-red-500'
-                              : trip.tripStatus.toLowerCase() === 'completed'
-                              ? 'bg-gray-500'
-                              : 'bg-green-500'
+                              : 'bg-slate-500'
                           }`}
                         />
-                        {trip.tripStatus}
+                        {formatTripStatus(trip.tripStatus)}
                       </span>
                     </CardTitle>
                     <p className="text-muted-foreground text-sm flex items-center gap-2">
